@@ -27,9 +27,6 @@ const helmet      = require('helmet');
 const cookieParser = require('cookie-parser');
 const path    = require('path');
 
-const mysql = require("mysql2");
-
-const connection = mysql.createConnection(process.env.DATABASE_URL);
 const { globalLimiter, mapsKeyLimiter } = require('./middleware/rateLimiter');
 const authMiddleware = require('./middleware/auth');
 

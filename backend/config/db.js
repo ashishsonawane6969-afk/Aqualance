@@ -19,10 +19,10 @@
 
 const mysql = require('mysql2/promise');
 
-const DB_NAME  = process.env.DB_NAME || 'aqualence_db';
-const DB_HOST  = process.env.DB_HOST || 'localhost';
+const DB_NAME  = process.env.DB_NAME || 'railway';
+const DB_HOST  = process.env.DB_HOST || 'mysql.railway.internal';
 const DB_PORT  = parseInt(process.env.DB_PORT, 10) || 3306;
-const DB_USER  = process.env.DB_USER || 'root';
+const DB_USER  = process.env.DB_USER || 'aqualence_user';
 const DB_PASS  = process.env.DB_PASSWORD || '';
 
 const sslConfig = process.env.DB_SSL === 'true'
@@ -77,7 +77,9 @@ const pool = mysql.createPool({
       }
     } else {
       console.error('❌  MySQL connection failed:', err.code || err.message);
-      console.error('   Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD in your .env');
+      console.error(`   DB_HOST=${DB_HOST} DB_PORT=${DB_PORT} DB_USER=${DB_USER} DB_NAME=${DB_NAME}`);
+      console.error('   Verify DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME are set correctly.');
+      console.error('   On Railway, DB_HOST should be mysql.railway.internal (private DNS).');
       process.exit(1);
     }
   }
