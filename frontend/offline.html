@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offline — Aqualence</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+<style>
+  body { font-family: sans-serif; display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; margin: 0; background: #f0f4f0; color: #1565a8; text-align: center; padding: 24px; }
+  .icon { font-size: 64px; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  p { color: #555; font-size: 14px; max-width: 300px; margin: 0 auto 24px; }
+  button { background: #1565a8; color: white; border: none; border-radius: 999px;
+    padding: 12px 28px; font-size: 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="icon">📡</div>
+    <h1>No Internet Connection</h1>
+    <p>Please check your Wi-Fi or mobile data and try again.</p>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

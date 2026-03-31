@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MFA Security — Aqualence Admin</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    .mfa-card { max-width:480px; margin:32px auto; background:var(--surface);
+      border:1px solid var(--border); border-radius:16px; padding:28px 28px 32px; }
+    .mfa-header { text-align:center; margin-bottom:24px; }
+    .mfa-icon { font-size:2.8rem; margin-bottom:8px; }
+    .mfa-header h2 { font-size:1.15rem; font-weight:700; color:var(--ink); }
+    .mfa-header p  { font-size:.82rem; color:var(--ink-soft); margin-top:4px; }
+
+    .status-badge { display:inline-flex; align-items:center; gap:6px;
+      padding:6px 14px; border-radius:999px; font-size:.78rem; font-weight:700;
+      margin-bottom:20px; }
+    .status-on  { background:var(--success-pale); color:var(--success); }
+    .status-off { background:var(--warn-pale);    color:var(--warn); }
+
+    .step-block { background:var(--surface-2); border-radius:10px; padding:16px;
+      margin-bottom:16px; }
+    .step-block h3 { font-size:.82rem; font-weight:700; color:var(--ink-mid); margin-bottom:8px; }
+    .step-block p  { font-size:.8rem; color:var(--ink-soft); line-height:1.6; }
+
+    .qr-wrap { text-align:center; margin:16px 0; }
+    .qr-wrap img { border:4px solid white; border-radius:10px;
+      box-shadow:0 2px 12px rgba(0,0,0,.12); max-width:200px; }
+    .manual-key { font-family:monospace; background:var(--surface-2); border:1px solid var(--border);
+      border-radius:8px; padding:10px 12px; font-size:.78rem; word-break:break-all;
+      color:var(--ink-mid); margin-top:8px; text-align:center; }
+
+    .otp-input { font-size:1.5rem; letter-spacing:.4em; text-align:center;
+      padding:12px; width:100%; }
+
+    .btn-danger { background:#c0392b; color:white; border:none; }
+    .btn-danger:hover { background:#a93226; }
+
+    .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+    #msgBox { padding:10px 14px; border-radius:8px; font-size:.82rem;
+      margin-bottom:14px; display:none; }
+    #msgBox.success { background:var(--success-pale); color:var(--success); display:block; }
+    #msgBox.error   { background:var(--error-pale);   color:var(--error);   display:block; }
+  </style>
+</head>
+<body class="admin-layout">
+
+<!-- Topbar -->
+<div class="top-bar">
+  <button class="icon-btn" onclick="history.back()">&#8592;</button>
+  <span class="top-bar-title">🔐 MFA Security</span>
+</div>
+
+<div class="mfa-card">
+  <div class="mfa-header">
+    <div class="mfa-icon">🔐</div>
+    <h2>Two-Factor Authentication</h2>
+    <p>Protect your admin account with Google Authenticator</p>
+  </div>
+
+  <div style="text-align:center">
+    <span id="statusBadge" class="status-badge status-off">⚪ Checking…</span>
+  </div>
+
+  <div id="msgBox"></div>
+
+  <!-- ── SETUP FLOW (shown when MFA is OFF) ───────────────────── -->
+  <div id="setupSection" style="display:none">
+    <div class="step-block">
+      <h3>Step 1 — Install an authenticator app</h3>
+      <p>Download <strong>Google Authenticator</strong> or <strong>Authy</strong> on your phone if you haven't already.</p>
+    </div>
+
+    <div class="step-block" id="qrSection" style="display:none">
+      <h3>Step 2 — Scan this QR code</h3>
+      <div class="qr-wrap">
+        <img id="qrImg" src="" alt="QR Code" />
+      </div>
+      <p>Or enter this key manually:</p>
+      <div class="manual-key" id="manualKey"></div>
+    </div>
+
+    <div class="step-block" id="confirmSection" style="display:none">
+      <h3>Step 3 — Enter your first OTP to confirm</h3>
+      <p>Open the app and enter the 6-digit code shown for <em>Aqualence Admin</em>.</p>
+      <div class="form-group" style="margin-top:12px">
+        <input type="text" id="confirmOtp" class="otp-input" inputmode="numeric"
+               maxlength="6" placeholder="000000" autocomplete="one-time-code" />
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="enableMfa()">
+        ✓ Activate MFA
+      </button>
+    </div>
+
+    <button id="startSetupBtn" class="btn btn-primary btn-full" onclick="startSetup()">
+      📲 Set Up MFA
+    </button>
+  </div>
+
+  <!-- ── MANAGE FLOW (shown when MFA is ON) ──────────────────── -->
+  <div id="manageSection" style="display:none">
+    <div class="step-block">
+      <h3>✅ MFA is protecting your account</h3>
+      <p>Every login requires a 6-digit code from your authenticator app in addition to your password.</p>
+    </div>
+
+    <hr class="divider" />
+    <p style="font-size:.8rem;color:var(--ink-soft);margin-bottom:10px;">
+      To disable MFA, enter your current authenticator code below:
+    </p>
+    <div class="form-group">
+      <label for="disableOtp">Current OTP
+        <input type="text" id="disableOtp" class="otp-input" inputmode="numeric"
+      </label>
+             maxlength="6" placeholder="000000" />
+    </div>
+    <button class="btn btn-danger btn-full" style="margin-top:8px" onclick="disableMfa()">
+      🚫 Disable MFA
+    </button>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE">
+// API is declared in admin.js (loaded above)
+
+function showMsg(msg, type) {
+  const el = document.getElementById('msgBox');
+  el.textContent = msg;
+  el.className = type; // 'success' or 'error'
+}
+function clearMsg() {
+  const el = document.getElementById('msgBox');
+  el.className = ''; el.style.display = 'none';
+}
+
+// ── Load current MFA status ───────────────────────────────────
+async function loadStatus() {
+  try {
+    const res  = await apiFetch(`${API}/auth/mfa/status`);
+    const data = await res.json();
+    const badge = document.getElementById('statusBadge');
+    if (data.mfa_enabled) {
+      badge.textContent = '🟢 MFA Enabled';
+      badge.className = 'status-badge status-on';
+      document.getElementById('setupSection').style.display   = 'none';
+      document.getElementById('manageSection').style.display  = 'block';
+    } else {
+      badge.textContent = '🔴 MFA Disabled';
+      badge.className = 'status-badge status-off';
+      document.getElementById('setupSection').style.display   = 'block';
+      document.getElementById('manageSection').style.display  = 'none';
+    }
+  } catch (e) {
+    showMsg('Could not load MFA status. Please refresh.', 'error');
+  }
+}
+
+// ── Step 1: Generate QR code ──────────────────────────────────
+async function startSetup() {
+  clearMsg();
+  const btn = document.getElementById('startSetupBtn');
+  btn.textContent = 'Generating…'; btn.disabled = true;
+  try {
+    const res  = await apiFetch(`${API}/auth/mfa/setup`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+
+    document.getElementById('qrImg').src    = data.qr_code_url;
+    document.getElementById('manualKey').textContent = data.manual_key;
+    document.getElementById('qrSection').style.display      = 'block';
+    document.getElementById('confirmSection').style.display = 'block';
+    btn.style.display = 'none';
+    document.getElementById('confirmOtp').focus();
+  } catch (e) {
+    showMsg(e.message, 'error');
+    btn.textContent = '📲 Set Up MFA'; btn.disabled = false;
+  }
+}
+
+// ── Step 2: Confirm OTP and enable MFA ───────────────────────
+async function enableMfa() {
+  clearMsg();
+  const otp = document.getElementById('confirmOtp').value.trim();
+  if (!/^\d{6}$/.test(otp)) {
+    showMsg('Enter the 6-digit code from your authenticator app.', 'error');
+    return;
+  }
+  try {
+    const res  = await apiFetch(`${API}/auth/mfa/enable`, {
+      method: 'POST',
+      body:   JSON.stringify({ otp }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    showMsg('✅ MFA is now active! You will need your authenticator on every login.', 'success');
+    setTimeout(() => loadStatus(), 1500);
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+// ── Disable MFA ───────────────────────────────────────────────
+async function disableMfa() {
+  clearMsg();
+  const otp = document.getElementById('disableOtp').value.trim();
+  if (!/^\d{6}$/.test(otp)) {
+    showMsg('Enter your current 6-digit authenticator code to confirm.', 'error');
+    return;
+  }
+  if (!confirm('Are you sure you want to disable MFA? Your account will be less secure.')) return;
+  try {
+    const res  = await apiFetch(`${API}/auth/mfa/disable`, {
+      method: 'POST',
+      body:   JSON.stringify({ otp }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    showMsg('MFA has been disabled.', 'success');
+    setTimeout(() => loadStatus(), 1500);
+  } catch (e) {
+    showMsg(e.message, 'error');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+if (!adminAuth()) { /* redirect handled by adminAuth */ } else {
+  loadStatus();
+}
+</script>
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

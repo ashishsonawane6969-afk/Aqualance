@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Salesmen — Admin | Aqualence Ventures</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    /* ─── Design tokens ─────────────────────────── */
+    :root {
+      --f0:#0d2210; --f1:#1a4020; --f2:#2a6535; --f3:#3d8c4a; --f4:#5aab65;
+      --f5:#8fd49a; --f6:#d4f0d9; --f7:#f0f8f1;
+      --ink:#111a0d; --ink2:#3d5240; --ink3:#7a9480; --ink4:#b8cebb;
+      --bdr:#e0ead1; --bg:#f4f7f0;
+      --blue:#1565c0; --blu-lt:#e3f2fd;
+      --amber:#b06800; --amb-lt:#fff3cd;
+      --red:#b91c1c; --red-lt:#fee2e2;
+      --em:#166534; --em-lt:#dcfce7;
+      --gold:#c4820a; --gld-lt:#fef3c7;
+      --card-sh: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(13,34,16,.05);
+      --font: 'DM Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { background: var(--bg); font-family: var(--font); }
+    .main-area { min-width: 0; overflow-x: hidden; }
+    .content-area { min-width: 0; overflow-x: hidden; max-width: 100%; }
+
+    /* ─── KPI strip ─────────────────────────────── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 20px 20px 0;
+    }
+    .kpi-tile {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--bdr);
+      padding: 18px 16px 16px;
+      box-shadow: var(--card-sh);
+      position: relative; overflow: hidden;
+    }
+    .kpi-tile::before {
+      content: '';
+      position: absolute; inset: 0 0 auto 0;
+      height: 3px; border-radius: 14px 14px 0 0;
+    }
+    .kpi-tile.c-brand::before { background: var(--f2); }
+    .kpi-tile.c-green::before { background: var(--em); }
+    .kpi-tile.c-gold::before  { background: var(--gold); }
+    .kpi-tile.c-blue::before  { background: var(--blue); }
+    .kpi-tile-inner { display: flex; align-items: flex-start; gap: 12px; }
+    .kpi-icon-box {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .c-brand .kpi-icon-box { background: var(--f7); color: var(--f2); }
+    .c-green .kpi-icon-box { background: var(--em-lt); color: var(--em); }
+    .c-gold  .kpi-icon-box { background: var(--gld-lt); color: var(--gold); }
+    .c-blue  .kpi-icon-box { background: var(--blu-lt); color: var(--blue); }
+    .kpi-text { flex: 1; min-width: 0; }
+    .kt-val {
+      font-size: 1.85rem; font-weight: 800; line-height: 1;
+      display: block; font-family: var(--mono);
+      font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+    }
+    .c-brand .kt-val { color: var(--f2); }
+    .c-green .kt-val { color: var(--em); }
+    .c-gold  .kt-val { color: var(--gold); }
+    .c-blue  .kt-val { color: var(--blue); }
+    .kt-lbl {
+      font-size: .63rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--ink3); margin-top: 4px; display: block;
+    }
+
+    /* ─── Tabs ──────────────────────────────────── */
+    .icon-tabs {
+      display: flex; padding: 18px 20px 0; gap: 2px;
+      background: transparent;
+    }
+    .icon-tab {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      gap: 7px; padding: 10px 12px;
+      background: #fff; border: 1px solid var(--bdr);
+      font-size: .78rem; font-weight: 600; color: var(--ink3);
+      cursor: pointer; border-radius: 10px;
+      transition: all .15s; font-family: var(--font);
+      white-space: nowrap;
+    }
+    .icon-tab:hover { color: var(--f2); border-color: var(--f3); background: var(--f7); }
+    .icon-tab.active {
+      background: var(--f1); color: #fff; border-color: var(--f1);
+      box-shadow: 0 2px 10px rgba(26,64,32,.25);
+    }
+    .icon-tab .t-icon { font-size: 1rem; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: tabIn .18s ease; }
+    @keyframes tabIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+    /* ─── Filter bar ────────────────────────────── */
+    .filter-section {
+      padding: 14px 20px 0;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .date-row {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .date-lbl { font-size: .73rem; font-weight: 600; color: var(--ink3); }
+    .date-input {
+      padding: 8px 12px; border: 1.5px solid var(--bdr);
+      border-radius: 8px; font-size: .8rem; font-family: var(--font);
+      background: #fff; color: var(--ink); outline: none;
+      transition: border-color .15s;
+    }
+    .date-input:focus { border-color: var(--f2); }
+    .btn-apply {
+      padding: 8px 18px; border-radius: 8px;
+      background: var(--f1); color: #fff; border: none;
+      font-size: .8rem; font-weight: 600; font-family: var(--font); cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-apply:hover { background: var(--f0); }
+    .preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .preset-btn {
+      padding: 5px 14px; border-radius: 999px;
+      border: 1.5px solid var(--bdr); background: #fff;
+      font-size: .73rem; font-weight: 600; color: var(--ink3);
+      cursor: pointer; transition: all .15s; font-family: var(--font);
+    }
+    .preset-btn:hover { border-color: var(--f2); color: var(--f2); }
+    .preset-btn.active { background: var(--f1); border-color: var(--f1); color: #fff; }
+
+    /* ─── Controls row ──────────────────────────── */
+    .controls-bar {
+      display: flex; gap: 8px; align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-pill {
+      flex: 1; min-width: 200px;
+      display: flex; align-items: center; gap: 8px;
+      background: #fff; border: 1.5px solid var(--bdr);
+      border-radius: 8px; padding: 9px 14px;
+      transition: border-color .15s;
+    }
+    .search-pill:focus-within { border-color: var(--f2); }
+    .search-pill input {
+      border: none; outline: none; background: transparent;
+      font-size: .84rem; color: var(--ink); width: 100%;
+      font-family: var(--font);
+    }
+    .search-pill input::placeholder { color: var(--ink4); }
+    .pill-select {
+      background: #fff; border: 1.5px solid var(--bdr);
+      border-radius: 8px; padding: 9px 34px 9px 12px;
+      font-size: .8rem; font-weight: 600; color: var(--ink2);
+      appearance: none; cursor: pointer; font-family: var(--font);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      transition: border-color .15s;
+    }
+    .pill-select:focus { outline: none; border-color: var(--f2); }
+    .icon-btn {
+      background: #fff; border: 1.5px solid var(--bdr);
+      border-radius: 8px; padding: 9px 14px;
+      font-size: .8rem; font-weight: 700; color: var(--ink2);
+      cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+      font-family: var(--font); transition: all .15s;
+    }
+    .icon-btn:hover { border-color: var(--f2); color: var(--f2); }
+
+    /* ─── Table card ────────────────────────────── */
+    .tcard {
+      margin: 14px 20px;
+      background: #fff; border-radius: 14px;
+      border: 1px solid var(--bdr); overflow: hidden;
+      box-shadow: var(--card-sh);
+    }
+    .twrap {
+      overflow-x: auto; overflow-y: visible;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bdr) transparent;
+    }
+    .twrap::-webkit-scrollbar { height: 4px; }
+    .twrap::-webkit-scrollbar-track { background: transparent; }
+    .twrap::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 2px; }
+    .tcard table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    .tcard thead th {
+      white-space: nowrap;
+      background: var(--f7);
+      padding: 11px 14px;
+      font-size: .62rem; font-weight: 700; text-align: left;
+      color: var(--f2); text-transform: uppercase;
+      letter-spacing: .08em; border-bottom: 1.5px solid var(--bdr);
+      white-space: nowrap;
+    }
+    .tcard tbody td {
+      padding: 12px 14px; font-size: .84rem;
+      color: var(--ink2); border-bottom: 1px solid #f0f4ec;
+      vertical-align: middle;
+    }
+    /* Prevent word-breaking in key columns */
+    .tcard tbody td.no-wrap { white-space: nowrap; }
+    .tcard tbody td.loc-cell {
+      white-space: nowrap; max-width: 130px;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .tcard tbody tr:last-child td { border-bottom: none; }
+    .tcard tbody tr:hover td { background: var(--f7); }
+    .t-empty { text-align:center; padding:48px 20px; color:var(--ink3); font-size:.85rem; }
+
+    /* ─── Badges ────────────────────────────────── */
+    .sm-name { font-weight: 700; color: var(--f1); font-size: .85rem; }
+    .shop-bold { font-weight: 700; color: var(--ink); }
+    .tag-yes {
+      display:inline-flex; align-items:center; gap:3px;
+      background: var(--em-lt); color: var(--em);
+      padding: 3px 10px; border-radius: 999px; font-size: .68rem; font-weight: 700;
+    }
+    .tag-no {
+      display:inline-flex; align-items:center; gap:3px;
+      background: var(--red-lt); color: var(--red);
+      padding: 3px 10px; border-radius: 999px; font-size: .68rem; font-weight: 700;
+    }
+    .tag-active   { display:inline-block; background:var(--em-lt); color:var(--em); padding:3px 10px; border-radius:999px; font-size:.68rem; font-weight:700; }
+    .tag-inactive { display:inline-block; background:#f3f4f6; color:#9ca3af; padding:3px 10px; border-radius:999px; font-size:.68rem; font-weight:700; }
+    .mobile-link { color: var(--f2); font-weight: 600; text-decoration: none; font-family: var(--mono); font-size: .8rem; }
+    .mobile-link:hover { text-decoration: underline; }
+    .count-badge { color: var(--ink); font-weight: 700; font-family: var(--mono); }
+    .photo-thumb {
+      width: 38px; height: 38px; object-fit: cover;
+      border-radius: 8px; border: 1.5px solid var(--bdr);
+      cursor: zoom-in; display: block; transition: transform .15s;
+    }
+    .photo-thumb:hover { transform: scale(1.08); }
+
+    /* ─── Leaderboard ───────────────────────────── */
+    #lbCards { padding: 14px 20px 0; }
+    .lb-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--bdr);
+      padding: 16px 18px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: var(--card-sh); transition: box-shadow .15s;
+    }
+    .lb-card:hover { box-shadow: 0 4px 20px rgba(13,34,16,.1); }
+    .lb-rank { font-size: 1.6rem; flex-shrink:0; width:36px; text-align:center; }
+    .lb-info { flex:1; min-width:0; }
+    .lb-name { font-weight: 700; color: var(--ink); font-size: .9rem; }
+    .lb-sub  { font-size: .72rem; color: var(--ink3); margin-top: 2px; }
+    .lb-bar-track { height: 3px; border-radius: 2px; background: var(--bdr); overflow: hidden; margin-top: 8px; }
+    .lb-bar-fill  { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--f3), var(--f4)); }
+    .lb-nums { display: flex; gap: 14px; flex-shrink:0; }
+    .lb-num  { text-align: center; }
+    .lb-num-val { font-weight: 800; font-size: .92rem; display: block; font-family: var(--mono); }
+    .lb-num-lbl { font-size: .57rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); }
+    .podium-row { display: none; gap: 12px; padding: 16px 20px 0; }
+    .podium-card {
+      flex:1; background:#fff; border-radius:16px; border:1px solid var(--bdr);
+      padding:20px 16px; text-align:center; box-shadow:var(--card-sh);
+    }
+    .podium-card.top1 { border-color: var(--gold); box-shadow: 0 4px 20px rgba(196,130,10,.18); }
+    .podium-medal { font-size:2rem; display:block; margin-bottom:6px; }
+    .podium-name  { font-weight:800; font-size:.95rem; color:var(--ink); }
+    .podium-phone { font-size:.72rem; color:var(--ink3); margin-top:2px; }
+    .podium-stats { display:flex; justify-content:center; gap:16px; margin-top:12px; }
+    .pstat-val { display:block; font-weight:800; font-size:1.2rem; font-family:var(--mono); }
+    .pstat-lbl { font-size:.58rem; text-transform:uppercase; letter-spacing:.07em; color:var(--ink3); }
+    .sec-head { padding:16px 20px 0; display:flex; align-items:center; justify-content:space-between; }
+    .sec-head h2 { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink3); }
+    .smlist-hdr { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 0; }
+    .smlist-hdr h3 { font-size:.9rem; font-weight:700; color:var(--ink); }
+
+    /* ─── CSV dropdown ──────────────────────────── */
+    .csv-menu {
+      display:none; position:fixed; z-index:801;
+      background:#fff; border:1px solid var(--bdr);
+      border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.14);
+      min-width:240px; overflow:hidden;
+    }
+    .csv-menu-hdr { padding:10px 14px 7px; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink3); }
+    .csv-menu-item {
+      display:flex; align-items:center; gap:10px;
+      width:100%; padding:11px 14px;
+      background:none; border:none; border-top:1px solid #f3f4f0;
+      font-size:.82rem; font-weight:600; color:var(--ink2);
+      cursor:pointer; text-align:left; font-family:var(--font);
+    }
+    .csv-menu-item:hover { background:var(--f7); }
+
+    /* ─── Lead detail modal ─────────────────────── */
+    .ld-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; font-size:.85rem; }
+    .ld-field span:first-child {
+      display:block; font-size:.65rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.06em; color:var(--ink3); margin-bottom:2px;
+    }
+    .ld-field span:last-child { font-weight:600; color:var(--ink); }
+    .ld-notes { margin-top:12px; padding:10px 13px; background:var(--f7); border-radius:10px; font-size:.83rem; color:var(--ink2); line-height:1.6; }
+
+    /* ─── Footer strip / bottom clearance ───────── */
+    .btm-clear { height: calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 20px); }
+    .leads-count-row { padding: 4px 20px 0; text-align: right; }
+
+    /* ─── Responsive ────────────────────────────── */
+    @media (max-width: 700px) {
+      .kpi-strip { grid-template-columns: repeat(2, 1fr); gap:8px; padding:14px 14px 0; }
+      .kt-val { font-size: 1.5rem; }
+      .icon-tabs { padding:12px 14px 0; gap:4px; }
+      .icon-tab { font-size:.7rem; padding:9px 6px; }
+      .icon-tab .t-icon { display:none; }
+      .filter-section { padding:12px 14px 0; }
+      .controls-bar { flex-wrap:wrap; }
+      .search-pill { min-width:100%; flex:1 1 100%; }
+      .tcard { margin:12px 14px; }
+      .smlist-hdr { padding:14px 14px 0; }
+      #lbCards { padding:12px 14px 0; }
+      .podium-row { padding:12px 14px 0; }
+    }
+    @media (min-width:700px) {
+      .podium-row { display:flex; }
+    }
+    @media (max-width:480px) {
+      .kpi-tile-inner { flex-direction:column; gap:6px; }
+      .kpi-icon-box { width:32px; height:32px; font-size:.9rem; }
+    }
+
+    /* ─── Photo lightbox ────────────────────────── */
+    #photoModal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9000; align-items:center; justify-content:center; }
+    #photoModal.show { display:flex; }
+    #photoModal img { max-width:90vw; max-height:88vh; border-radius:12px; object-fit:contain; }
+    #pmClose { position:absolute; top:max(18px,env(safe-area-inset-top,18px)); right:18px; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:1.3rem; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+    /* ─── FAB (mobile only) ─────────────────────── */
+    .add-fab { position:fixed; bottom:calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 14px); right:16px; z-index:150; width:52px; height:52px; border-radius:50%; background:var(--f1); color:#fff; font-size:1.5rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 18px rgba(26,64,32,.32); border:none; cursor:pointer; transition:transform .15s; }
+    .add-fab:active { transform:scale(.92); }
+    @media(min-width:900px){ .add-fab { display:none !important; } }
+  </style>
+</head>
+<body class="admin-layout">
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">Admin</div>
+      <div class="role">Administrator</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="nav-item" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </a>
+      <a href="/admin/overview.html" class="nav-item" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+        Overview
+      </a>
+      <a href="/admin/leaderboard.html" class="nav-item" data-page="leaderboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>
+        Leaderboard
+      </a>
+      <a href="/admin/orders.html" class="nav-item" data-page="orders">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Orders
+      </a>
+      <a href="/admin/products.html" class="nav-item" data-page="products">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>
+        Products
+      </a>
+      <a href="/admin/geo-map.html" class="nav-item" data-page="geo-map">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Geo Map
+      </a>
+  <a href="/admin/salesmen.html" class="nav-item active" data-page="salesmen">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Salesmen
+      </a>
+      <a href="/admin/delivery-boys.html" class="nav-item" data-page="delivery-boys">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        Delivery Boys
+      </a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="topnav">
+      <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
+      <h2>💼 Salesmen</h2>
+      <span id="lastUpdated" class="lu-chip"></span>
+    </div>
+    <div class="content-area">
+<div class="page-wrap">
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip">
+    <div class="kpi-tile c-brand">
+      <div class="kpi-tile-inner">
+        <div class="kpi-icon-box">📋</div>
+        <div class="kpi-text">
+          <span class="kt-val" id="statTodayLeads">—</span>
+          <span class="kt-lbl">Today Leads</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-tile c-green">
+      <div class="kpi-tile-inner">
+        <div class="kpi-icon-box">📅</div>
+        <div class="kpi-text">
+          <span class="kt-val" id="statMonthLeads">—</span>
+          <span class="kt-lbl">Month Leads</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-tile c-gold">
+      <div class="kpi-tile-inner">
+        <div class="kpi-icon-box">✅</div>
+        <div class="kpi-text">
+          <span class="kt-val" id="statTotalSales">—</span>
+          <span class="kt-lbl">Sales YES</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-tile c-blue">
+      <div class="kpi-tile-inner">
+        <div class="kpi-icon-box">📈</div>
+        <div class="kpi-text">
+          <span class="kt-val" id="statConversion">—</span>
+          <span class="kt-lbl">Conversion</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ICON TABS -->
+  <div class="icon-tabs">
+    <button class="icon-tab active" onclick="switchTab('AllLeads',this)">
+      <span class="t-icon">📋</span>All Leads
+    </button>
+    <button class="icon-tab" onclick="switchTab('Leaderboard',this)">
+      <span class="t-icon">🏆</span>Leaderboard
+    </button>
+    <button class="icon-tab" onclick="switchTab('SalesmanList',this)">
+      <span class="t-icon">👥</span>Salesman List
+    </button>
+    <button class="icon-tab" onclick="switchTab('SalesProducts',this)">
+      <span class="t-icon">🛒</span>Sales Products
+    </button>
+  </div>
+
+  <!-- ═══════ TAB: ALL LEADS ═══════════════════════════ -->
+  <div class="tab-panel active" id="tabAllLeads">
+    <div class="filter-section">
+      <div class="date-row">
+        <span class="date-lbl">From</span>
+        <input type="date" id="fromDate" class="date-input" />
+        <span class="date-lbl">To</span>
+        <input type="date" id="toDate" class="date-input" />
+        <button class="btn-apply" onclick="applyAdminRange()">Apply</button>
+      </div>
+      <div class="preset-row">
+        <button class="preset-btn" onclick="setAdminPreset('today',this)">Today</button>
+        <button class="preset-btn" onclick="setAdminPreset('week',this)">This Week</button>
+        <button class="preset-btn active" onclick="setAdminPreset('month',this)">This Month</button>
+        <button class="preset-btn" onclick="setAdminPreset('all',this)">All Time</button>
+      </div>
+      <div class="controls-bar">
+      <div class="search-pill">
+        <span style="color:var(--ink-faint)">🔍</span>
+        <input type="text" id="searchLeads" placeholder="Search shop, owner, village, salesman…" oninput="filterAdminLeads()" />
+      </div>
+      <select class="pill-select" id="statusFilter" onchange="filterAdminLeads()">
+        <option value="">All Status</option>
+        <option value="YES">✅ YES</option>
+        <option value="NO">❌ NO</option>
+      </select>
+      <select class="pill-select" id="salesmanFilter" onchange="filterAdminLeads()">
+        <option value="">All Salesmen</option>
+      </select>
+      <button class="icon-btn" onclick="openCSVMenu(event)">⬇ CSV <span style="font-size:.6rem">▾</span></button>
+      </div>
+    </div><!-- /.filter-section -->
+
+    <!-- CSV overlay + menu -->
+    <div id="csvOverlay" style="display:none;position:fixed;inset:0;z-index:800;" onclick="closeCSVMenu()"></div>
+    <div class="csv-menu" id="csvMenu">
+      <div class="csv-menu-hdr">Export CSV</div>
+      <button class="csv-menu-item" onclick="exportCSV();closeCSVMenu()">📋 All Leads (Current Filter)</button>
+      <button class="csv-menu-item" onclick="exportCSVBySalesman();closeCSVMenu()">👤 By Salesman (Grouped)</button>
+      <button class="csv-menu-item" onclick="exportCSVSummary();closeCSVMenu()">📊 Summary Report</button>
+      <button class="csv-menu-item" onclick="switchTab('SalesProducts',document.querySelector('[onclick*=SalesProducts]'));closeCSVMenu()">🛒 Sales Products View</button>
+    </div>
+
+    <div class="tcard">
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Salesman</th><th>Shop</th><th>Type</th>
+              <th>Owner</th><th>Mobile</th><th>Village</th><th>District</th>
+              <th>Sale?</th><th>Photo</th><th>Visited</th>
+            </tr>
+          </thead>
+          <tbody id="adminLeadsBody">
+            <tr><td colspan="10" class="t-empty"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="leads-count-row">
+      <span id="leadsCountBadge" style="font-size:.7rem;color:var(--ink3);font-family:var(--mono)"></span>
+    </div>
+  </div>
+
+  <!-- ═══════ TAB: LEADERBOARD ═══════════════════════════ -->
+  <div class="tab-panel" id="tabLeaderboard">
+
+    <!-- Podium top-3 (visible ≥600px) -->
+    <div class="podium-row" id="podiumRow"></div>
+
+    <!-- Leaderboard cards -->
+    <div id="lbCards">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Full rankings table -->
+    <div class="sec-head">
+      <h2>Full Rankings</h2>
+    </div>
+    <div class="tcard">
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr><th>Rank</th><th>Salesman</th><th>Phone</th><th>Total Leads</th><th>Sales YES</th><th>Conv %</th><th>Last Visit</th></tr>
+          </thead>
+          <tbody id="lbTableBody">
+            <tr><td colspan="7" class="t-empty"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════ TAB: SALESMAN LIST ═══════════════════════════ -->
+  <div class="tab-panel" id="tabSalesmanList">
+    <div class="smlist-hdr">
+      <h3>All Salesmen</h3>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addSalesmanModal')" style="gap:5px">➕ Add</button>
+    </div>
+    <div class="controls-bar" style="padding-top:10px">
+      <div class="search-pill">
+        <span style="color:var(--ink-faint)">🔍</span>
+        <input type="text" id="searchSalesman" placeholder="Search name or phone…" oninput="filterSalesmanList()" />
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Phone</th><th>Total Leads</th><th>Sales YES</th><th>Conv %</th><th>Last Visit</th><th>Status</th><th>Areas</th><th></th></tr>
+          </thead>
+          <tbody id="smListBody">
+            <tr><td colspan="9" class="t-empty"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ TAB: SALES PRODUCTS ═══════════════════════════ -->
+  <div class="tab-panel" id="tabSalesProducts">
+    <div class="filter-section">
+      <div class="date-row">
+        <span class="date-lbl">Salesman</span>
+        <select class="pill-select" id="spSalesmanFilter" onchange="filterSalesProducts()" style="flex:1;max-width:260px">
+          <option value="">All Salesmen</option>
+        </select>
+        <span class="date-lbl" style="margin-left:8px">From</span>
+        <input type="date" id="spFromDate" class="date-input" />
+        <span class="date-lbl">To</span>
+        <input type="date" id="spToDate" class="date-input" />
+        <button class="btn-apply" onclick="fetchSalesProducts()">Apply</button>
+      </div>
+      <div class="controls-bar" style="margin-top:6px">
+        <div class="search-pill">
+          <span style="color:var(--ink-faint)">🔍</span>
+          <input type="text" id="spSearch" placeholder="Search shop, owner, product, village…" oninput="filterSalesProducts()" />
+        </div>
+        <!-- Export dropdown -->
+        <div style="position:relative">
+          <button class="icon-btn" id="spExportBtn" onclick="toggleSPExportMenu(event)">⬇ Export <span style="font-size:.6rem">▾</span></button>
+          <div id="spExportMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--bdr);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:180px;z-index:900;overflow:hidden">
+            <div style="padding:8px 12px 5px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)">Export As</div>
+            <button onclick="exportSalesProductsCSV();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📋 CSV</button>
+            <button onclick="exportSalesProductsExcel();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📊 Excel (.xlsx)</button>
+            <button onclick="exportSalesProductsPDF();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📄 PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI row for selected salesman -->
+    <div id="spKpiRow" style="display:none; padding:10px 20px 0; display:grid; grid-template-columns:repeat(4,1fr); gap:10px">
+      <div class="kpi-tile c-brand" style="padding:12px 14px">
+        <div class="kpi-tile-inner">
+          <div class="kpi-icon-box">👤</div>
+          <div class="kpi-text">
+            <span class="kt-val" style="font-size:1.1rem" id="spKpiName">—</span>
+            <span class="kt-lbl">Salesman</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-tile c-green" style="padding:12px 14px">
+        <div class="kpi-tile-inner">
+          <div class="kpi-icon-box">📦</div>
+          <div class="kpi-text">
+            <span class="kt-val" style="font-size:1.4rem" id="spKpiItems">—</span>
+            <span class="kt-lbl">Product Lines</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-tile c-gold" style="padding:12px 14px">
+        <div class="kpi-tile-inner">
+          <div class="kpi-icon-box">🛒</div>
+          <div class="kpi-text">
+            <span class="kt-val" style="font-size:1.4rem" id="spKpiQty">—</span>
+            <span class="kt-lbl">Total Qty</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-tile c-blue" style="padding:12px 14px">
+        <div class="kpi-tile-inner">
+          <div class="kpi-icon-box">₹</div>
+          <div class="kpi-text">
+            <span class="kt-val" style="font-size:1.1rem" id="spKpiTotal">—</span>
+            <span class="kt-lbl">Grand Total</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tcard">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0">
+        <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)">Sales Products</span>
+        <span id="spCountBadge" style="font-size:.7rem;color:var(--ink3);font-family:var(--mono)"></span>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Lead ID</th><th>User</th><th>Shop</th><th>Owner</th><th>Village</th>
+              <th>Product</th><th>Qty</th><th>Rate</th><th>Total</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="spTableBody">
+            <tr><td colspan="11" class="t-empty">Select a salesman or click Apply to load data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="btm-clear"></div>
+  </div>
+
+  <div class="btm-clear"></div>
+    </div><!-- /.content-area -->
+  </div><!-- /.main-area -->
+</div><!-- /.app-layout -->
+
+<!-- FAB (mobile) -->
+<button class="add-fab" onclick="openModal('addSalesmanModal')" title="Add Salesman">＋</button>
+
+<!-- MODAL: ADD SALESMAN -->
+<div class="modal-overlay" id="addSalesmanModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h3>➕ Add Salesman</h3>
+      <button class="modal-close" onclick="closeModal('addSalesmanModal')">✕</button>
+    </div>
+    <form id="addSalesmanForm" novalidate style="padding:0 18px 18px">
+      <div class="form-group"><label for="smName">Full Name *<input type="text" id="smName" placeholder="Ajay Sharma" required /></label></div>
+      <div class="form-group"><label for="smPhone">Phone Number *<input type="tel" id="smPhone" placeholder="9876543210" maxlength="10" required inputmode="numeric" /></label></div>
+      <div class="form-group"><label for="smPassword">Password *<input type="password" id="smPassword" placeholder="Min 6 characters" required /></label></div>
+      <div id="addSalesmanError" class="login-error hidden"></div>
+      <button type="submit" class="btn btn-primary btn-full" id="addSalesmanBtn">Add Salesman</button>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: LEAD DETAIL -->
+<div class="modal-overlay" id="leadDetailModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>📋 Lead Details</h3>
+      <button class="modal-close" onclick="closeModal('leadDetailModal')">✕</button>
+    </div>
+    <div id="leadDetailContent" style="padding:14px 18px 18px"></div>
+  </div>
+</div>
+
+<!-- PHOTO LIGHTBOX -->
+<div id="photoModal" onclick="closePhotoModal()">
+  <button id="pmClose" onclick="closePhotoModal()">✕</button>
+  <img id="photoModalImg" src="" alt="Proof" onclick="event.stopPropagation()" />
+</div>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ADMIN BOTTOM NAV (mobile) -->
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html" class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/products.html" class="bnav-item"><span class="bnav-icon">📦</span><span>Products</span></a>
+    <a href="/admin/salesmen.html" class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+  </div>
+</nav>
+<script nonce="CSP_NONCE">
+function toggleSidebar(){
+  var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
+  var isOpen=s.classList.toggle("open");
+  o.classList.toggle("show",isOpen);
+  document.body.style.overflow=isOpen?"hidden":"";
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+  document.body.style.overflow="";
+}
+(function(){
+  // Close sidebar on Escape key
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSidebar();});
+  // Mark active bottom nav item
+  var path=window.location.pathname.split("/").pop();
+  document.querySelectorAll("#adminBottomNav .bnav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+  });
+  // Mark active sidebar item
+  document.querySelectorAll(".sidebar .nav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+    else a.classList.remove("active");
+  });
+})();
+</script>
+<script nonce="CSP_NONCE">
+/* ── State ─────────────────────────────────────────── */
+let adminAllLeads   = [];
+let allSalesmenData = [];
+
+/* ── Helpers ───────────────────────────────────────── */
+function todayStr()   { return new Date().toISOString().slice(0,10); }
+function monthStart() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
+function weekStart()  { const d=new Date(); d.setDate(d.getDate()-d.getDay()); return d.toISOString().slice(0,10); }
+function _set(id,v)   { const e=document.getElementById(id); if(e) e.textContent=v; }
+
+/* ── Init ──────────────────────────────────────────── */
+document.getElementById('fromDate').value = monthStart();
+document.getElementById('toDate').value   = todayStr();
+(window.adminAuthRehydrate || Promise.resolve.bind(Promise, true))().then(function(ok) { if (!ok) return; fetchAdminReport(); loadSalesmenList(); });
+
+/* ── Tab switch ────────────────────────────────────── */
+function switchTab(tab, btn) {
+  document.querySelectorAll('.icon-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab'+tab).classList.add('active');
+  if (tab==='Leaderboard')  renderLeaderboard();
+  if (tab==='SalesmanList') loadSalesmenList();
+  if (tab==='SalesProducts') initSalesProductsTab();
+}
+
+/* ── Date presets ──────────────────────────────────── */
+function setAdminPreset(p,btn) {
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('toDate').value=todayStr();
+  const f=document.getElementById('fromDate');
+  if(p==='today') f.value=todayStr();
+  if(p==='week')  f.value=weekStart();
+  if(p==='month') f.value=monthStart();
+  if(p==='all')   f.value='2020-01-01';
+  fetchAdminReport();
+}
+function applyAdminRange() { fetchAdminReport(); }
+
+/* ── Fetch report + leads ──────────────────────────── */
+async function fetchAdminReport() {
+  const from=document.getElementById('fromDate').value;
+  const to=document.getElementById('toDate').value;
+  try {
+    const rpt=(await apiFetch('/api/v1/salesman/report?from='+from+'&to='+to));
+    const d=(await rpt.json()).data;
+    if(d) {
+      _set('statTodayLeads', d.today_leads??'0');
+      _set('statMonthLeads', d.month_leads??'0');
+      window._adminLbData = d.leaderboard||[];
+      const lb=d.leaderboard||[];
+      const ts=lb.reduce((s,x)=>s+parseInt(x.sales||0),0);
+      const tl=lb.reduce((s,x)=>s+parseInt(x.total||0),0);
+      const cv=tl>0?Math.round(ts/tl*100):0;
+      _set('statTotalSales',ts||'0');
+      _set('statConversion',(cv||0)+'%');
+    }
+    const lr=await apiFetch('/api/v1/salesman/leads?from='+from+'&to='+to+'&per_page=500');
+    adminAllLeads=(await lr.json()).data||[];
+    populateSalesmanFilter();
+    filterAdminLeads();
+    const lu=document.getElementById('lastUpdated');
+    if(lu){ lu.textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); lu.style.display=''; }
+  } catch(err){ showToast('Failed: '+err.message,'error'); }
+}
+
+/* ── Salesman filter ───────────────────────────────── */
+function populateSalesmanFilter() {
+  const sel=document.getElementById('salesmanFilter'); if(!sel) return;
+  const names=[...new Set(adminAllLeads.map(l=>l.salesman_name).filter(Boolean))].sort();
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All Salesmen</option>'+
+    names.map(n=>`<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+}
+
+/* ── Filter + render leads ─────────────────────────── */
+function filterAdminLeads() {
+  const q=(document.getElementById('searchLeads').value||'').toLowerCase();
+  const st=document.getElementById('statusFilter').value;
+  const sm=document.getElementById('salesmanFilter').value;
+  const f=adminAllLeads.filter(l=>
+    (!st||l.sale_status===st)&&
+    (!sm||l.salesman_name===sm)&&
+    (!q||[l.shop_name,l.owner_name,l.village,l.taluka,l.district,l.salesman_name,l.mobile]
+      .some(x=>(x||'').toLowerCase().includes(q)))
+  );
+  const badge=document.getElementById('leadsCountBadge');
+  if(badge) badge.textContent=f.length+' lead'+(f.length!==1?'s':'');
+  const tbody=document.getElementById('adminLeadsBody');
+  if(!f.length){ tbody.innerHTML='<tr><td colspan="11" class="t-empty">No leads found.</td></tr>'; return; }
+  // Use lead ID as key — avoids embedding large base64/products into onclick attribute
+  tbody.innerHTML=f.map((l,i)=>{
+    const photoSrc = l.photo_proof || l.photo_url || null;
+    const safePhoto = photoSrc ? photoSrc.replace(/'/g,"&#39;") : null;
+    const photoCell = safePhoto
+      ? `<img src="${safePhoto}" alt="proof" class="photo-thumb"
+           onclick="event.stopPropagation();openPhotoModal('${safePhoto}')" />`
+      : `<span style="font-size:.72rem;color:var(--ink4)">—</span>`;
+    const visitedFmt = l.visited_at
+      ? new Date(l.visited_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    return `
+    <tr style="cursor:pointer" onclick="openLeadDetail(${l.id})">
+      <td class="no-wrap" style="color:var(--ink4);font-size:.72rem;font-family:var(--mono)">${i+1}</td>
+      <td><span class="sm-name">${_e(l.salesman_name)||'—'}</span></td>
+      <td class="no-wrap"><span class="shop-bold">${_e(l.shop_name)}</span></td>
+      <td class="no-wrap" style="color:var(--ink3);font-size:.78rem">${_e(l.shop_type)||'—'}</td>
+      <td class="no-wrap">${_e(l.owner_name)}</td>
+      <td class="no-wrap"><a href="tel:${_e(l.mobile)}" class="mobile-link" onclick="event.stopPropagation()">${_e(l.mobile)||'—'}</a></td>
+      <td class="loc-cell" title="${_e(l.village||'')}">${_e(l.village)||'—'}</td>
+      <td class="loc-cell" title="${_e(l.district||'')}">${_e(l.district)||'—'}</td>
+      <td class="no-wrap"><span class="${l.sale_status==='YES'?'tag-yes':'tag-no'}">${l.sale_status==='YES'?'✅ YES':'❌ NO'}</span></td>
+      <td>${photoCell}</td>
+      <td class="no-wrap" style="font-size:.75rem;color:var(--ink3)">${visitedFmt}</td>
+    </tr>`}).join('');
+}
+
+/* ── Lead detail modal ─────────────────────────────── */
+function _e(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function openLeadDetail(leadId) {
+  // Look up the full lead object from the in-memory array (avoids embedding
+  // large base64 photo_proof + products array into onclick HTML attributes)
+  const l = adminAllLeads.find(x => x.id === leadId || x.id == leadId);
+  if (!l) return;
+  const vis = l.visited_at
+    ? new Date(l.visited_at).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    : '—';
+
+  /* photo_proof is the field name from salesman.js API; photo_url is alternative */
+  const photoSrc = l.photo_proof || l.photo_url || null;
+
+  const photoHTML = photoSrc
+    ? `<div style="margin-top:16px">
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:8px">📷 PHOTO PROOF</div>
+        <div style="text-align:center">
+          <img src="${photoSrc}"
+               alt="Proof photo"
+               style="max-width:100%;max-height:300px;object-fit:contain;border-radius:10px;border:2px solid var(--border);cursor:zoom-in;display:block;margin:0 auto"
+               onclick="openPhotoModal('${photoSrc}')" />
+          <button onclick="openPhotoModal('${photoSrc}')" class="btn btn-ghost btn-sm" style="margin-top:8px;border-radius:999px;font-size:.72rem">
+            🔍 View Full Size
+          </button>
+        </div>
+      </div>`
+    : `<div style="margin-top:14px;padding:12px;background:var(--surface-2);border-radius:10px;text-align:center;font-size:.78rem;color:var(--ink-soft)">
+        📷 No photo uploaded for this lead
+      </div>`;
+
+  document.getElementById('leadDetailContent').innerHTML = `
+    <div class="ld-grid">
+      <div class="ld-field"><span>Salesman</span><span style="color:var(--brand);font-weight:700">${_e(l.salesman_name)||'—'}</span></div>
+      <div class="ld-field"><span>Sale?</span><span><span class="${l.sale_status==='YES'?'tag-yes':'tag-no'}">${l.sale_status==='YES'?'✅ YES':'❌ NO'}</span></span></div>
+      <div class="ld-field"><span>Shop Name</span><span style="font-weight:700">${_e(l.shop_name)||'—'}</span></div>
+      <div class="ld-field"><span>Shop Type</span><span>${_e(l.shop_type)||'—'}</span></div>
+      <div class="ld-field"><span>Owner</span><span>${_e(l.owner_name)||'—'}</span></div>
+      <div class="ld-field"><span>Mobile</span><span><a href="tel:${_e(l.mobile)}" style="color:var(--brand);font-weight:600">${_e(l.mobile)||'—'}</a></span></div>
+      <div class="ld-field"><span>Village</span><span>${_e(l.village)||'—'}</span></div>
+      <div class="ld-field"><span>Taluka</span><span>${_e(l.taluka)||'—'}</span></div>
+      <div class="ld-field" style="grid-column:1/-1"><span>District</span><span>${_e(l.district)||'—'}</span></div>
+      <div class="ld-field" style="grid-column:1/-1"><span>Visit Date & Time</span><span>${vis}</span></div>
+    </div>
+    ${l.notes ? `<div class="ld-notes" style="margin-top:12px"><span style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);display:block;margin-bottom:4px">Notes</span>${_e(l.notes)}</div>` : ''}
+    ${Array.isArray(l.products) && l.products.length ? `
+      <div style="margin-top:14px">
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:8px">
+          📦 Products Interested (${l.products.length})
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead>
+            <tr style="background:var(--surface-2)">
+              <th style="padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:700">Product</th>
+              <th style="padding:6px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:700">Qty</th>
+              <th style="padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);font-weight:700">Price</th>
+              <th style="padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);font-weight:700">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${l.products.map(p => `
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px 10px">
+                  <div style="font-weight:600">${_e(p.name)}</div>
+                  ${p.category ? `<div style="font-size:.68rem;color:var(--ink-soft)">${_e(p.category)}</div>` : ''}
+                </td>
+                <td style="padding:6px 10px;text-align:center">${p.quantity ?? p.qty ?? 1}</td>
+                <td style="padding:6px 10px;text-align:right">₹${parseFloat(p.price||0).toFixed(2)}</td>
+                <td style="padding:6px 10px;text-align:right;font-weight:600">₹${parseFloat(p.total || (parseFloat(p.price||0)*(p.quantity ?? p.qty ?? 1))).toFixed(2)}</td>
+              </tr>`).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--surface-2)">
+              <td colspan="3" style="padding:7px 10px;font-weight:700;text-align:right">Grand Total</td>
+              <td style="padding:7px 10px;font-weight:700;text-align:right;color:var(--brand)">
+                ₹${l.products.reduce((s,p)=>s+parseFloat(p.total||(parseFloat(p.price||0)*(p.quantity??p.qty??1))),0).toFixed(2)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>` : '<div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)">No products recorded for this lead.</div>'}
+    ${photoHTML}`;
+
+  openModal('leadDetailModal');
+}
+
+/* ── Photo lightbox ────────────────────────────────── */
+function openPhotoModal(url) {
+  document.getElementById('photoModalImg').src=url;
+  document.getElementById('photoModal').classList.add('show');
+}
+function closePhotoModal() {
+  document.getElementById('photoModal').classList.remove('show');
+}
+
+/* ── Leaderboard render ────────────────────────────── */
+function renderLeaderboard() {
+  const lb=window._adminLbData||[];
+  const medals=['🥇','🥈','🥉'];
+
+  /* Podium */
+  const podium=document.getElementById('podiumRow');
+  if(podium && lb.length) {
+    const top3=lb.slice(0,3);
+    const order=top3.length>=3?[1,0,2]:top3.map((_,i)=>i);
+    podium.innerHTML=order.map(idx=>{
+      const s=top3[idx]; if(!s) return '';
+      const t=parseInt(s.total||0),sa=parseInt(s.sales||0);
+      const cv=t>0?Math.round(sa/t*100):0;
+      return `<div class="podium-card${idx===0?' top1':''}">
+        <span class="podium-medal">${medals[idx]||'#'+(idx+1)}</span>
+        <div class="podium-name">${s.name}</div>
+        <div class="podium-phone">${s.phone||''}</div>
+        <div class="podium-stats">
+          <div><span class="pstat-val" style="color:var(--brand)">${t}</span><span class="pstat-lbl">Leads</span></div>
+          <div><span class="pstat-val" style="color:var(--success)">${sa}</span><span class="pstat-lbl">Sales</span></div>
+          <div><span class="pstat-val" style="color:var(--gold)">${cv}%</span><span class="pstat-lbl">Conv</span></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* Cards */
+  const c=document.getElementById('lbCards');
+  if(!lb.length){ c.innerHTML='<div style="text-align:center;padding:40px;color:var(--ink-soft)">No leaderboard data yet.</div>'; return; }
+  c.innerHTML=lb.map((s,i)=>{
+    const t=parseInt(s.total||0),sa=parseInt(s.sales||0);
+    const cv=t>0?Math.round(sa/t*100):0;
+    return `<div class="lb-card">
+      <div class="lb-rank">${medals[i]||`<b style="font-size:.85rem;color:var(--ink-soft)">#${i+1}</b>`}</div>
+      <div class="lb-info">
+        <div class="lb-name">${s.name}</div>
+        <div class="lb-sub">${s.phone||''} · Last: ${s.last_visit?new Date(s.last_visit).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—'}</div>
+        <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${cv}%"></div></div>
+      </div>
+      <div class="lb-nums">
+        <div class="lb-num"><span class="lb-num-val" style="color:var(--brand)">${t}</span><span class="lb-num-lbl">Leads</span></div>
+        <div class="lb-num"><span class="lb-num-val" style="color:var(--success)">${sa}</span><span class="lb-num-lbl">Sales</span></div>
+        <div class="lb-num"><span class="lb-num-val" style="color:var(--gold)">${cv}%</span><span class="lb-num-lbl">Conv.</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  /* Full table */
+  const tbody=document.getElementById('lbTableBody');
+  if(tbody) tbody.innerHTML=lb.map((s,i)=>{
+    const t=parseInt(s.total||0),sa=parseInt(s.sales||0);
+    const cv=t>0?Math.round(sa/t*100):0;
+    return `<tr>
+      <td style="font-size:1.05rem">${medals[i]||'<b style="color:var(--ink-soft)">#'+(i+1)+'</b>'}</td>
+      <td><strong>${s.name}</strong></td>
+      <td><a href="tel:${s.phone}" style="color:var(--brand);font-weight:600">${s.phone||'—'}</a></td>
+      <td style="font-weight:700">${t}</td>
+      <td><span class="tag-yes">${sa}</span></td>
+      <td style="font-weight:700;color:var(--gold)">${cv}%</td>
+      <td style="font-size:.75rem;color:var(--ink-soft)">${s.last_visit?new Date(s.last_visit).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Salesman list ──────────────────────────────────── */
+async function loadSalesmenList() {
+  const tbody=document.getElementById('smListBody'); if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  try {
+    const res  = await apiFetch('/api/v1/salesman/list');
+    const ct   = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) throw new Error('Server error — check backend is running');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'Failed to load');
+    const list = json.data || [];
+    allSalesmenData = list;
+    renderSalesmanList(list);
+  } catch(err) {
+    tbody.innerHTML=`<tr><td colspan="10" class="t-empty" style="color:var(--error)">⚠️ Failed to load. Please try again.</td></tr>`;
+  }
+}
+function filterSalesmanList() {
+  const q=(document.getElementById('searchSalesman').value||'').toLowerCase();
+  renderSalesmanList(allSalesmenData.filter(s=>!q||s.name.toLowerCase().includes(q)||(s.phone||'').includes(q)));
+}
+function renderSalesmanList(list) {
+  const tbody=document.getElementById('smListBody');
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="10" class="t-empty">No salesmen found.</td></tr>'; return; }
+  tbody.innerHTML=list.map((s,i)=>{
+    const total=parseInt(s.total_leads||0),yes=parseInt(s.total_sales||0);
+    const cv=total>0?Math.round(yes/total*100):0;
+    const ac=parseInt(s.area_count||0);
+    const areasBadge=ac>0
+      ?`<span style="font-size:.6rem;background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:999px;font-weight:700;margin-left:4px">📍 ${ac} area${ac>1?'s':''}</span>`
+      :`<span style="font-size:.6rem;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:999px;font-weight:700;margin-left:4px">🌐 All areas</span>`;
+    const nm=s.name.replace(/`/g,"'");
+    return `<tr>
+      <td style="color:var(--ink-faint);font-size:.73rem">${i+1}</td>
+      <td><strong>${s.name}</strong> ${areasBadge}</td>
+      <td><a href="tel:${s.phone}" style="color:var(--brand);font-weight:600">${s.phone}</a></td>
+      <td style="font-weight:700">${total}</td>
+      <td><span class="tag-yes">${yes}</span></td>
+      <td style="font-weight:700;color:var(--gold)">${cv}%</td>
+      <td style="font-size:.75rem;color:var(--ink-soft)">${s.last_visit?new Date(s.last_visit).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'—'}</td>
+      <td>${s.is_active?'<span class="tag-active">Active</span>':'<span class="tag-inactive">Inactive</span>'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openAreasModal(${s.id},\`${nm}\`)" style="color:var(--brand);border-color:var(--brand);white-space:nowrap;gap:3px">📍 Areas</button></td>
+      <td>${s.is_active?`<button class="btn btn-outline btn-sm" onclick="removeSalesman(${s.id},\`${nm}\`)" style="color:var(--error);border-color:var(--error)">Remove</button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Add salesman ───────────────────────────────────── */
+document.getElementById('addSalesmanForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const errDiv=document.getElementById('addSalesmanError');
+  const btn=document.getElementById('addSalesmanBtn');
+  errDiv.classList.add('hidden'); btn.textContent='Adding…'; btn.disabled=true;
+  try {
+    const res=await apiFetch('/api/v1/salesman/add',{method:'POST',body:JSON.stringify({
+      name:document.getElementById('smName').value.trim(),
+      phone:document.getElementById('smPhone').value.trim(),
+      password:document.getElementById('smPassword').value
+    })});
+    const data=await res.json();
+    if(!data.success) throw new Error(data.message);
+    showToast('Salesman added ✓','success');
+    closeModal('addSalesmanModal');
+    document.getElementById('addSalesmanForm').reset();
+    loadSalesmenList(); fetchAdminReport();
+  } catch(err){ errDiv.textContent=err.message; errDiv.classList.remove('hidden'); }
+  btn.textContent='Add Salesman'; btn.disabled=false;
+});
+
+/* ── Remove salesman ────────────────────────────────── */
+async function removeSalesman(id,name) {
+  if(!confirm('Deactivate '+name+'?')) return;
+  try {
+    const r=await apiFetch('/api/v1/salesman/remove/'+id,{method:'DELETE'});
+    const d=await r.json();
+    if(!d.success) throw new Error(d.message);
+    showToast(name+' deactivated','success'); loadSalesmenList();
+  } catch(err){ showToast(err.message,'error'); }
+}
+
+/* ── CSV helpers ────────────────────────────────────── */
+function _dl(rows,name) {
+  const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=name; a.click();
+}
+function exportCSV() {
+  if(!adminAllLeads.length){ showToast('No data','error'); return; }
+  const from=document.getElementById('fromDate').value, to=document.getElementById('toDate').value;
+  _dl([['#','Salesman','Shop','Type','Owner','Mobile','Village','Taluka','District','Sale','Notes','Visited'],
+    ...adminAllLeads.map((l,i)=>[i+1,l.salesman_name||'',l.shop_name,l.shop_type||'',l.owner_name,l.mobile,l.village,l.taluka,l.district,l.sale_status,(l.notes||''),l.visited_at?new Date(l.visited_at).toLocaleString('en-IN'):''])],
+    'sales-'+from+'-'+to+'.csv');
+  showToast('CSV exported ✓','success');
+}
+function exportCSVBySalesman() {
+  if(!adminAllLeads.length){ showToast('No data','error'); return; }
+  const from=document.getElementById('fromDate').value, to=document.getElementById('toDate').value;
+  const g={};
+  adminAllLeads.forEach(l=>{const n=l.salesman_name||'Unknown';if(!g[n])g[n]=[];g[n].push(l);});
+  const lines=[];
+  const tr=r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',');
+  Object.keys(g).sort().forEach(sm=>{
+    const leads=g[sm],yes=leads.filter(l=>l.sale_status==='YES').length;
+    lines.push(tr(['SALESMAN: '+sm,'Total: '+leads.length,'YES: '+yes,'Conv: '+Math.round(yes/leads.length*100)+'%','','','','','','','']));
+    lines.push(tr(['#','Shop','Type','Owner','Mobile','Village','Taluka','District','Sale','Notes','Visited']));
+    leads.forEach((l,i)=>lines.push(tr([i+1,l.shop_name,l.shop_type||'',l.owner_name,l.mobile,l.village,l.taluka,l.district,l.sale_status,(l.notes||''),l.visited_at?new Date(l.visited_at).toLocaleString('en-IN'):''])));
+    lines.push('');
+  });
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));a.download='sales-by-sm-'+from+'-'+to+'.csv';a.click();
+  showToast('CSV exported ✓','success');
+}
+function exportCSVSummary() {
+  if(!adminAllLeads.length){ showToast('No data','error'); return; }
+  const from=document.getElementById('fromDate').value, to=document.getElementById('toDate').value;
+  const g={};
+  adminAllLeads.forEach(l=>{const n=l.salesman_name||'Unknown';if(!g[n])g[n]={t:0,y:0};g[n].t++;if(l.sale_status==='YES')g[n].y++;});
+  _dl([['Salesman','Total Leads','Sale YES','Sale NO','Conversion %'],
+    ...Object.keys(g).sort().map(n=>[n,g[n].t,g[n].y,g[n].t-g[n].y,(g[n].t>0?Math.round(g[n].y/g[n].t*100):0)+'%'])],
+    'sales-summary-'+from+'-'+to+'.csv');
+  showToast('Summary exported ✓','success');
+}
+
+/* ── CSV dropdown ───────────────────────────────────── */
+function openCSVMenu(e) {
+  const btn=(e.currentTarget||e.target).closest('button');
+  const rect=btn.getBoundingClientRect();
+  const menu=document.getElementById('csvMenu');
+  const right=Math.max(8,window.innerWidth-rect.right);
+  menu.style.display='block';
+  menu.style.right=right+'px'; menu.style.left='auto';
+  const top=rect.bottom+6;
+  if(top+160>window.innerHeight-12) {
+    menu.style.top='auto'; menu.style.bottom=(window.innerHeight-rect.top+6)+'px';
+  } else {
+    menu.style.top=top+'px'; menu.style.bottom='auto';
+  }
+  document.getElementById('csvOverlay').style.display='block';
+}
+function closeCSVMenu() {
+  document.getElementById('csvMenu').style.display='none';
+  document.getElementById('csvOverlay').style.display='none';
+}
+</script>
+
+<script nonce="CSP_NONCE">
+/* ═══════════════════════════════════════════════════
+   SALES PRODUCTS TAB
+═══════════════════════════════════════════════════ */
+let _spAllRows = [];   // flat product rows derived from leads
+let _spFiltered = [];  // after filters
+
+/* Called when tab is first opened */
+function initSalesProductsTab() {
+  document.getElementById('spFromDate').value = monthStart();
+  document.getElementById('spToDate').value   = todayStr();
+  // Populate salesman dropdown from already-loaded leads (if any)
+  populateSPSalesmanFilter();
+  // If adminAllLeads already loaded, derive rows immediately
+  if (adminAllLeads.length) {
+    _buildSPRows(adminAllLeads);
+    filterSalesProducts();
+  } else {
+    fetchSalesProducts();
+  }
+}
+
+/* Fetch leads for the SP date range and build rows */
+async function fetchSalesProducts() {
+  const from = document.getElementById('spFromDate').value;
+  const to   = document.getElementById('spToDate').value;
+  const tbody = document.getElementById('spTableBody');
+  tbody.innerHTML = '<tr><td colspan="10" class="t-empty"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  try {
+    const res  = await apiFetch('/api/v1/salesman/leads?from='+from+'&to='+to+'&per_page=1000');
+    const data = (await res.json()).data || [];
+    _buildSPRows(data);
+    populateSPSalesmanFilter();
+    filterSalesProducts();
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="10" class="t-empty" style="color:var(--red)">⚠️ Failed to load: '+_e(err.message)+'</td></tr>';
+  }
+}
+
+/* Flatten leads → one row per product */
+function _buildSPRows(leads) {
+  _spAllRows = [];
+  let seq = 1;
+  leads.forEach(l => {
+    const products = Array.isArray(l.products) ? l.products : [];
+    products.forEach(p => {
+      _spAllRows.push({
+        seq: seq++,
+        lead_id: l.id,
+        salesman: l.salesman_name || '—',
+        shop: l.shop_name || '—',
+        owner: l.owner_name || '—',
+        village: l.village || '—',
+        product: p.name || '—',
+        qty: p.quantity ?? p.qty ?? 1,
+        rate: parseFloat(p.price || 0),
+        total: parseFloat(p.total || (parseFloat(p.price||0) * (p.quantity ?? p.qty ?? 1))),
+        date: l.visited_at || null
+      });
+    });
+  });
+}
+
+/* Populate salesman <select> from current SP rows */
+function populateSPSalesmanFilter() {
+  const sel = document.getElementById('spSalesmanFilter'); if (!sel) return;
+  const cur = sel.value;
+  const names = [...new Set(_spAllRows.map(r=>r.salesman))].sort();
+  sel.innerHTML = '<option value="">All Salesmen</option>' +
+    names.map(n=>`<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+}
+
+/* Filter + render */
+function filterSalesProducts() {
+  const sm = document.getElementById('spSalesmanFilter').value;
+  const q  = (document.getElementById('spSearch').value||'').toLowerCase();
+
+  _spFiltered = _spAllRows.filter(r =>
+    (!sm || r.salesman === sm) &&
+    (!q  || [r.shop, r.product, r.village, r.salesman, r.owner].some(v=>(v||'').toLowerCase().includes(q)))
+  );
+
+  // KPI row
+  const kpiRow = document.getElementById('spKpiRow');
+  if (sm) {
+    kpiRow.style.display = 'grid';
+    document.getElementById('spKpiName').textContent  = sm;
+    document.getElementById('spKpiItems').textContent = _spFiltered.length;
+    const totalQty = _spFiltered.reduce((s,r)=>s+Number(r.qty),0);
+    const grandTot = _spFiltered.reduce((s,r)=>s+r.total,0);
+    document.getElementById('spKpiQty').textContent   = totalQty;
+    document.getElementById('spKpiTotal').textContent = '₹'+grandTot.toLocaleString('en-IN',{maximumFractionDigits:2});
+  } else {
+    kpiRow.style.display = 'none';
+  }
+
+  const badge = document.getElementById('spCountBadge');
+  if (badge) badge.textContent = _spFiltered.length + ' entr' + (_spFiltered.length===1?'y':'ies');
+
+  const tbody = document.getElementById('spTableBody');
+  if (!_spFiltered.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="t-empty">No sales product data found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _spFiltered.map((r, i) => {
+    const dateFmt = r.date
+      ? new Date(r.date).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    return `<tr>
+      <td style="color:var(--ink4);font-size:.72rem;font-family:var(--mono)">${i+1}</td>
+      <td style="font-family:var(--mono);font-size:.78rem;color:var(--ink3)">${r.lead_id}</td>
+      <td><span class="sm-name">${_e(r.salesman)}</span></td>
+      <td class="no-wrap"><span class="shop-bold">${_e(r.shop)}</span></td>
+      <td class="no-wrap">${_e(r.owner)}</td>
+      <td class="loc-cell">${_e(r.village)}</td>
+      <td style="font-weight:600;color:var(--ink)">${_e(r.product)}</td>
+      <td style="text-align:center;font-family:var(--mono);font-weight:700">${r.qty}</td>
+      <td style="text-align:right;font-family:var(--mono)">₹${r.rate.toFixed(2)}</td>
+      <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--f2)">₹${r.total.toFixed(2)}</td>
+      <td class="no-wrap" style="font-size:.75rem;color:var(--ink3)">${dateFmt}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* CSV Export for Sales Products */
+/* ── Export helpers ────────────────────────────────── */
+function _spExportRows() {
+  const sm   = document.getElementById('spSalesmanFilter').value;
+  const from = document.getElementById('spFromDate').value;
+  const to   = document.getElementById('spToDate').value;
+  return { sm, from, to };
+}
+
+function exportSalesProductsCSV() {
+  if (!_spFiltered.length) { showToast('No data to export','error'); return; }
+  const { sm, from, to } = _spExportRows();
+  const rows = [
+    ['#','Lead ID','Salesman','Shop','Owner','Village','Product','Qty','Rate','Total','Date'],
+    ..._spFiltered.map((r,i) => [
+      i+1, r.lead_id, r.salesman, r.shop, r.owner, r.village,
+      r.product, r.qty, r.rate.toFixed(2), r.total.toFixed(2),
+      r.date ? new Date(r.date).toLocaleString('en-IN') : ''
+    ])
+  ];
+  if (sm) {
+    rows.push([]);
+    rows.push(['Grand Total','','','','','','',
+      _spFiltered.reduce((s,r)=>s+Number(r.qty),0),'',
+      _spFiltered.reduce((s,r)=>s+r.total,0).toFixed(2),''
+    ]);
+  }
+  const csv = rows.map(r=>r.map(v=>'\"'+String(v||'').replace(/"/g,'""')+'\"').join(',')).join('\n');
+  const fname = (sm ? 'sales-products-'+sm.replace(/\s+/g,'-') : 'sales-products')+'-'+from+'-'+to+'.csv';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = fname; a.click();
+  showToast('CSV exported ✓','success');
+}
+
+function exportSalesProductsExcel() {
+  if (!_spFiltered.length) { showToast('No data to export','error'); return; }
+  const { sm, from, to } = _spExportRows();
+
+  function doExcel() {
+    const XLSX = window.XLSX;
+    const headers = ['#','Lead ID','Salesman','Shop','Owner','Village','Product','Qty','Rate (₹)','Total (₹)','Date'];
+    const data = _spFiltered.map((r,i) => ({
+      '#': i+1,
+      'Lead ID': r.lead_id,
+      'Salesman': r.salesman,
+      'Shop': r.shop,
+      'Owner': r.owner,
+      'Village': r.village,
+      'Product': r.product,
+      'Qty': Number(r.qty),
+      'Rate (₹)': r.rate,
+      'Total (₹)': r.total,
+      'Date': r.date ? new Date(r.date).toLocaleString('en-IN') : ''
+    }));
+    if (sm) {
+      data.push({});
+      data.push({
+        '#': 'Grand Total', 'Lead ID':'','Salesman':'','Shop':'','Owner':'','Village':'','Product':'',
+        'Qty': _spFiltered.reduce((s,r)=>s+Number(r.qty),0),
+        'Rate (₹)': '',
+        'Total (₹)': _spFiltered.reduce((s,r)=>s+r.total,0),
+        'Date': ''
+      });
+    }
+    const ws = XLSX.utils.json_to_sheet(data, {header: headers});
+    // Column widths
+    ws['!cols'] = [4,8,16,20,16,14,28,6,10,10,20].map(w=>({wch:w}));
+    // Style header row bold (xlsx style requires xlsx-style lib; skip for now)
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sales Products');
+    const fname = (sm ? 'sales-products-'+sm.replace(/\s+/g,'-') : 'sales-products')+'-'+from+'-'+to+'.xlsx';
+    XLSX.writeFile(wb, fname);
+    showToast('Excel exported ✓','success');
+  }
+
+  if (window.XLSX) { doExcel(); return; }
+  const _xlsxNonce = document.querySelector('script[nonce]')?.nonce || '';
+  const s = document.createElement('script');
+  s.src = 'js/xlsx.full.min.js';
+  if (_xlsxNonce) s.nonce = _xlsxNonce;
+  s.onload = doExcel;
+  s.onerror = () => showToast('Failed to load Excel library','error');
+  document.head.appendChild(s);
+}
+
+function exportSalesProductsPDF() {
+  if (!_spFiltered.length) { showToast('No data to export','error'); return; }
+  const { sm, from, to } = _spExportRows();
+
+  function doPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // Header bar
+    doc.setFillColor(26, 64, 32);
+    doc.rect(0, 0, pageW, 38, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica','bold');
+    doc.text('🌿 Aqualence Ventures — Sales Products', 32, 24);
+
+    // Sub-header
+    doc.setFillColor(240, 248, 241);
+    doc.rect(0, 38, pageW, 22, 'F');
+    doc.setTextColor(61, 82, 64);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','normal');
+    const dateRange = from + ' to ' + to;
+    const salesmanLabel = sm ? ('Salesman: ' + sm + '   ') : '';
+    const totalQty = _spFiltered.reduce((s,r)=>s+Number(r.qty),0);
+    const grandTot = _spFiltered.reduce((s,r)=>s+r.total,0);
+    doc.text(salesmanLabel+'Period: '+dateRange+'   Entries: '+_spFiltered.length+'   Total Qty: '+totalQty+'   Grand Total: ₹'+grandTot.toLocaleString('en-IN'), 32, 52);
+
+    // Table
+    const cols = ['#','Lead ID','Salesman','Shop','Owner','Village','Product','Qty','Rate','Total','Date'];
+    const rows = _spFiltered.map((r,i) => [
+      i+1, r.lead_id, r.salesman, r.shop, r.owner, r.village,
+      r.product, r.qty, '₹'+r.rate.toFixed(2), '₹'+r.total.toFixed(2),
+      r.date ? new Date(r.date).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'
+    ]);
+    // Grand total footer row
+    rows.push([
+      'TOTAL','','','','','','',
+      totalQty,'','₹'+grandTot.toFixed(2),''
+    ]);
+
+    // Column widths proportionally scaled to fill A4 landscape usable width
+    // (pageW 841.89pt − margins 56pt = 785pt). tableWidth:'wrap' respects explicit widths.
+    doc.autoTable({
+      head: [cols],
+      body: rows,
+      startY: 68,
+      styles: { font:'helvetica', fontSize: 7, cellPadding: 3, valign:'middle' },
+      headStyles: { fillColor:[26,64,32], textColor:255, fontStyle:'bold', fontSize:7.5 },
+      alternateRowStyles: { fillColor:[245,250,245] },
+      columnStyles: {
+        0:{cellWidth:27,  halign:'right'},
+        1:{cellWidth:47,  halign:'center'},
+        2:{cellWidth:82},
+        3:{cellWidth:89},
+        4:{cellWidth:74},
+        5:{cellWidth:74},
+        6:{cellWidth:134},
+        7:{cellWidth:33,  halign:'center'},
+        8:{cellWidth:56,  halign:'right'},
+        9:{cellWidth:62,  halign:'right', fontStyle:'bold'},
+        10:{cellWidth:107}
+      },
+      didParseCell: function(data) {
+        // Bold grand total footer row
+        if (data.row.index === rows.length - 1) {
+          data.cell.styles.fillColor = [230, 247, 232];
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = [26,64,32];
+        }
+      },
+      margin: { left: 28, right: 28 },
+      tableWidth: 'wrap'
+    });
+
+    // Page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= pageCount; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7);
+      doc.setTextColor(160);
+      doc.text('Page '+p+' of '+pageCount, pageW - 60, doc.internal.pageSize.getHeight() - 12);
+      doc.text('Generated: '+new Date().toLocaleString('en-IN'), 28, doc.internal.pageSize.getHeight() - 12);
+    }
+
+    const fname = (sm ? 'sales-products-'+sm.replace(/\s+/g,'-') : 'sales-products')+'-'+from+'-'+to+'.pdf';
+    doc.save(fname);
+    showToast('PDF exported ✓','success');
+  }
+
+  function loadJsPDF(cb) {
+    if (window.jspdf) { cb(); return; }
+    const nonce = document.querySelector('script[nonce]')?.nonce || '';
+    const s1 = document.createElement('script');
+    s1.src = 'js/jspdf.umd.min.js';
+    if (nonce) s1.nonce = nonce;
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'js/jspdf.plugin.autotable.min.js';
+      if (nonce) s2.nonce = nonce;
+      s2.onload = cb;
+      s2.onerror = () => showToast('Failed to load PDF table plugin','error');
+      document.head.appendChild(s2);
+    };
+    s1.onerror = () => showToast('Failed to load PDF library','error');
+    document.head.appendChild(s1);
+  }
+
+  loadJsPDF(doPDF);
+}
+
+/* ── Export dropdown toggle ────────────────────────── */
+function toggleSPExportMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('spExportMenu');
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    const close = () => { menu.style.display='none'; document.removeEventListener('click', close); };
+    setTimeout(() => document.addEventListener('click', close), 0);
+  }
+}
+function closeSPExportMenu() {
+  document.getElementById('spExportMenu').style.display = 'none';
+}
+</script>
+<div class="modal-overlay" id="areasModal">
+  <div class="modal" style="max-width:620px;width:96vw">
+    <div class="modal-header">
+      <h3>📍 Manage Areas — <span id="areasModalName"></span></h3>
+      <button class="modal-close" onclick="closeModal('areasModal')">✕</button>
+    </div>
+    <div style="padding:14px 18px 18px;max-height:80vh;overflow-y:auto">
+
+      <!-- Info banner -->
+      <div style="background:#e8f5e9;border-radius:10px;padding:10px 13px;font-size:.79rem;color:#2e7d32;margin-bottom:14px;line-height:1.5">
+        <strong>How it works:</strong> Assign talukas below. Once assigned, the salesman can <strong>only</strong> add leads in those areas. Remove all areas to allow all locations.
+      </div>
+
+      <!-- Google Map -->
+      <div id="areasMap" style="width:100%;height:220px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:14px;background:#f0f4f0;overflow:hidden;position:relative"></div>
+
+      <!-- Assigned areas list -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:8px">Assigned Areas</div>
+        <div id="assignedAreasList"><div class="spinner" style="margin:12px auto"></div></div>
+      </div>
+
+      <!-- Add new area -->
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:10px">Add New Area</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="newTaluka"   placeholder="Taluka *"   style="flex:1;min-width:110px;padding:9px 14px;border:1.5px solid var(--border);border-radius:999px;font-size:.83rem;font-family:var(--font-body);outline:none" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'" />
+          <input type="text" id="newDistrict" placeholder="District *" style="flex:1;min-width:110px;padding:9px 14px;border:1.5px solid var(--border);border-radius:999px;font-size:.83rem;font-family:var(--font-body);outline:none" onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--border)'" />
+          <button onclick="addArea()" class="btn btn-primary btn-sm" style="border-radius:999px;white-space:nowrap;padding:9px 18px">➕ Add</button>
+        </div>
+
+        <!-- Quick presets -->
+        <div style="margin-top:10px">
+          <div style="font-size:.67rem;color:var(--ink-soft);margin-bottom:6px;font-weight:600">Quick add:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px" id="talukaPresets"></div>
+        </div>
+        <div id="areasError" style="color:var(--error);font-size:.78rem;margin-top:8px;display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script nonce="CSP_NONCE">
+/* ═══════════════════════════════════════════════════════
+   AREAS MODAL — state & constants
+═══════════════════════════════════════════════════════ */
+let _areasModalId   = null;
+let _areasMap       = null;
+let _areasMapMarkers= [];
+let _areasPolygons  = [];
+
+// Live talukas fetched from /api/geo/talukas (populated on modal open)
+// Falls back to MAHARASHTRA_TALUKAS if the API call fails.
+let _geoTalukas = null; // null = not yet fetched
+
+const MAHARASHTRA_TALUKAS = [
+  // Ahmednagar District — all 14 talukas with correct GPS
+  {taluka:'Ahmednagar', district:'Ahmednagar', lat:19.0948, lng:74.7480},
+  {taluka:'Akole',      district:'Ahmednagar', lat:19.5200, lng:74.0200},
+  {taluka:'Jamkhed',    district:'Ahmednagar', lat:18.7167, lng:75.3167},
+  {taluka:'Karjat',     district:'Ahmednagar', lat:18.7334, lng:75.0131},
+  {taluka:'Kopargaon',  district:'Ahmednagar', lat:19.8935, lng:74.4780},
+  {taluka:'Nevasa',     district:'Ahmednagar', lat:19.5594, lng:74.9855},
+  {taluka:'Parner',     district:'Ahmednagar', lat:19.0015, lng:74.4359},
+  {taluka:'Pathardi',   district:'Ahmednagar', lat:18.8624, lng:75.1914},
+  {taluka:'Rahata',     district:'Ahmednagar', lat:19.7160, lng:74.4760},
+  {taluka:'Rahuri',     district:'Ahmednagar', lat:19.3917, lng:74.6497},
+  {taluka:'Sangamner',  district:'Ahmednagar', lat:19.5741, lng:74.2103},
+  {taluka:'Shevgaon',   district:'Ahmednagar', lat:19.3449, lng:75.0867},  // FIXED: was 75.6872 (wrong)
+  {taluka:'Shrigonda',  district:'Ahmednagar', lat:18.6221, lng:74.7085},  // ADDED: was missing
+  {taluka:'Shrirampur', district:'Ahmednagar', lat:19.6225, lng:74.6514},
+  // Nashik District
+  {taluka:'Nashik',     district:'Nashik',     lat:19.9975, lng:73.7898},
+  {taluka:'Malegaon',   district:'Nashik',     lat:20.5579, lng:74.5089},
+  {taluka:'Niphad',     district:'Nashik',     lat:20.0800, lng:74.1100},
+  {taluka:'Sinnar',     district:'Nashik',     lat:19.8483, lng:74.0000},
+  {taluka:'Igatpuri',   district:'Nashik',     lat:19.6981, lng:73.5580},
+  {taluka:'Yeola',      district:'Nashik',     lat:20.0415, lng:74.4886},
+  // Pune District
+  {taluka:'Pune',       district:'Pune',       lat:18.5204, lng:73.8567},
+  {taluka:'Baramati',   district:'Pune',       lat:18.1514, lng:74.5817},
+  {taluka:'Shirur',     district:'Pune',       lat:18.8271, lng:74.3617},
+  {taluka:'Junnar',     district:'Pune',       lat:19.2004, lng:73.8800},
+  {taluka:'Khed',       district:'Pune',       lat:18.8586, lng:73.9910},
+  {taluka:'Daund',      district:'Pune',       lat:18.4600, lng:74.5700},
+  // Other Districts
+  {taluka:'Aurangabad', district:'Aurangabad', lat:19.8762, lng:75.3433},
+  {taluka:'Solapur',    district:'Solapur',    lat:17.6805, lng:75.9064},
+  {taluka:'Beed',       district:'Beed',       lat:18.9890, lng:75.7560},
+  {taluka:'Latur',      district:'Latur',      lat:18.4088, lng:76.5604},
+  {taluka:'Osmanabad',  district:'Osmanabad',  lat:18.1860, lng:76.0420},
+];
+
+/* ── Safe fetch — cookie-based auth (credentials:include) ── */
+async function areasFetch(url, opts = {}) {
+  // Auth is via httpOnly cookie (aq_auth) — no Bearer token needed.
+  // credentials:'include' sends the cookie automatically.
+  const res = await fetch(url, {
+    ...opts,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401 || res.status === 403) {
+    window.location.href = '/admin/login.html'; // session expired
+    throw new Error('Session expired');
+  }
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`Server returned non-JSON (status ${res.status}). Is the backend running?`);
+  }
+  return res;
+}
+
+/* ── Init Google Map ─────────────────────────────────── */
+function initAreasMap() {
+  const mapEl = document.getElementById('areasMap');
+  if (!mapEl) return;
+  if (typeof google === 'undefined' || !google.maps) {
+    mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-soft);font-size:.8rem;gap:8px">⏳ Map loading…</div>';
+    setTimeout(initAreasMap, 600); return;
+  }
+  try {
+    if (_areasMap) {
+      // Already initialised — just trigger resize so tiles fill the modal
+      google.maps.event.trigger(_areasMap, 'resize');
+      return;
+    }
+    _areasMap = new google.maps.Map(mapEl, {
+      center: { lat: 19.4, lng: 74.5 },
+      zoom: 8,
+      mapTypeId: 'roadmap',
+      disableDefaultUI: false,
+      zoomControl: true,
+      streetViewControl: false,
+      fullscreenControl: false,
+      styles: [
+        {featureType:'all',elementType:'labels.text.fill',stylers:[{color:'#3d4a2f'}]},
+        {featureType:'water',elementType:'geometry',stylers:[{color:'#c9e8f5'}]},
+        {featureType:'landscape',elementType:'geometry',stylers:[{color:'#f2f5ee'}]},
+        {featureType:'road',elementType:'geometry',stylers:[{color:'#ffffff'}]},
+        {featureType:'administrative',elementType:'geometry.stroke',stylers:[{color:'#b0c4a0'}]}
+      ]
+    });
+  } catch(e) {
+    console.warn('Map init error:', e);
+    mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-soft);font-size:.8rem">🗺️ Map unavailable</div>';
+  }
+}
+
+/* ── Refresh map markers from assigned areas ─────────── */
+function refreshMap(assignedAreas) {
+  if (!_areasMap) { initAreasMap(); if (!_areasMap) return; }
+
+  // Clear old markers/circles
+  _areasMapMarkers.forEach(m => m.setMap(null));
+  _areasPolygons.forEach(p => p.setMap(null));
+  _areasMapMarkers = [];
+  _areasPolygons   = [];
+
+  if (!assignedAreas.length) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  assignedAreas.forEach(area => {
+    const preset = MAHARASHTRA_TALUKAS.find(t => t.taluka.toLowerCase() === area.taluka.toLowerCase());
+    const lat = preset ? preset.lat : 19.4;
+    const lng = preset ? preset.lng : 74.5;
+    const pos = { lat, lng };
+    bounds.extend(pos);
+
+    // Circle for taluka radius
+    const circle = new google.maps.Circle({
+      map: _areasMap,
+      center: pos,
+      radius: 15000,
+      fillColor: '#4a7c3f', fillOpacity: 0.18,
+      strokeColor: '#4a7c3f', strokeOpacity: 0.8, strokeWeight: 2,
+    });
+    _areasPolygons.push(circle);
+
+    // Marker
+    const marker = new google.maps.Marker({
+      position: pos,
+      map: _areasMap,
+      title: `${area.taluka} (${area.district})`,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 9,
+        fillColor: '#4a7c3f', fillOpacity: 1,
+        strokeColor: '#fff', strokeWeight: 2,
+      }
+    });
+    const iw = new google.maps.InfoWindow({
+      content: `<div style="font-family:sans-serif;padding:4px 2px"><strong style="color:#2e7d32">${area.taluka}</strong><br><span style="font-size:12px;color:#666">${area.district} district</span></div>`
+    });
+    marker.addListener('click', () => iw.open(_areasMap, marker));
+    _areasMapMarkers.push(marker);
+  });
+
+  _areasMap.fitBounds(bounds);
+  google.maps.event.addListenerOnce(_areasMap, 'bounds_changed', () => {
+    if (_areasMap.getZoom() > 11) _areasMap.setZoom(11);
+  });
+}
+
+/* ── Open modal ──────────────────────────────────────── */
+/* ── Render quick-add preset chips ───────────────────── */
+/* When salesman has assigned districts: show ONLY talukas   */
+/* in those districts, grouped by district header.           */
+/* When no areas yet: show ALL talukas grouped by district.  */
+function renderTalukaPresets(assignedAreas) {
+  const container = document.getElementById('talukaPresets');
+  if (!container) return;
+
+  // Use live talukas from DB (_geoTalukas), fall back to hardcoded list
+  // _geoTalukas = array of { name, district, ... } from /api/geo/talukas
+  const sourceList = _geoTalukas
+    ? _geoTalukas.map(t => ({ taluka: t.name, district: t.district }))
+    : MAHARASHTRA_TALUKAS;
+
+  if (!sourceList.length) {
+    container.innerHTML = '<span style="font-size:.72rem;color:var(--ink-soft)">No zones added yet. Add zones in Geo Map first.</span>';
+    return;
+  }
+
+  // Get assigned district names (unique, lowercased for matching)
+  const assignedDistricts = assignedAreas.length
+    ? [...new Set(assignedAreas.map(a => a.district.toLowerCase()))]
+    : null; // null = show all
+
+  // Build district → talukas map from live source
+  const districtMap = {};
+  sourceList.forEach(t => {
+    const d = t.district;
+    if (!districtMap[d]) districtMap[d] = [];
+    // Avoid duplicates
+    if (!districtMap[d].some(x => x.taluka.toLowerCase() === t.taluka.toLowerCase())) {
+      districtMap[d].push(t);
+    }
+  });
+
+  // Sort talukas within each district
+  Object.keys(districtMap).forEach(d => {
+    districtMap[d].sort((a, b) => a.taluka.localeCompare(b.taluka));
+  });
+
+  // Determine which districts to show
+  const allDistricts = Object.keys(districtMap).sort();
+  const districtsToShow = assignedDistricts
+    ? allDistricts.filter(d => assignedDistricts.includes(d.toLowerCase()))
+    : allDistricts;
+
+  if (!districtsToShow.length && assignedDistricts) {
+    // Assigned districts not found in zones — show all
+    const allChips = sourceList
+      .sort((a,b) => a.taluka.localeCompare(b.taluka))
+      .map(t => `<button class="preset-chip" onclick="quickAdd('${t.taluka}','${t.district}')">${t.taluka}</button>`)
+      .join('');
+    container.innerHTML = allChips || '<span style="font-size:.72rem;color:var(--ink-soft)">No zones found.</span>';
+    return;
+  }
+
+  // Render chips grouped by district with header
+  let html = '';
+  districtsToShow.forEach(district => {
+    const talukas = districtMap[district] || [];
+    if (!talukas.length) return;
+
+    html += `<div style="width:100%;margin-top:8px;margin-bottom:3px;display:flex;align-items:center;gap:6px">
+      <span style="font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);background:var(--brand-ultra);padding:2px 8px;border-radius:999px">${district}</span>
+    </div>`;
+    html += talukas.map(t =>
+      `<button class="preset-chip" onclick="quickAdd('${t.taluka}','${t.district}')">${t.taluka}</button>`
+    ).join('');
+  });
+
+  container.innerHTML = html || '<span style="font-size:.72rem;color:var(--ink-soft)">No matching talukas in assigned districts.</span>';
+}
+
+async function openAreasModal(id, name) {
+  _areasModalId = id;
+  document.getElementById('areasModalName').textContent = name;
+  document.getElementById('newTaluka').value   = '';
+  document.getElementById('newDistrict').value = '';
+  document.getElementById('areasError').style.display = 'none';
+
+  // Show loading state in presets while areas + zones load
+  document.getElementById('talukaPresets').innerHTML =
+    '<span style="font-size:.72rem;color:var(--ink-soft)">Loading zones…</span>';
+
+  openModal('areasModal');
+
+  // Init/refresh Google Map
+  setTimeout(() => {
+    _areasMap = null;
+    initAreasMap();
+  }, 250);
+
+  // Fetch live zones from geo table (always fresh — admin may have just added one)
+  try {
+    const res  = await areasFetch('/api/v1/geo/talukas');
+    const json = await res.json();
+    _geoTalukas = json.success ? (json.data || []) : null;
+  } catch (e) {
+    _geoTalukas = null; // fall back to MAHARASHTRA_TALUKAS
+    console.warn('Could not load geo zones:', e.message);
+  }
+
+  await loadAssignedAreas();
+}
+
+/* ── Load assigned areas ─────────────────────────────── */
+async function loadAssignedAreas() {
+  const el = document.getElementById('assignedAreasList');
+  el.innerHTML = '<div class="spinner" style="margin:12px auto"></div>';
+  try {
+    const res  = await areasFetch(`/api/v1/salesman/areas/${_areasModalId}`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'Failed to load');
+    const data = json.data || [];
+
+    if (!data.length) {
+      el.innerHTML = '<div style="text-align:center;padding:14px 8px;color:var(--ink-soft);font-size:.82rem;background:#fafafa;border-radius:10px;border:1.5px dashed var(--border)">🌐 No restrictions — salesman can add leads in <strong>any area</strong></div>';
+      if (_areasMap) {
+        _areasMapMarkers.forEach(m => m.setMap(null));
+        _areasPolygons.forEach(p => p.setMap(null));
+        _areasMapMarkers = []; _areasPolygons = [];
+      }
+      // No areas assigned — show all talukas grouped by district
+      renderTalukaPresets([]);
+      return;
+    }
+
+    el.innerHTML = data.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--brand-ultra);border-radius:10px;margin-bottom:6px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1rem">📍</span>
+          <div>
+            <span style="font-weight:700;color:var(--brand);font-size:.88rem">${a.taluka}</span>
+            <span style="color:var(--ink-soft);font-size:.74rem;margin-left:5px">${a.district} dist.</span>
+          </div>
+        </div>
+        <button onclick="deleteArea(${a.id},'${a.taluka}')" style="background:#fee;border:1px solid #fcc;cursor:pointer;color:var(--error);font-size:.75rem;padding:4px 10px;border-radius:999px;font-weight:700" title="Remove">✕ Remove</button>
+      </div>`).join('');
+
+    // Update map
+    refreshMap(data);
+
+    // Update quick-add presets: only show talukas in assigned districts
+    renderTalukaPresets(data);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--error);font-size:.82rem;padding:10px;background:#fff5f5;border-radius:8px;border:1px solid #fcc">⚠️ Failed to load. Please try again.</div>`;
+  }
+}
+
+/* ── Add area ────────────────────────────────────────── */
+async function addArea() {
+  const taluka   = document.getElementById('newTaluka').value.trim();
+  const district = document.getElementById('newDistrict').value.trim();
+  const errEl    = document.getElementById('areasError');
+  errEl.style.display = 'none';
+
+  if (!taluka || !district) {
+    errEl.textContent = 'Both taluka and district are required';
+    errEl.style.display = 'block'; return;
+  }
+  try {
+    const res  = await areasFetch(`/api/v1/salesman/areas/${_areasModalId}`, {
+      method: 'POST', body: JSON.stringify({ taluka, district })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    document.getElementById('newTaluka').value   = '';
+    document.getElementById('newDistrict').value = '';
+    showToast(`${taluka} assigned ✓`, 'success');
+    await loadAssignedAreas();
+    loadSalesmenList();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+/* ── Quick preset add ────────────────────────────────── */
+async function quickAdd(taluka, district) {
+  document.getElementById('newTaluka').value   = taluka;
+  document.getElementById('newDistrict').value = district;
+  await addArea();
+}
+
+/* ── Delete area ─────────────────────────────────────── */
+async function deleteArea(areaId, taluka) {
+  if (!confirm(`Remove "${taluka}" from this salesman's assigned areas?`)) return;
+  try {
+    const res  = await areasFetch(`/api/v1/salesman/areas/${_areasModalId}/${areaId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    showToast(`${taluka} removed`, 'success');
+    await loadAssignedAreas();
+    loadSalesmenList();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+/* ── Load Google Maps JavaScript API ─────────────────── */
+window._gmapsReady = false;
+window.onGMapsLoaded = function() {
+  window._gmapsReady = true;
+  console.log('Google Maps ready');
+  // If the areas modal is already open when Maps loads, init the map now
+  if (document.getElementById('areasModal')?.classList.contains('show')) {
+    setTimeout(initAreasMap, 100);
+  }
+};
+(async function loadGMaps() {
+  if (document.getElementById('gmaps-script')) return;
+  try {
+    /* SECURITY: Maps key fetched from server — never hardcoded client-side.
+       Endpoint requires a valid JWT; anonymous requests are rejected (401).
+       If no valid key is configured, Maps is not loaded at all — prevents
+       anonymous quota consumption on the Google Maps billing account. */
+    /* SECURITY: maps-key requires auth — cookie sent automatically via credentials:'include' */
+    const r   = await fetch('/api/v1/config/maps-key', { credentials: 'include' });
+
+    if (!r.ok) {
+      // 401 = session expired, 403 = insufficient role — don't attempt load
+      console.warn('[maps] Could not fetch key — HTTP', r.status);
+      return;
+    }
+
+    const cfg = await r.json();
+    const hasKey = cfg.key && cfg.key !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE' && cfg.key.length > 10;
+
+    if (!hasKey) {
+      // No key configured — abort silently. Map features degrade gracefully.
+      console.info('[maps] No API key configured — map disabled.');
+      return;
+    }
+
+    const _mapsNonce = document.querySelector('script[nonce]')?.nonce || '';
+    const s   = document.createElement('script');
+    s.id      = 'gmaps-script';
+    // Key appended only when verified present — never loads as anonymous request
+    s.src     = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(cfg.key)}&callback=onGMapsLoaded`;
+    s.async   = true;
+    s.defer   = true;
+    if (_mapsNonce) s.nonce = _mapsNonce;
+    s.onerror = () => console.warn('[maps] Script load failed — check API key restrictions');
+    document.head.appendChild(s);
+  } catch (e) {
+    // Network error — degrade gracefully, no user-facing crash
+    console.warn('[maps] Load error:', e.message);
+  }
+})();
+</script>
+
+<style>
+.preset-chip {
+  padding: 4px 12px; border-radius: 999px;
+  border: 1.5px solid var(--border); background: #fff;
+  font-size: .7rem; font-weight: 600; color: var(--ink-soft);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.preset-chip:hover, .preset-chip:active {
+  background: var(--brand); border-color: var(--brand); color: #fff;
+}
+</style>
+
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

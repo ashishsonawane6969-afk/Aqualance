@@ -1,0 +1,20 @@
+# SECURITY: Never commit secrets or local config
+.env
+*.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+
+# Debug / temp files
+tmp-db-test.js
+*.tmp.js
+debug-*.js

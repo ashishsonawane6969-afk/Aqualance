@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Order Placed! — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+  </head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="/index.html" class="logo">
+      <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.5 2 5 5.5 5 10c0 5.25 7 12 7 12s7-6.75 7-12c0-4.5-3.5-8-7-8zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 7.5 12 7.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+      Aqualence <span>Ventures</span>
+    </a>
+  </div>
+</header>
+
+<main class="success-page">
+  <div class="success-card">
+    <div class="success-icon">🎉</div>
+    <h2>Order Placed!</h2>
+    <p>Thank you for your order. Our team will review it and assign a delivery partner shortly.</p>
+    <div class="order-ref" id="orderRef">—</div>
+    <p style="font-size:.82rem; color:var(--ink-soft);">Save this order number for reference.</p>
+    <div style="margin-top:24px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <a href="/index.html" class="btn btn-primary">🛍 Shop More</a>
+    </div>
+    <div style="margin-top:20px; padding:14px; background:var(--sage-pale); border-radius:var(--radius-sm); font-size:.82rem; color:var(--ink-soft); line-height:1.7;">
+      📞 Questions? Call us at <strong><a href="tel:7378656656">7378656656</a></strong>
+    </div>
+  </div>
+</main>
+
+<script nonce="CSP_NONCE">
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  document.getElementById('orderRef').textContent = ref ? `Order #${ref}` : 'Order Placed ✓';
+</script>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

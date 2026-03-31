@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d2210" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Geo Intelligence Map — Admin | Aqualence</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+  <!-- Leaflet.js (OSM fallback) — loaded always, used only when no Google Maps key -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script nonce="CSP_NONCE" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script nonce="CSP_NONCE">
+    window._gmapsReady = false;
+    window.onGMapsLoaded = function() { window._gmapsReady = true; initMap(); };
+  </script>
+  <style>
+    :root {
+      --g0:#0d2210; --g1:#2f80c2; --g2:#2a6535; --g3:#3d8c4a; --g4:#5aab65;
+      --g5:#8fd49a; --g6:#d4f0d9; --g7:#f0f8f1;
+      --ink:#0d1a0f; --ink2:#3d5240; --ink3:#7a9480; --ink4:#b8cebb;
+      --blue:#1565c0; --blue-lt:#e3f2fd;
+      --amber:#b06800; --amber-lt:#fff3cd;
+      --red:#b91c1c; --red-lt:#fee2e2;
+      --em:#166534; --em-lt:#dcfce7;
+      --bdr:#e4ede5; --bg:#f0f8f1;
+      --rad:10px; --sh:0 2px 12px rgba(0,0,0,.07);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+    body{overflow:hidden}
+
+    /* ── Shell ── */
+    .app-shell{display:flex;height:100dvh}
+    .main-area{flex:1;min-width:0;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+
+    /* ── Topnav ── */
+    .topnav{height:54px;display:flex;align-items:center;gap:10px;padding:0 16px;
+      background:#fff;border-bottom:1px solid var(--bdr);flex-shrink:0;z-index:50}
+    .topnav h2{font-size:.95rem;font-weight:700;color:var(--g0);flex:1}
+    .mob-menu-btn{display:none;width:34px;height:34px;border:none;background:none;
+      font-size:1.1rem;cursor:pointer;border-radius:8px;color:var(--ink)}
+    .tnav-right{display:flex;align-items:center;gap:8px}
+    #lastRefreshLabel{font-size:.65rem;color:var(--ink3);font-family:'Space Mono',monospace}
+    .btn-refresh{padding:6px 14px;border-radius:8px;border:1.5px solid var(--bdr);
+      font-size:.72rem;font-weight:600;cursor:pointer;background:#fff;font-family:inherit;
+      color:var(--ink2);transition:all .15s}
+    .btn-refresh:hover{background:var(--g7);border-color:var(--g2);color:var(--g2)}
+
+    /* ── KPI strip ── */
+    .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);
+      border-bottom:1px solid var(--bdr);background:#fff;flex-shrink:0}
+    .kpi-item{padding:10px 14px;border-right:1px solid var(--bdr);display:flex;flex-direction:column;gap:2px}
+    .kpi-item:last-child{border-right:none}
+    .k-lbl{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)}
+    .k-val{font-size:1.55rem;font-weight:700;font-family:'Space Mono',monospace;line-height:1;color:var(--g0)}
+    .kpi-item.k-live .k-val{color:var(--blue)}
+    .kpi-item.k-sale .k-val{color:var(--em)}
+    .kpi-item.k-zones .k-val{color:var(--amber)}
+
+    /* ── Main geo layout ── */
+    .geo-layout{flex:1;display:grid;grid-template-columns:320px 1fr;overflow:hidden;min-height:0}
+
+    /* ── Side panel ── */
+    .geo-panel{background:#fff;border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow:hidden}
+
+    /* Tab bar */
+    .panel-tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--g7)}
+    .p-tab{padding:9px 4px;border:none;background:none;font-size:.64rem;font-weight:600;cursor:pointer;
+      color:var(--ink3);font-family:inherit;border-bottom:2px solid transparent;
+      transition:all .15s;display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
+    .p-tab:hover{color:var(--g2)}
+    .p-tab.active{color:var(--g2);border-bottom-color:var(--g2);background:#fff}
+    .tdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .tdot.gr{background:var(--g4)} .tdot.bl{background:var(--blue)} .tdot.yl{background:var(--amber)} .tdot.pu{background:#7c3aed}
+
+    /* Scrollable list */
+    .panel-list{flex:1;overflow-y:auto;min-height:0}
+    .panel-list:not(.active){display:none}
+
+    /* Filter bar */
+    .filter-bar{padding:10px;border-bottom:1px solid var(--bdr);flex-shrink:0;display:flex;flex-direction:column;gap:6px;background:var(--g7)}
+    .filter-bar select,.filter-bar input[type=date]{width:100%;padding:7px 10px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.77rem;font-family:inherit;color:var(--ink);background:#fff;outline:none;transition:border-color .15s}
+    .filter-bar select:focus,.filter-bar input:focus{border-color:var(--g2)}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .fbtns{display:flex;gap:6px}
+    .btn-apply{flex:2;padding:7px;background:var(--g2);color:#fff;border:none;border-radius:var(--rad);font-size:.72rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+    .btn-apply:hover{background:var(--g1)}
+    .btn-clear{flex:1;padding:7px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.72rem;font-weight:600;font-family:inherit;cursor:pointer;background:#fff;color:var(--ink2);transition:all .15s}
+    .btn-clear:hover{border-color:var(--g2);color:var(--g2)}
+
+    /* Lead item */
+    .lead-item{padding:11px 14px;border-bottom:1px solid #eff5f0;cursor:pointer;transition:background .1s}
+    .lead-item:hover{background:var(--g7)}
+    .lead-item.active{background:var(--g6);border-left:3px solid var(--g2)}
+    .li-r1{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+    .li-name{font-size:.81rem;font-weight:600;line-height:1.3}
+    .li-loc{font-size:.67rem;color:var(--ink3);margin-top:2px}
+    .li-meta{font-size:.66rem;color:var(--ink2);margin-top:3px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+    .chip{font-size:.59rem;font-weight:700;padding:2px 6px;border-radius:99px;white-space:nowrap}
+    .chip.yes{background:var(--em-lt);color:var(--em)} .chip.no{background:var(--red-lt);color:var(--red)}
+    .chip.gok{background:var(--em-lt);color:var(--em)} .chip.gbad{background:var(--amber-lt);color:var(--amber)}
+    .chip.blue{background:var(--blue-lt);color:var(--blue)}
+
+    /* Live item */
+    .live-item{padding:11px 14px;border-bottom:1px solid #eff5f0;cursor:pointer;transition:background .1s}
+    .live-item:hover{background:var(--g7)}
+    .li-live-h{display:flex;align-items:center;justify-content:space-between}
+    .li-live-n{font-size:.81rem;font-weight:600;display:flex;align-items:center;gap:6px}
+    .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .sdot.on{background:#4caf50;box-shadow:0 0 0 2px rgba(76,175,80,.25)} .sdot.off{background:#bbb}
+    .li-live-s{font-size:.67rem;color:var(--ink3);margin-top:2px}
+    .li-coords{font-size:.61rem;color:var(--ink4);font-family:'Space Mono',monospace;margin-top:2px}
+
+    /* Taluka zone item */
+    .zone-item{padding:7px 10px;border-bottom:1px solid #eff5f0;display:flex;align-items:center;gap:6px}
+    .zi-info{flex:1;min-width:0}
+    .zi-name{font-size:.78rem;font-weight:600}
+    .zi-meta{font-size:.63rem;color:var(--ink3);margin-top:0}
+    .zi-coords{display:none}
+    .btn-focus{padding:4px 7px;border-radius:6px;border:1.5px solid var(--bdr);font-size:.72rem;font-weight:600;cursor:pointer;background:#fff;font-family:inherit;color:var(--ink2);transition:all .15s;white-space:nowrap;line-height:1}
+    .btn-focus:hover{border-color:var(--g2);color:var(--g2)}
+
+    /* ── Taluka management forms ── */
+    .panel-section{padding:10px 12px;border-bottom:1px solid var(--bdr);background:var(--g7)}
+    .sec-title{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--g2);margin-bottom:8px}
+    .at-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .at-grid input{padding:7px 10px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.76rem;font-family:inherit;outline:none;background:#fff;transition:border-color .15s;width:100%}
+    .at-grid input:focus{border-color:var(--g2)}
+    .at-grid .full{grid-column:span 2}
+    .btn-save{width:100%;margin-top:6px;padding:8px;background:var(--g2);color:#fff;border:none;border-radius:var(--rad);font-size:.75rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+    .btn-save:hover{background:var(--g1)}
+
+    /* ── Salesman assignment panel ── */
+    .assign-panel{padding:12px;border-bottom:1px solid var(--bdr);background:#fff}
+    .assign-grid{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:6px}
+    .assign-grid select{padding:7px 10px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.75rem;font-family:inherit;outline:none;transition:border-color .15s;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .assign-grid select:focus{border-color:var(--g2)}
+    .btn-assign{width:100%;padding:8px;background:var(--g0);color:#fff;border:none;border-radius:var(--rad);font-size:.75rem;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+    .btn-assign:hover{background:var(--g1)}
+    .btn-unassign{background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:.63rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+    .btn-unassign:hover{background:#991b1b}
+    .salesman-row{padding:9px 14px;border-bottom:1px solid #eff5f0;display:flex;align-items:center;gap:8px;min-width:0}
+    .sm-info{flex:1;min-width:0;overflow:hidden}
+    .sm-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sm-taluka{font-size:.63rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sm-taluka.assigned{color:var(--em);font-weight:600}
+    .sm-taluka.none{color:var(--ink3)}
+    .btn-unassign{flex-shrink:0}
+
+    /* ── Map column ── */
+    .map-col{display:flex;flex-direction:column;overflow:hidden;position:relative}
+    .map-wrap{flex:1;position:relative}
+    #geoMap{position:absolute;inset:0;width:100%;height:100%}
+    .live-badge{position:absolute;top:12px;left:12px;z-index:10;background:rgba(255,255,255,.95);
+      backdrop-filter:blur(6px);border:1px solid var(--bdr);border-radius:20px;padding:5px 12px;
+      font-size:.67rem;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:6px;box-shadow:var(--sh)}
+    .lbdot{width:6px;height:6px;border-radius:50%;background:#4caf50;animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    .map-ctrl{position:absolute;top:12px;right:12px;z-index:10;display:flex;flex-direction:column;gap:5px}
+    .mc-btn{background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border:1.5px solid var(--bdr);
+      border-radius:8px;padding:7px 12px;font-size:.68rem;font-weight:700;font-family:inherit;cursor:pointer;
+      color:var(--ink);box-shadow:var(--sh);white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px}
+    .mc-btn:hover{background:var(--g6);border-color:var(--g2)}
+    .mc-btn.active{background:var(--g2);color:#fff;border-color:var(--g2)}
+    .mc-dot{width:7px;height:7px;border-radius:50%}
+
+    /* Detail sheet */
+    .detail-sheet{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;
+      box-shadow:0 -4px 24px rgba(0,0,0,.12);padding:16px;transform:translateY(105%);
+      transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:20;max-height:56%;overflow-y:auto}
+    .detail-sheet.open{transform:translateY(0)}
+    .sheet-handle{width:32px;height:3px;background:var(--bdr);border-radius:99px;margin:0 auto 14px;cursor:pointer}
+    .detail-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+    .detail-name{font-size:1rem;font-weight:700;color:var(--g0)}
+    .detail-sub{font-size:.77rem;color:var(--ink2);margin-top:2px}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:12px}
+    .dg-row{display:flex;flex-direction:column;gap:2px}
+    .dg-lbl{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)}
+    .dg-val{font-size:.8rem;font-weight:500}
+    .detail-photo{width:100%;border-radius:10px;margin-top:12px;max-height:180px;object-fit:cover}
+
+    /* Map unavailable */
+    .map-unavail{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+      height:100%;background:#f8faf8;color:var(--ink3);font-size:.82rem;text-align:center;padding:20px}
+
+    /* Empty state */
+    .empty{padding:36px 16px;text-align:center;color:var(--ink3);font-size:.8rem}
+    .empty-icon{font-size:1.8rem;display:block;margin-bottom:8px;opacity:.5}
+
+    /* Toast */
+    .toast-container{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+    .toast{padding:9px 16px;border-radius:10px;font-size:.79rem;font-weight:600;color:#fff;box-shadow:var(--sh);animation:tin .25s ease;pointer-events:auto;white-space:nowrap}
+    .toast.success{background:var(--em)} .toast.error{background:var(--red)}
+    @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Mobile */
+    @media(max-width:750px){
+      body{overflow:auto}
+      .main-area{height:auto;overflow:visible}
+      .app-shell{height:auto}
+      .mob-menu-btn{display:flex;align-items:center;justify-content:center}
+      .geo-layout{grid-template-columns:1fr;height:auto;overflow:visible}
+      .geo-panel{height:50vh;min-height:300px}
+      .map-col{height:55vh;min-height:320px;position:relative}
+      .kpi-strip{grid-template-columns:repeat(2,1fr)}
+      .kpi-item:nth-child(2){border-right:none}
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">Admin</div>
+      <div class="role">Administrator</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</a>
+      <a href="/admin/overview.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>Overview</a>
+      <a href="/admin/leaderboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>Leaderboard</a>
+      <a href="/admin/orders.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders</a>
+      <a href="/admin/products.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products</a>
+      <a href="/admin/salesmen.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
+      <a href="/admin/geo-map.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map</a>
+      <a href="/admin/delivery-boys.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys</a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+
+    <div class="topnav">
+      <button class="mob-menu-btn" onclick="toggleSidebar()">☰</button>
+      <h2>🗺️ Geo Intelligence Map</h2>
+      <div class="tnav-right">
+        <span id="lastRefreshLabel"></span>
+        <button class="btn-refresh" onclick="refreshAll()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-item"><div class="k-lbl">Total Leads</div><div class="k-val" id="kTotal">—</div></div>
+      <div class="kpi-item k-sale"><div class="k-lbl">GPS Verified</div><div class="k-val" id="kVerified">—</div></div>
+      <div class="kpi-item k-live"><div class="k-lbl">Live Salesmen</div><div class="k-val" id="kLive">—</div></div>
+      <div class="kpi-item k-zones"><div class="k-lbl">Talukas</div><div class="k-val" id="kTalukas">—</div></div>
+    </div>
+
+    <div class="geo-layout">
+
+      <!-- LEFT PANEL -->
+      <div class="geo-panel">
+        <div class="panel-tabs">
+          <button class="p-tab active" id="tabLeads"   onclick="switchTab('leads')"><span class="tdot gr"></span>Leads</button>
+          <button class="p-tab"        id="tabLive"    onclick="switchTab('live')"><span class="tdot bl"></span>Live</button>
+          <button class="p-tab"        id="tabAssign"  onclick="switchTab('assign')"><span class="tdot pu"></span>Assign</button>
+          <button class="p-tab"        id="tabZones"   onclick="switchTab('zones')"><span class="tdot yl"></span>Zones</button>
+        </div>
+
+        <!-- LEADS tab -->
+        <div id="paneLeads" class="panel-list active" style="display:flex;flex-direction:column;overflow:hidden">
+          <div class="filter-bar" style="flex-shrink:0">
+            <select id="filterSalesman" onchange="loadMapLeads()">
+              <option value="">All Salesmen</option>
+            </select>
+            <div class="frow">
+              <input type="date" id="filterFrom" onchange="loadMapLeads()" />
+              <input type="date" id="filterTo"   onchange="loadMapLeads()" />
+            </div>
+            <div class="fbtns">
+              <button class="btn-apply" onclick="loadMapLeads()">Apply</button>
+              <button class="btn-clear" onclick="clearFilters()">Clear</button>
+            </div>
+          </div>
+          <div id="leadsList" style="flex:1;overflow-y:auto"><div class="empty"><span class="empty-icon">⏳</span>Loading leads…</div></div>
+        </div>
+
+        <!-- LIVE tab -->
+        <div id="paneLive" class="panel-list" style="display:none;overflow-y:auto">
+          <div class="empty"><span class="empty-icon">⏳</span>Loading…</div>
+        </div>
+
+        <!-- ASSIGN tab -->
+        <div id="paneAssign" class="panel-list" style="display:none;flex-direction:column;overflow:hidden">
+          <div class="assign-panel" style="flex-shrink:0">
+            <div class="sec-title">📍 Assign Taluka to Salesman</div>
+            <p style="font-size:.71rem;color:var(--ink3);margin-bottom:8px;line-height:1.4">Select a salesman and a taluka. The salesman can <strong>only</strong> submit geo leads within that taluka's radius.</p>
+            <div class="assign-grid">
+              <select id="asmSalesman"><option value="">Select Salesman…</option></select>
+              <select id="asmTaluka"><option value="">Select Taluka…</option></select>
+            </div>
+            <button class="btn-assign" onclick="doAssign()">✅ Assign Taluka</button>
+          </div>
+          <div id="assignList" style="flex:1;overflow-y:auto;min-height:0"></div>
+        </div>
+
+        <!-- ZONES tab -->
+        <div id="paneZones" class="panel-list" style="display:none;flex-direction:column;overflow:hidden">
+
+          <!-- Add zone form — compact -->
+          <div class="panel-section" style="padding:10px 12px">
+            <div class="sec-title" style="margin-bottom:6px">➕ Add / Edit Zone</div>
+
+            <!-- District + Taluka side by side -->
+            <div class="frow" style="margin-bottom:5px">
+              <select id="atDistrict" onchange="onDistrictChange()" style="flex:1;padding:6px 8px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.73rem;font-family:inherit;outline:none;background:#fff;min-width:0">
+                <option value="">District…</option>
+              </select>
+              <select id="atTalukaSelect" onchange="onTalukaSelect()" style="flex:1;padding:6px 8px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.73rem;font-family:inherit;outline:none;background:#fff;min-width:0">
+                <option value="">Taluka…</option>
+              </select>
+            </div>
+
+            <!-- Lat · Lng · Radius in one row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 72px;gap:4px;margin-bottom:5px">
+              <input type="number" id="atLat" placeholder="Lat" step="0.0001" style="padding:6px 7px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.72rem;font-family:inherit;outline:none;width:100%" />
+              <input type="number" id="atLng" placeholder="Lng" step="0.0001" style="padding:6px 7px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.72rem;font-family:inherit;outline:none;width:100%" />
+              <input type="number" id="atRadius" placeholder="km" value="25" min="5" max="100" step="1" style="padding:6px 7px;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.72rem;font-family:inherit;outline:none;width:100%" title="Radius (km)" />
+            </div>
+
+            <!-- Hidden fields still needed by JS -->
+            <input type="hidden" id="atName" />
+            <input type="hidden" id="atState" value="Maharashtra" />
+
+            <div style="display:flex;gap:4px">
+              <button class="btn-save" id="btnSaveZone" onclick="createTaluka()" style="flex:1;margin-top:0;padding:7px">💾 Save Zone</button>
+              <button id="btnCancelEdit" style="display:none;flex-shrink:0;padding:7px 10px;background:#fff;border:1.5px solid #dce8dd;border-radius:var(--rad);font-size:.72rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--ink2)" onclick="cancelEditZone()">✕</button>
+            </div>
+          </div>
+
+          <!-- Zone list -->
+          <div id="zoneList" style="flex:1;overflow-y:auto;min-height:0"></div>
+        </div>
+
+      </div><!-- /geo-panel -->
+
+      <!-- MAP COLUMN -->
+      <div class="map-col">
+        <div class="map-wrap">
+          <div id="geoMap"></div>
+          <div class="live-badge"><div class="lbdot"></div><span id="refreshStatus">Live · 60s refresh</span></div>
+          <div class="map-ctrl">
+            <button class="mc-btn active" id="ctrlLeads" onclick="toggleLayer('leads')"><span class="mc-dot" style="background:var(--g3)"></span>Leads</button>
+            <button class="mc-btn active" id="ctrlLive"  onclick="toggleLayer('live')"><span class="mc-dot" style="background:var(--blue)"></span>Live</button>
+            <button class="mc-btn active" id="ctrlZones" onclick="toggleLayer('zones')"><span class="mc-dot" style="background:var(--amber)"></span>Zones</button>
+            <button class="mc-btn"        onclick="fitAllMarkers()">⊞ Fit All</button>
+          </div>
+          <div class="detail-sheet" id="detailSheet">
+            <div class="sheet-handle" onclick="closeDetail()"></div>
+            <div id="detailContent"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html"  class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html"    class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/salesmen.html"  class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+    <a href="/admin/geo-map.html"   class="bnav-item active"><span class="bnav-icon">🗺️</span><span>Map</span></a>
+  </div>
+</nav>
+
+<script nonce="CSP_NONCE">
+/* ══════════════════════════════════════════════════════════
+   GEO MAP — Admin (Full rewrite)
+   Auth handled by admin.js above.
+══════════════════════════════════════════════════════════ */
+const GEO = '/api/v1/geo';
+let _map, _tab = 'leads';
+let _allLeads=[], _allLive=[], _allTalukas=[], _allSalesmen=[], _assignments=[];
+let _gmLeads=[], _gmLive=[], _gmZones=[];
+let _layers = { leads:true, live:true, zones:true };
+let _dataLoaded=false, _countdown=60;
+
+/* Coordinate map + data */
+function onReady() {
+  if(!_dataLoaded) return;
+  if (_usingLeaflet) {
+    _lfRenderLeads(); _lfRenderLive(); _lfRenderZones();
+  } else if (_map) {
+    renderLeadsOnMap(); renderLiveOnMap(); renderZonesOnMap();
+  }
+}
+const _orig = window.onGMapsLoaded;
+window.onGMapsLoaded = function(){ _orig&&_orig(); onReady(); };
+
+(async function init(){
+  await Promise.all([loadSalesmen(), loadTalukas()]);
+  await Promise.all([loadMapLeads(), loadLivePositions(), loadAssignments()]);
+  _dataLoaded=true; onReady(); startAutoRefresh();
+})();
+
+function startAutoRefresh(){
+  _countdown=60;
+  setInterval(async function(){
+    _countdown--;
+    var el=document.getElementById('refreshStatus');
+    if(el) el.textContent=_countdown<=5?'Refreshing…':'Live · refresh in '+_countdown+'s';
+    if(_countdown<=0){ _countdown=60; await loadLivePositions(); }
+  },1000);
+}
+function updateRefreshLabel(){ var el=document.getElementById('lastRefreshLabel'); if(el) el.textContent='Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+
+/* ── Map init ── */
+function initMap(){
+  if(typeof google==='undefined'||!google.maps) return;
+  _map=new google.maps.Map(document.getElementById('geoMap'),{
+    center:{lat:19.4,lng:74.5}, zoom:8, mapTypeId:'roadmap', mapId:'aqualence_geo',
+    streetViewControl:false, fullscreenControl:true, mapTypeControl:true
+  });
+}
+
+/* ══════════ DATA LOADERS ══════════ */
+async function loadMapLeads(){
+  try{
+    var from=document.getElementById('filterFrom').value,
+        to=document.getElementById('filterTo').value,
+        sid=document.getElementById('filterSalesman').value;
+    var url=GEO+'/map-leads?';
+    if(from) url+='from='+from+'&'; if(to) url+='to='+to+'&'; if(sid) url+='salesman_id='+sid;
+    var res=await apiFetch(url), data=await res.json();
+    if(!data.success) return;
+    _allLeads=data.data||[];
+    renderLeadsList(); renderLeadsOnMap(); renderZonesOnMap(); updateKpis(); updateRefreshLabel();
+  }catch(e){ showToast('Failed to load leads','error'); }
+}
+async function loadLivePositions(){
+  try{
+    var res=await apiFetch(GEO+'/live-positions'), data=await res.json();
+    if(!data.success) return;
+    _allLive=data.data||[];
+    renderLiveList(); renderLiveOnMap();
+    document.getElementById('kLive').textContent=_allLive.length;
+    updateRefreshLabel();
+  }catch(e){ console.warn('loadLivePositions:', e.message); }
+}
+async function loadTalukas(){
+  try{
+    var res=await apiFetch(GEO+'/talukas'), data=await res.json();
+    if(!data.success) return;
+    _allTalukas=data.data||[];
+    renderZonesList(); renderZonesOnMap();
+    document.getElementById('kTalukas').textContent=_allTalukas.length;
+    // Populate assign taluka dropdown
+    var sel=document.getElementById('asmTaluka');
+    sel.innerHTML='<option value="">Select Taluka…</option>'+
+      _allTalukas.map(function(t){ return '<option value="'+t.id+'">'+t.name+' ('+t.district+') · '+t.radius_km+'km</option>'; }).join('');
+  }catch(e){
+    // Show error in zone list so admin can see what went wrong (e.g. 429 Too Many Requests)
+    var el=document.getElementById('zonesList');
+    if(el && !_allTalukas.length){
+      el.innerHTML='<div class="empty" style="color:var(--err)">⚠️ Failed to load zones: '+e.message+'<br><button onclick="loadTalukas()" style="margin-top:8px;padding:4px 12px;border:1px solid var(--err);border-radius:6px;background:none;color:var(--err);cursor:pointer">↻ Retry</button></div>';
+    }
+    console.warn('loadTalukas:', e.message);
+  }
+}
+async function loadSalesmen(){
+  try{
+    var res=await apiFetch('/api/v1/salesman/list'), data=await res.json();
+    if(!data.success) return;
+    _allSalesmen=data.data||[];
+    // Filter dropdown
+    var fs=document.getElementById('filterSalesman');
+    fs.innerHTML='<option value="">All Salesmen</option>'+_allSalesmen.map(function(s){ return '<option value="'+s.id+'">'+s.name+'</option>'; }).join('');
+    // Assign dropdown
+    var as=document.getElementById('asmSalesman');
+    as.innerHTML='<option value="">Select Salesman…</option>'+_allSalesmen.map(function(s){ return '<option value="'+s.id+'">'+s.name+' ('+s.phone+')</option>'; }).join('');
+  }catch(e){ console.warn('loadSalesmen:', e.message); }
+}
+async function loadAssignments(){
+  try{
+    var res=await apiFetch(GEO+'/salesmen-assignments'), data=await res.json();
+    if(!data.success) return;
+    _assignments=data.data||[];
+    renderAssignList();
+  }catch(e){ console.warn('loadAssignments:',e.message); }
+}
+
+/* ══════════ MAP RENDERING ══════════ */
+function _clearMarkers(arr){ arr.forEach(function(m){ if(typeof m.setMap==='function') m.setMap(null); else m.map=null; }); }
+
+function renderLeadsOnMap(){
+  if (_usingLeaflet) { _lfRenderLeads(); updateKpis(); return; }
+  if(!_map) return;
+  _clearMarkers(_gmLeads); _gmLeads=[];
+  var iw=new google.maps.InfoWindow();
+  _allLeads.forEach(function(lead){
+    var lat=parseFloat(lead.latitude), lng=parseFloat(lead.longitude);
+    if(isNaN(lat)||isNaN(lng)) return;
+    var isSale=lead.sale_status==='YES', color=isSale?'#2a6535':'#b91c1c';
+    var dt=lead.visited_at?new Date(lead.visited_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    var pin=new google.maps.marker.PinElement({background:color,borderColor:'#fff',glyphColor:'#fff',scale:lead.geo_verified?1.1:.85});
+    var marker=new google.maps.marker.AdvancedMarkerElement({position:{lat:lat,lng:lng},map:_layers.leads?_map:null,title:lead.shop_name,content:pin});
+    var html='<div style="font-family:DM Sans,system-ui;min-width:200px;font-size:13px;line-height:1.5">'
+      +'<div style="font-weight:700;color:'+color+';font-size:14px;margin-bottom:3px">'+lead.shop_name+'</div>'
+      +'<div style="color:#555">'+lead.owner_name+' · 📞 '+lead.mobile+'</div>'
+      +'<div style="color:#888;font-size:11px">📍 '+lead.taluka+', '+lead.district+'</div>'
+      +'<div style="color:#666;font-size:11px">👤 '+lead.salesman_name+' · '+dt+'</div>'
+      +'<div style="margin-top:5px;display:flex;gap:4px">'
+      +(lead.geo_verified?'<span style="background:#dcfce7;color:#166534;padding:2px 6px;border-radius:99px;font-size:11px;font-weight:700">✅ GPS</span>':'<span style="background:#fff3cd;color:#b06800;padding:2px 6px;border-radius:99px;font-size:11px;font-weight:700">⚠️ No GPS</span>')
+      +'<span style="background:'+(isSale?'#dcfce7':'#fee2e2')+';color:'+(isSale?'#166534':'#b91c1c')+';padding:2px 6px;border-radius:99px;font-size:11px;font-weight:700">'+lead.sale_status+'</span>'
+      +'</div></div>';
+    marker.addListener('gmp-click',function(){ iw.setContent(html); iw.open(_map,marker); showLeadDetail(lead); });
+    _gmLeads.push(marker);
+  });
+  updateKpis();
+}
+function renderLiveOnMap(){
+  if (_usingLeaflet) { _lfRenderLive(); return; }
+  if(!_map) return;
+  _clearMarkers(_gmLive); _gmLive=[];
+  var now=Date.now(), iw=new google.maps.InfoWindow();
+  _allLive.forEach(function(s){
+    var lat=parseFloat(s.latitude), lng=parseFloat(s.longitude);
+    if(isNaN(lat)||isNaN(lng)) return;
+    var ageMs=now-new Date(s.recorded_at).getTime(), isOn=ageMs<5*60*1000, color=isOn?'#1565c0':'#9e9e9e';
+    var lp=new google.maps.marker.PinElement({background:color,borderColor:'#fff',glyph:s.name.charAt(0),glyphColor:'#fff',scale:1.2});
+    var marker=new google.maps.marker.AdvancedMarkerElement({position:{lat:lat,lng:lng},map:_layers.live?_map:null,title:s.name,content:lp});
+    var html='<div style="font-family:DM Sans,system-ui;font-size:13px;line-height:1.5">'
+      +'<div style="font-weight:700;color:'+color+';font-size:14px">👤 '+s.name+'</div>'
+      +'<div style="color:#666;font-size:11px">📞 '+s.phone+'</div>'
+      +'<div style="font-size:11px;color:#888">'+lat.toFixed(5)+', '+lng.toFixed(5)+'</div>'
+      +'<div style="color:'+(isOn?'#166534':'#aaa')+';font-size:11px;margin-top:3px">'+(isOn?'🟢 Online':'⚫ Offline')+' · '+fmtAgo(ageMs)+'</div></div>';
+    marker.addListener('gmp-click',function(){ iw.setContent(html); iw.open(_map,marker); });
+    _gmLive.push(marker);
+  });
+}
+function renderZonesOnMap(){
+  if (_usingLeaflet) { _lfRenderZones(); return; }
+  if(!_map) return;
+  _clearMarkers(_gmZones); _gmZones=[];
+  var iw=new google.maps.InfoWindow();
+  _allTalukas.forEach(function(t){
+    var lat=parseFloat(t.center_lat), lng=parseFloat(t.center_lng);
+    if(isNaN(lat)||isNaN(lng)) return;
+    var circle=new google.maps.Circle({map:_layers.zones?_map:null,center:{lat:lat,lng:lng},radius:t.radius_km*1000,
+      strokeColor:'#2a6535',strokeOpacity:.65,strokeWeight:1.5,fillColor:'#3d8c4a',fillOpacity:.07});
+    circle.addListener('click',function(){
+      iw.setContent('<div style="font-family:DM Sans,system-ui;font-size:13px"><strong>'+t.name+'</strong><br>'+t.district+', '+t.state+'<br>Radius: '+t.radius_km+' km</div>');
+      iw.setPosition({lat:lat,lng:lng}); iw.open(_map);
+    });
+    _gmZones.push(circle);
+    _gmZones.push(new google.maps.marker.AdvancedMarkerElement({
+      position:{lat:lat,lng:lng},map:_layers.zones?_map:null,
+      content:(function(){ var d=document.createElement('div'); d.style.cssText='font-size:10px;font-weight:700;color:#2a6535;background:rgba(255,255,255,.8);padding:2px 5px;border-radius:4px;white-space:nowrap;pointer-events:none'; d.textContent=t.name; return d; })()
+    }));
+  });
+}
+
+/* ══════════ LIST RENDERING ══════════ */
+function renderLeadsList(){
+  var el=document.getElementById('leadsList');
+  if(!_allLeads.length){ el.innerHTML='<div class="empty"><span class="empty-icon">📍</span>No geo leads found.</div>'; return; }
+  el.innerHTML=_allLeads.map(function(l,i){
+    var dt=l.visited_at?new Date(l.visited_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'—';
+    return '<div class="lead-item" onclick="focusLead('+i+')" id="li-'+l.id+'">'
+      +'<div class="li-r1"><div class="li-name">'+l.shop_name+'</div>'
+      +'<span class="chip '+(l.geo_verified?'gok':'gbad')+'">'+(l.geo_verified?'✅ GPS':'⚠️ No GPS')+'</span></div>'
+      +'<div class="li-loc">📍 '+l.taluka+', '+l.district+'</div>'
+      +'<div class="li-meta">👤 '+l.salesman_name+' · '+dt
+      +' · <span class="chip '+(l.sale_status==='YES'?'yes':'no')+'">'+l.sale_status+'</span>'
+      +(l.distance_km?' · '+l.distance_km+' km':'')+'</div></div>';
+  }).join('');
+}
+function renderLiveList(){
+  var el=document.getElementById('paneLive');
+  if(!_allLive.length){ el.innerHTML='<div class="empty"><span class="empty-icon">🟢</span>No live positions.</div>'; return; }
+  var now=Date.now();
+  el.innerHTML=_allLive.map(function(s){
+    var ageMs=now-new Date(s.recorded_at).getTime(), isOn=ageMs<5*60*1000;
+    return '<div class="live-item" onclick="focusLive('+s.salesman_id+')">'
+      +'<div class="li-live-h"><div class="li-live-n"><span class="sdot '+(isOn?'on':'off')+'"></span>'+s.name+'</div>'
+      +'<span class="chip blue">'+fmtAgo(ageMs)+'</span></div>'
+      +'<div class="li-live-s">📞 '+s.phone+'</div>'
+      +'<div class="li-coords">'+parseFloat(s.latitude).toFixed(5)+', '+parseFloat(s.longitude).toFixed(5)+'</div></div>';
+  }).join('');
+}
+function renderAssignList(){
+  var el=document.getElementById('assignList');
+  if(!_assignments.length){ el.innerHTML='<div class="empty"><span class="empty-icon">👤</span>No salesmen found.</div>'; return; }
+  el.innerHTML=_assignments.map(function(s){
+    var talukaText=s.taluka_id
+      ?'📍 '+s.taluka_name+' · '+s.taluka_district+' · '+s.taluka_radius+'km'
+      :'No taluka assigned';
+    var removeBtn=s.taluka_id
+      ?'<button class="btn-unassign" onclick="doUnassign('+s.id+',\''+s.name+'\')">'+'Remove'+'</button>'
+      :'';
+    return '<div class="salesman-row">'
+      +'<div class="sm-info">'
+      +'<div class="sm-name">'+s.name+'</div>'
+      +'<div class="sm-taluka '+(s.taluka_id?'assigned':'none')+'">'+''+talukaText+'</div>'
+      +'</div>'
+      +removeBtn
+      +'</div>';
+  }).join('');
+}
+function renderZonesList(){
+  var el=document.getElementById('zoneList');
+  if(!_allTalukas.length){ el.innerHTML='<div class="empty"><span class="empty-icon">🗺️</span>No talukas yet. Use the form above to add one.</div>'; return; }
+
+  // Group by district for cleaner display
+  var byDistrict={};
+  _allTalukas.forEach(function(t){
+    var d=t.district||'Unknown';
+    if(!byDistrict[d]) byDistrict[d]=[];
+    byDistrict[d].push(t);
+  });
+
+  var html='';
+  Object.keys(byDistrict).sort().forEach(function(district){
+    html+='<div style="padding:6px 14px 4px;background:var(--g7);border-bottom:1px solid var(--bdr)">'
+      +'<span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)">📌 '+district+' District</span>'
+      +'</div>';
+    byDistrict[district].forEach(function(t){
+      html+='<div class="zone-item">'
+        +'<div class="zi-info">'
+        +'<div class="zi-name">'+t.name+'</div>'
+        +'<div class="zi-meta">'+t.district+' · '+t.radius_km+' km radius</div>'
+        +'<div class="zi-coords">'+parseFloat(t.center_lat).toFixed(4)+', '+parseFloat(t.center_lng).toFixed(4)+'</div>'
+        +'</div>'
+        +'<div style="display:flex;flex-direction:row;gap:3px;flex-shrink:0;align-items:center">'
+        +'<button class="btn-focus" onclick="focusTaluka('+t.id+')" title="Map">🔍</button>'
+        +'<button class="btn-focus" style="color:var(--blue);border-color:var(--blue)" onclick="editZoneById('+t.id+')" title="Edit">✏️</button>'
+        +'<button class="btn-unassign" onclick="deleteTalukaZone('+t.id+',\''+t.name+'\')" title="Delete">🗑️</button>'
+        +'</div></div>';
+    });
+  });
+  el.innerHTML=html;
+}
+
+/* Delete taluka zone */
+async function deleteTalukaZone(id, name){
+  if(!confirm('Deactivate zone "'+name+'"? Salesmen assigned to it will be unaffected but the zone circle will disappear from the map.')) return;
+  try{
+    var res=await apiFetch(GEO+'/talukas/'+id,{method:'DELETE'});
+    var data=await res.json();
+    if(!data.success){ showToast(data.message,'error'); return; }
+    showToast(name+' deactivated','success');
+    await loadTalukas();
+  }catch(e){ showToast(e.message,'error'); }
+}
+
+/* ══════════ INTERACTIONS ══════════ */
+function switchTab(tab){
+  _tab=tab;
+  ['leads','live','assign','zones'].forEach(function(t){
+    var cap=t.charAt(0).toUpperCase()+t.slice(1);
+    document.getElementById('tab'+cap).className='p-tab'+(t===tab?' active':'');
+    var pane=document.getElementById('pane'+cap);
+    // assign and zones panes use flex column layout — must use 'flex' not 'block'
+    var displayVal = t===tab ? (t==='assign'||t==='zones'?'flex':'') : 'none';
+    pane.style.display = displayVal;
+    if(t===tab&&t!=='leads') pane.classList.add('active');
+    else pane.classList.remove('active');
+  });
+  // Populate district dropdown when Zones tab opens
+  if(tab==='zones') populateDistrictDropdown();
+}
+function focusLead(idx){
+  var l=_allLeads[idx]; if(!l||!l.latitude||!_map) return;
+  _map.setZoom(15); _map.setCenter({lat:parseFloat(l.latitude),lng:parseFloat(l.longitude)});
+  showLeadDetail(l);
+  document.querySelectorAll('.lead-item').forEach(function(el){ el.classList.remove('active'); });
+  var li=document.getElementById('li-'+l.id); if(li){ li.classList.add('active'); li.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function focusLive(sid){
+  var s=_allLive.find(function(x){ return x.salesman_id===sid; }); if(!s||!_map) return;
+  _map.setZoom(14); _map.setCenter({lat:parseFloat(s.latitude),lng:parseFloat(s.longitude)});
+}
+function focusTaluka(tid){
+  var t=_allTalukas.find(function(x){ return x.id===tid; }); if(!t||!_map) return;
+  _map.setZoom(11); _map.setCenter({lat:parseFloat(t.center_lat),lng:parseFloat(t.center_lng)});
+  switchTab('leads');
+}
+function fitAllMarkers(){
+  if(!_map) return;
+  var bounds=new google.maps.LatLngBounds(), count=0;
+  _allLeads.filter(function(l){ return l.latitude&&l.longitude; }).forEach(function(l){ bounds.extend({lat:parseFloat(l.latitude),lng:parseFloat(l.longitude)}); count++; });
+  _allLive.filter(function(s){ return s.latitude&&s.longitude; }).forEach(function(s){ bounds.extend({lat:parseFloat(s.latitude),lng:parseFloat(s.longitude)}); count++; });
+  if(count) _map.fitBounds(bounds);
+}
+function toggleLayer(name){
+  _layers[name]=!_layers[name];
+  var on=_layers[name];
+  ({leads:_gmLeads,live:_gmLive,zones:_gmZones})[name].forEach(function(m){ if(typeof m.setMap==='function') m.setMap(on?_map:null); else m.map=on?_map:null; });
+  var cap=name.charAt(0).toUpperCase()+name.slice(1);
+  document.getElementById('ctrl'+cap).classList.toggle('active',on);
+}
+
+/* ══════════ ASSIGN TALUKA ══════════ */
+async function doAssign(){
+  var sid=document.getElementById('asmSalesman').value;
+  var tid=document.getElementById('asmTaluka').value;
+  if(!sid||!tid){ showToast('Select both salesman and taluka','error'); return; }
+  try{
+    var res=await apiFetch(GEO+'/assign/'+sid,{method:'POST',body:JSON.stringify({taluka_id:parseInt(tid)})});
+    var data=await res.json();
+    if(!data.success){ showToast(data.message,'error'); return; }
+    showToast(data.message,'success');
+    await loadAssignments();
+    document.getElementById('asmSalesman').value='';
+    document.getElementById('asmTaluka').value='';
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function doUnassign(salesmanId, name){
+  if(!confirm('Remove taluka from '+name+'?')) return;
+  try{
+    var res=await apiFetch(GEO+'/assign/'+salesmanId,{method:'POST',body:JSON.stringify({taluka_id:null})});
+    var data=await res.json();
+    if(!data.success){ showToast(data.message,'error'); return; }
+    showToast(name+' unassigned','success');
+    await loadAssignments();
+  }catch(e){ showToast(e.message,'error'); }
+}
+
+/* ══════════════════════════════════════════════════════
+   MAHARASHTRA DISTRICT → TALUKA MASTER DATA
+   GPS coordinates verified. Used to auto-fill form fields.
+════════════════════════════════════════════════════════ */
+var MH_TALUKAS = {
+  'Ahmednagar': [
+    {name:'Ahmednagar', lat:19.0948, lng:74.7480},
+    {name:'Akole',      lat:19.5200, lng:74.0200},
+    {name:'Jamkhed',    lat:18.7167, lng:75.3167},
+    {name:'Karjat',     lat:18.7334, lng:75.0131},
+    {name:'Kopargaon',  lat:19.8935, lng:74.4780},
+    {name:'Nevasa',     lat:19.5594, lng:74.9855},
+    {name:'Parner',     lat:19.0015, lng:74.4359},
+    {name:'Pathardi',   lat:18.8624, lng:75.1914},
+    {name:'Rahata',     lat:19.7160, lng:74.4760},
+    {name:'Rahuri',     lat:19.3917, lng:74.6497},
+    {name:'Sangamner',  lat:19.5741, lng:74.2103},
+    {name:'Shevgaon',   lat:19.3449, lng:75.0867},
+    {name:'Shrigonda',  lat:18.6221, lng:74.7085},
+    {name:'Shrirampur', lat:19.6225, lng:74.6514},
+  ],
+  'Nashik': [
+    {name:'Baglan',    lat:20.5500, lng:74.0800},
+    {name:'Chandwad',  lat:20.3405, lng:74.2420},
+    {name:'Deola',     lat:20.4300, lng:74.2500},
+    {name:'Dindori',   lat:20.2000, lng:73.9700},
+    {name:'Igatpuri',  lat:19.6981, lng:73.5580},
+    {name:'Kalwan',    lat:20.5200, lng:73.9900},
+    {name:'Malegaon',  lat:20.5579, lng:74.5089},
+    {name:'Nandgaon',  lat:20.3168, lng:74.6570},
+    {name:'Nashik',    lat:19.9975, lng:73.7898},
+    {name:'Niphad',    lat:20.0800, lng:74.1100},
+    {name:'Peint',     lat:20.2600, lng:73.6400},
+    {name:'Sinnar',    lat:19.8483, lng:74.0000},
+    {name:'Surgana',   lat:20.5700, lng:73.6200},
+    {name:'Trimbakeshwar', lat:19.9369, lng:73.5314},
+    {name:'Yeola',     lat:20.0415, lng:74.4886},
+  ],
+  'Pune': [
+    {name:'Ambegaon',  lat:19.1200, lng:73.7400},
+    {name:'Baramati',  lat:18.1514, lng:74.5817},
+    {name:'Bhor',      lat:18.1500, lng:73.8500},
+    {name:'Daund',     lat:18.4600, lng:74.5700},
+    {name:'Haveli',    lat:18.5700, lng:73.9200},
+    {name:'Indapur',   lat:18.1100, lng:74.9800},
+    {name:'Junnar',    lat:19.2004, lng:73.8800},
+    {name:'Khed',      lat:18.8586, lng:73.9910},
+    {name:'Maval',     lat:18.6800, lng:73.4800},
+    {name:'Mulshi',    lat:18.5300, lng:73.5200},
+    {name:'Pune',      lat:18.5204, lng:73.8567},
+    {name:'Purandar',  lat:18.2760, lng:74.0460},
+    {name:'Shirur',    lat:18.8271, lng:74.3617},
+    {name:'Velhe',     lat:18.2800, lng:73.6400},
+  ],
+  'Beed': [
+    {name:'Ambajogai', lat:18.7300, lng:76.3800},
+    {name:'Ashti',     lat:18.8700, lng:75.8900},
+    {name:'Beed',      lat:18.9890, lng:75.7560},
+    {name:'Dharur',    lat:18.4500, lng:76.3667},
+    {name:'Georai',    lat:19.2660, lng:75.7333},
+    {name:'Kaij',      lat:18.8333, lng:76.0167},
+    {name:'Majalgaon', lat:19.1528, lng:76.2333},
+    {name:'Parli',     lat:18.8500, lng:76.5300},
+    {name:'Patoda',    lat:19.1100, lng:75.2200},
+    {name:'Shirur Kasar', lat:19.0200, lng:75.6400},
+    {name:'Wadwani',   lat:18.8100, lng:76.7700},
+  ],
+  'Aurangabad': [
+    {name:'Aurangabad', lat:19.8762, lng:75.3433},
+    {name:'Gangapur',   lat:19.6900, lng:75.0100},
+    {name:'Kannad',     lat:20.2600, lng:75.1400},
+    {name:'Khuldabad',  lat:20.0000, lng:75.1800},
+    {name:'Paithan',    lat:19.4764, lng:75.3858},
+    {name:'Phulambri',  lat:19.9700, lng:75.2100},
+    {name:'Soegaon',    lat:20.6800, lng:75.5200},
+    {name:'Sillod',     lat:20.2900, lng:75.6600},
+    {name:'Vaijapur',   lat:20.0600, lng:74.7100},
+  ],
+  'Solapur': [
+    {name:'Akkalkot',  lat:17.5300, lng:76.2000},
+    {name:'Barshi',    lat:18.2300, lng:75.7000},
+    {name:'Karmala',   lat:18.4100, lng:75.2000},
+    {name:'Madha',     lat:17.9300, lng:75.5300},
+    {name:'Mohol',     lat:17.7600, lng:75.6800},
+    {name:'Pandharpur',lat:17.6800, lng:75.3300},
+    {name:'Sangola',   lat:17.4400, lng:75.1900},
+    {name:'Solapur',   lat:17.6805, lng:75.9064},
+    {name:'South Solapur', lat:17.6000, lng:75.9200},
+    {name:'North Solapur', lat:17.7400, lng:75.9500},
+  ],
+  'Osmanabad': [
+    {name:'Bhoom',     lat:18.4700, lng:75.6700},
+    {name:'Kalamb',    lat:18.6000, lng:76.0600},
+    {name:'Lohara',    lat:18.0500, lng:76.4400},
+    {name:'Osmanabad', lat:18.1860, lng:76.0420},
+    {name:'Paranda',   lat:18.2800, lng:75.5200},
+    {name:'Tuljapur',  lat:17.9700, lng:76.0700},
+    {name:'Umarga',    lat:17.8300, lng:76.6000},
+    {name:'Washi',     lat:18.3300, lng:76.5200},
+  ],
+  'Latur': [
+    {name:'Ahmadpur',  lat:18.7100, lng:76.9300},
+    {name:'Ausa',      lat:18.2600, lng:76.5100},
+    {name:'Chakur',    lat:17.9100, lng:76.8700},
+    {name:'Deoni',     lat:17.9800, lng:76.6500},
+    {name:'Jalkot',    lat:17.8500, lng:77.2200},
+    {name:'Latur',     lat:18.4088, lng:76.5604},
+    {name:'Nilanga',   lat:17.7400, lng:76.7500},
+    {name:'Renapur',   lat:18.1300, lng:76.5900},
+    {name:'Shirur Anantpal', lat:18.0400, lng:77.1600},
+    {name:'Udgir',     lat:18.3900, lng:77.1200},
+  ],
+};
+
+var _editingZoneId = null;
+
+/* ── District dropdown change ── */
+function onDistrictChange(){
+  var district=document.getElementById('atDistrict').value;
+  var sel=document.getElementById('atTalukaSelect');
+  sel.innerHTML='<option value="">— Select Taluka —</option>';
+  if(!district||!MH_TALUKAS[district]) return;
+  MH_TALUKAS[district].forEach(function(t){
+    sel.innerHTML+='<option value="'+t.name+'" data-lat="'+t.lat+'" data-lng="'+t.lng+'">'+t.name+'</option>';
+  });
+  // Clear dependent fields
+  document.getElementById('atName').value='';
+  document.getElementById('atLat').value='';
+  document.getElementById('atLng').value='';
+}
+
+/* ── Taluka dropdown change — auto-fill lat/lng/name ── */
+function onTalukaSelect(){
+  var sel=document.getElementById('atTalukaSelect');
+  var opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  document.getElementById('atName').value=opt.value;
+  document.getElementById('atLat').value=opt.dataset.lat||'';
+  document.getElementById('atLng').value=opt.dataset.lng||'';
+}
+
+/* ── Populate district dropdown from MH_TALUKAS keys ── */
+function populateDistrictDropdown(){
+  var sel=document.getElementById('atDistrict');
+  var current=sel.value;
+  sel.innerHTML='<option value="">— Select District —</option>';
+  Object.keys(MH_TALUKAS).sort().forEach(function(d){
+    sel.innerHTML+='<option value="'+d+'"'+(d===current?' selected':'')+'>'+d+'</option>';
+  });
+}
+
+/* ══════════ TALUKA CREATE / UPDATE ══════════ */
+async function createTaluka(){
+  var name=document.getElementById('atName').value.trim(),
+      district=document.getElementById('atDistrict').value.trim(),
+      state=document.getElementById('atState').value.trim(),
+      lat=document.getElementById('atLat').value,
+      lng=document.getElementById('atLng').value,
+      radius=document.getElementById('atRadius').value;
+
+  if(!district){ showToast('Select a district first','error'); document.getElementById('atDistrict').focus(); return; }
+  if(!name)    { showToast('Taluka name is required','error');  document.getElementById('atName').focus();     return; }
+  if(!lat||!lng){ showToast('GPS coordinates are required — select a taluka from the dropdown','error'); return; }
+
+  // Validate coordinates are in Maharashtra range
+  var latN=parseFloat(lat), lngN=parseFloat(lng);
+  if(latN<15||latN>23||lngN<72||lngN>81){
+    showToast('GPS coordinates look wrong — Maharashtra is lat 15–23, lng 72–81','error'); return;
+  }
+
+  try{
+    var isEdit=!!_editingZoneId;
+    var url=isEdit ? GEO+'/talukas/'+_editingZoneId : GEO+'/talukas';
+    var method=isEdit ? 'PUT' : 'POST';
+    var res=await apiFetch(url,{method:method,body:JSON.stringify({
+      name:name,district:district,state:state||'Maharashtra',
+      center_lat:latN,center_lng:lngN,radius_km:parseFloat(radius)||25
+    })});
+    var data=await res.json();
+    if(!data.success){
+      showToast(data.message||'Failed to save zone','error');
+      return;
+    }
+    // Backend now upserts — data.updated=true means the zone already existed and was updated
+    showToast(data.message||(name+(isEdit||data.updated?' updated ✓':' zone saved ✓')),'success');
+    resetZoneForm();
+    await loadTalukas();
+  }catch(e){ showToast(e.message,'error'); }
+}
+
+function resetZoneForm(){
+  _editingZoneId=null;
+  document.getElementById('atName').value='';
+  document.getElementById('atDistrict').value='';
+  document.getElementById('atTalukaSelect').innerHTML='<option value="">— Select Taluka —</option>';
+  document.getElementById('atLat').value='';
+  document.getElementById('atLng').value='';
+  document.getElementById('atRadius').value='25';
+  document.getElementById('atState').value='Maharashtra';
+  document.getElementById('btnSaveZone').textContent='💾 Save Zone';
+  document.getElementById('btnCancelEdit').style.display='none';
+}
+
+function cancelEditZone(){ resetZoneForm(); }
+
+function editZoneById(id){
+  var t=_allTalukas.find(function(x){ return x.id===id; });
+  if(!t){ showToast('Zone not found','error'); return; }
+  editZone(t);
+}
+
+function editZone(t){
+  _editingZoneId=t.id;
+  // Pre-populate district dropdown
+  populateDistrictDropdown();
+  document.getElementById('atDistrict').value=t.district||'';
+  onDistrictChange();
+  // Set taluka select if it matches
+  var sel=document.getElementById('atTalukaSelect');
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value===t.name){ sel.selectedIndex=i; break; }
+  }
+  // Fill fields
+  document.getElementById('atName').value=t.name;
+  document.getElementById('atLat').value=parseFloat(t.center_lat).toFixed(4);
+  document.getElementById('atLng').value=parseFloat(t.center_lng).toFixed(4);
+  document.getElementById('atRadius').value=t.radius_km;
+  document.getElementById('atState').value=t.state||'Maharashtra';
+  document.getElementById('btnSaveZone').textContent='✏️ Update Zone';
+  document.getElementById('btnCancelEdit').style.display='';
+  // Scroll to form
+  document.getElementById('paneZones').scrollTop=0;
+  showToast('Editing "'+t.name+'" — make changes and save','success');
+}
+
+/* ══════════ DETAIL SHEET ══════════ */
+async function showLeadDetail(lead){
+  var dt=lead.visited_at?new Date(lead.visited_at).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+  var isSale=lead.sale_status==='YES';
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderPanel(products, loading){
+    var prodHtml='';
+    if(loading){
+      prodHtml='<div style="margin-top:12px;text-align:center;font-size:.78rem;color:#aaa;padding:8px" id="prodLoadingMsg">Loading products…</div>';
+    } else if(products && products.length){
+      var total=products.reduce(function(s,p){return s+(parseFloat(p.price!=null?p.price:p.catalogue_price)||0)*(p.qty||1);},0);
+      prodHtml='<div style="margin-top:14px">'
+        +'<div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:6px">Products Interested ('+products.length+')</div>'
+        +'<div style="border:1px solid #eee;border-radius:10px;overflow:hidden">'
+        +products.map(function(p,i){
+          var price=parseFloat(p.price!=null?p.price:p.catalogue_price)||0;
+          var cat=p.catalogue_price?parseFloat(p.catalogue_price):price;
+          var disc=(cat>0&&price<cat)?'<span style="font-size:.65rem;color:#c0392b;text-decoration:line-through">₹'+cat.toFixed(0)+'</span>':'';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;'+(i%2===0?'background:#fafafa;':'')+'border-bottom:1px solid #f0f0f0">'
+            +'<div><div style="font-size:.8rem;font-weight:600;color:#1c2116">'+esc(p.name)+'</div>'
+            +'<div style="font-size:.7rem;color:#888">'+esc(p.category||'')+'</div></div>'
+            +'<div style="text-align:right;flex-shrink:0">'
+            +'<div style="font-size:.82rem;font-weight:700;color:#1565a8">₹'+price.toFixed(0)+' '+disc+'</div>'
+            +'<div style="font-size:.7rem;color:#888">Qty: '+(p.qty||1)+'</div>'
+            +'</div></div>';
+        }).join('')
+        +'</div>'
+        +'<div style="margin-top:6px;text-align:right;font-size:.78rem;font-weight:700;color:#1565a8">Total: ₹'+total.toFixed(0)+'</div>'
+        +'</div>';
+    } else {
+      prodHtml='<div style="margin-top:12px;font-size:.78rem;color:#aaa;text-align:center;padding:8px">No products selected</div>';
+    }
+
+    document.getElementById('detailContent').innerHTML=
+      '<div class="detail-hd">'
+      +'<div><div class="detail-name">'+esc(lead.shop_name)+'</div>'
+      +'<div class="detail-sub">'+esc(lead.owner_name)+' · 📞 '+esc(lead.mobile)+'</div>'
+      +(lead.shop_type?'<div style="font-size:.7rem;color:#888;margin-top:2px">'+esc(lead.shop_type)+'</div>':'')
+      +'</div>'
+      +'<span class="chip '+(isSale?'yes':'no')+'" style="flex-shrink:0">'+lead.sale_status+'</span>'
+      +'</div>'
+      +'<div class="detail-grid">'
+      +'<div class="dg-row"><div class="dg-lbl">Taluka</div><div class="dg-val">'+esc(lead.taluka||'—')+'</div></div>'
+      +'<div class="dg-row"><div class="dg-lbl">District</div><div class="dg-val">'+esc(lead.district||'—')+'</div></div>'
+      +'<div class="dg-row"><div class="dg-lbl">Salesman</div><div class="dg-val">'+esc(lead.salesman_name||'—')+'</div></div>'
+      +'<div class="dg-row"><div class="dg-lbl">Visited</div><div class="dg-val">'+dt+'</div></div>'
+      +'<div class="dg-row"><div class="dg-lbl">GPS</div><div class="dg-val" style="font-family:Space Mono,monospace;font-size:.69rem">'
+      +(lead.latitude?parseFloat(lead.latitude).toFixed(5):'—')+', '+(lead.longitude?parseFloat(lead.longitude).toFixed(5):'—')+'</div></div>'
+      +'<div class="dg-row"><div class="dg-lbl">Verified</div><div class="dg-val">'+(lead.geo_verified?'✅ GPS Verified':'⚠️ No GPS')+'</div></div>'
+      +(lead.distance_km?'<div class="dg-row"><div class="dg-lbl">Distance</div><div class="dg-val">'+lead.distance_km+' km</div></div>':'')
+      +(lead.notes?'<div class="dg-row" style="grid-column:span 2"><div class="dg-lbl">Notes</div><div class="dg-val">'+esc(String(lead.notes).substring(0,120))+'</div></div>':'')
+      +(lead.address_geo?'<div class="dg-row" style="grid-column:span 2"><div class="dg-lbl">Address</div><div class="dg-val">'+esc(String(lead.address_geo).substring(0,80))+'</div></div>':'')
+      +'</div>'
+      +prodHtml
+      +(lead.photo_proof?'<img src="'+lead.photo_proof+'" class="detail-photo" alt="Shop" loading="lazy"/>':'');
+    document.getElementById('detailSheet').classList.add('open');
+  }
+
+  // Show immediately with loading spinner
+  renderPanel(null, true);
+
+  // Fetch products from backend
+  try {
+    var res  = await apiFetch(GEO+'/leads/'+lead.id);
+    var data = await res.json();
+    if(data.success){ renderPanel(data.products||[]); }
+    else { renderPanel([]); }
+  } catch(e) { renderPanel([]); }
+}
+function closeDetail(){ document.getElementById('detailSheet').classList.remove('open'); }
+
+/* ══════════ HELPERS ══════════ */
+function clearFilters(){
+  ['filterFrom','filterTo'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('filterSalesman').value=''; loadMapLeads();
+}
+function refreshAll(){ loadMapLeads(); loadLivePositions(); loadTalukas(); loadAssignments(); _countdown=60; }
+function updateKpis(){ document.getElementById('kTotal').textContent=_allLeads.length; document.getElementById('kVerified').textContent=_allLeads.filter(function(l){ return l.geo_verified; }).length; }
+function fmtAgo(ms){ var s=Math.floor(ms/1000); if(s<60) return s+'s ago'; if(s<3600) return Math.floor(s/60)+'m ago'; return Math.floor(s/3600)+'h ago'; }
+
+/* ── Bottom nav ── */
+(function(){ var p=window.location.pathname.split('/').pop(); document.querySelectorAll('#adminBottomNav .bnav-item').forEach(function(a){ a.classList.toggle('active',a.getAttribute('href')===p); }); })();
+function toggleSidebar(){ var s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay'); var open=s.classList.toggle('open'); o.classList.toggle('show',open); document.body.style.overflow=open?'hidden':''; }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); document.body.style.overflow=''; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeSidebar(); closeDetail(); } });
+
+/* ── Google Maps loader ── */
+(async function(){
+  try{
+    /* SECURITY: maps-key requires auth — cookie sent automatically via credentials:'include' */
+    var r=await fetch('/api/v1/config/maps-key', { credentials: 'include' }), cfg=await r.json();
+    var hasKey=cfg.key&&cfg.key!=='YOUR_GOOGLE_MAPS_API_KEY_HERE'&&cfg.key.length>10;
+    if(!hasKey){ showMapFallback('Add GOOGLE_MAPS_API_KEY in your .env file'); return; }
+    var s=document.createElement('script');
+    var _n=document.querySelector('script[nonce]')?.nonce||'';
+    s.src='https://maps.googleapis.com/maps/api/js?key='+cfg.key+'&callback=onGMapsLoaded&loading=async&v=weekly&libraries=marker';
+    s.async=true; s.defer=true; if(_n) s.nonce=_n;
+    s.onerror=function(){ showMapFallback('Google Maps failed to load. Check API key & billing.'); };
+    document.head.appendChild(s);
+  }catch(e){ showMapFallback('Could not load map config from server.'); }
+})();
+function showMapFallback(msg) {
+  /* No Google Maps key — use Leaflet + OpenStreetMap (free, no key required).
+     All lead markers, live positions and zone circles are rendered via Leaflet. */
+  console.info('[geo-map] Google Maps unavailable:', msg, '— switching to Leaflet/OSM');
+  var wrap = document.getElementById('geoMap');
+  if (!wrap || typeof L === 'undefined') return;
+
+  // Show banner
+  var banner = document.createElement('div');
+  banner.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:999;background:rgba(255,255,255,.92);border:1px solid #dce8dd;border-radius:8px;padding:5px 14px;font-size:.72rem;font-weight:600;color:#3d5240;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.1)';
+  banner.textContent = '🗺️ OpenStreetMap (no Google Maps key) · Tiles © OpenStreetMap';
+  wrap.style.position = 'relative';
+  wrap.appendChild(banner);
+
+  _leafletMap = L.map(wrap, { zoomControl: true }).setView([19.4, 74.5], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(_leafletMap);
+
+  // Mark map ready so data loaders can render on it
+  _usingLeaflet = true;
+  onReady();
+}
+var _leafletMap = null, _usingLeaflet = false;
+var _lfLeads = [], _lfLive = [], _lfZones = [];
+
+/* ── Leaflet render helpers (used when _usingLeaflet = true) ── */
+function _lfClearGroup(arr) { arr.forEach(function(l){ if(l && l.remove) l.remove(); }); arr.length = 0; }
+
+function _lfRenderLeads() {
+  if (!_leafletMap) return;
+  _lfClearGroup(_lfLeads);
+  _allLeads.forEach(function(lead) {
+    var lat = parseFloat(lead.latitude), lng = parseFloat(lead.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+    var isSale = lead.sale_status === 'YES';
+    var color  = isSale ? '#2a6535' : '#b91c1c';
+    var icon = L.divIcon({ className: '', html:
+      '<div style="width:12px;height:12px;border-radius:50%;background:' + color +
+      ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>',
+      iconSize:[12,12], iconAnchor:[6,6] });
+    var m = L.marker([lat, lng], { icon: icon })
+      .bindPopup('<strong>' + lead.shop_name + '</strong><br>' +
+        lead.owner_name + ' · 📞 ' + lead.mobile + '<br>' +
+        '📍 ' + lead.taluka + ', ' + lead.district + '<br>' +
+        '👤 ' + lead.salesman_name + '<br>' +
+        (lead.geo_verified ? '<span style="color:#166534">✅ GPS Verified</span>' : '<span style="color:#b06800">⚠️ No GPS</span>') +
+        ' · <span style="color:' + color + '">' + lead.sale_status + '</span>')
+      .addTo(_leafletMap);
+    m.on('click', function() { showLeadDetail(lead); });
+    _lfLeads.push(m);
+  });
+}
+
+function _lfRenderLive() {
+  if (!_leafletMap) return;
+  _lfClearGroup(_lfLive);
+  var now = Date.now();
+  _allLive.forEach(function(s) {
+    var lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+    var ageMs = now - new Date(s.recorded_at).getTime(), isOn = ageMs < 5 * 60 * 1000;
+    var color = isOn ? '#1565c0' : '#9e9e9e';
+    var icon = L.divIcon({ className: '', html:
+      '<div style="width:14px;height:14px;border-radius:50%;background:' + color +
+      ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:700">' +
+      s.name.charAt(0) + '</div>',
+      iconSize:[14,14], iconAnchor:[7,7] });
+    var m = L.marker([lat, lng], { icon: icon })
+      .bindPopup('<strong>' + s.name + '</strong><br>📞 ' + s.phone + '<br>' +
+        (isOn ? '<span style="color:#166534">🟢 Online</span>' : '<span style="color:#aaa">⚫ Offline</span>') +
+        ' · ' + Math.round(ageMs / 60000) + 'm ago')
+      .addTo(_leafletMap);
+    _lfLive.push(m);
+  });
+}
+
+function _lfRenderZones() {
+  if (!_leafletMap) return;
+  _lfClearGroup(_lfZones);
+  _allTalukas.forEach(function(t) {
+    var lat = parseFloat(t.center_lat), lng = parseFloat(t.center_lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    var circle = L.circle([lat, lng], {
+      radius: t.radius_km * 1000,
+      color: '#2a6535', weight: 1.5, opacity: 0.65,
+      fillColor: '#3d8c4a', fillOpacity: 0.07
+    }).bindPopup('<strong>' + t.name + '</strong><br>' + t.district + ', ' + t.state + '<br>Radius: ' + t.radius_km + ' km')
+      .addTo(_leafletMap);
+    var lbl = L.marker([lat, lng], { icon: L.divIcon({
+      className: '',
+      html: '<div style="font-size:10px;font-weight:700;color:#2a6535;background:rgba(255,255,255,.8);padding:2px 5px;border-radius:4px;white-space:nowrap;pointer-events:none">' + t.name + '</div>',
+      iconSize: [0, 0], iconAnchor: [0, 0]
+    }) }).addTo(_leafletMap);
+    _lfZones.push(circle); _lfZones.push(lbl);
+  });
+}
+</script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

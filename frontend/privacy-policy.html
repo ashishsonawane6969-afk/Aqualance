@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="manifest" href="/manifest.json" />
+<title>Privacy Policy — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8faf8; color: #1a2e1a; line-height: 1.7; }
+  header { background: #1565a8; color: white; padding: 24px 24px 20px; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  header p  { font-size: 12px; opacity: .75; margin-top: 4px; }
+  .container { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+  h2 { font-size: 16px; font-weight: 700; color: #1565a8;
+    margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid #d4e8c4; }
+  p, li { font-size: 14px; color: #333; margin-bottom: 8px; }
+  ul { padding-left: 20px; margin-bottom: 8px; }
+  .contact-box { background: #e8f5e0; border: 1px solid #b2d89b; border-radius: 10px;
+    padding: 16px 20px; margin-top: 24px; font-size: 13px; }
+  .effective { font-size: 12px; color: #666; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 Aqualence Ventures</h1>
+  <p>iKrish Distribution System — Privacy Policy</p>
+</header>
+
+<div class="container">
+  <p class="effective">Effective Date: 1 April 2024 · Last Updated: March 2026</p>
+
+  <p>Aqualence Ventures ("we", "our", "us") operates the iKrish Distribution platform — a B2B water distribution ordering and salesman management system. This Privacy Policy explains how we collect, use, and protect your information in accordance with India's <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong> and applicable Google Play Store / Apple App Store requirements.</p>
+
+  <h2>1. Information We Collect</h2>
+  <ul>
+    <li><strong>Account information:</strong> Name, mobile phone number, and password (stored as a bcrypt hash — never in plain text).</li>
+    <li><strong>GPS location:</strong> Collected from salesman devices during active work sessions to verify field visits and record lead locations. Location is only collected when the salesman app is open and in use.</li>
+    <li><strong>Photos:</strong> Shop photos taken by salesmen during lead capture. Photos are watermarked with GPS coordinates and timestamp and stored on our servers.</li>
+    <li><strong>Order data:</strong> Customer name, shop name, phone number, delivery address, and items ordered — provided by customers placing orders.</li>
+    <li><strong>Device information:</strong> Basic browser/device info (user agent) for troubleshooting purposes only.</li>
+  </ul>
+
+  <h2>2. How We Use Your Information</h2>
+  <ul>
+    <li>To authenticate users and maintain secure sessions.</li>
+    <li>To assign and track water delivery orders to delivery personnel.</li>
+    <li>To verify salesman field visits using GPS coordinates.</li>
+    <li>To generate sales reports and area coverage analytics for business management.</li>
+    <li>We do <strong>not</strong> sell, rent, or share your personal data with third parties for advertising or marketing.</li>
+  </ul>
+
+  <h2>3. GPS & Location Data</h2>
+  <p>Location access is requested only within the Salesman module of the app. It is used exclusively to:</p>
+  <ul>
+    <li>Verify that the salesman is within their assigned territory when submitting a shop lead.</li>
+    <li>Record the geographic coordinates of visited shops for administrative review.</li>
+    <li>Track salesman movement during working hours for route optimisation.</li>
+  </ul>
+  <p>Location data is stored on our secure servers and is accessible only to authorised administrators. Location tracking stops when the app is closed.</p>
+
+  <h2>4. Camera & Photo Access</h2>
+  <p>Camera access is requested in the Salesman module to photograph shops during field visits. Photos are automatically watermarked with the salesman's current GPS coordinates and timestamp. Photos are stored on our servers and are not shared publicly.</p>
+
+  <h2>5. Data Retention</h2>
+  <ul>
+    <li>Order data: retained for 3 years for business records.</li>
+    <li>GPS tracking history: retained for 30 days, then automatically deleted.</li>
+    <li>Shop lead photos: retained for 2 years.</li>
+    <li>Account data: retained while the account is active. Deleted within 30 days of account closure on request.</li>
+  </ul>
+
+  <h2>6. Data Security</h2>
+  <p>We implement industry-standard security measures including: encrypted HTTPS connections, bcrypt password hashing, HTTP-only session cookies, role-based access control, and rate limiting on all API endpoints. Our server infrastructure is hosted in India.</p>
+
+  <h2>7. Your Rights (DPDP Act 2023)</h2>
+  <p>Under the Digital Personal Data Protection Act, 2023, you have the right to:</p>
+  <ul>
+    <li>Access the personal data we hold about you.</li>
+    <li>Correct inaccurate personal data.</li>
+    <li>Request erasure of your personal data.</li>
+    <li>Withdraw consent for data processing (by closing your account).</li>
+    <li>Nominate a person to exercise these rights on your behalf.</li>
+  </ul>
+
+  <h2>8. Children's Privacy</h2>
+  <p>This application is intended for use by business personnel only. We do not knowingly collect data from individuals under 18 years of age.</p>
+
+  <h2>9. Changes to This Policy</h2>
+  <p>We may update this policy from time to time. We will notify registered users of material changes via the app or email. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
+
+  <h2>10. Contact Us</h2>
+  <div class="contact-box">
+    <strong>Data Protection Officer — Aqualence Ventures</strong><br>
+    📧 privacy@aqualence.in<br>
+    📍 Sangamner, Ahmednagar, Maharashtra, India<br>
+    📞 Contact through the app's support page<br><br>
+    For data access or deletion requests, please email us with your registered phone number and we will respond within 15 business days.
+  </div>
+</div>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

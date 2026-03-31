@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Sales Report — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/salesman/css/salesman.css" />
+
+  <style>
+    body { background: #f2f4ef; }
+
+    /* ── Stat cards row ── */
+    .stat-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding: 14px 14px 0;
+    }
+    .stat-box {
+      background: #fff; border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 14px 10px 12px; text-align: center;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .stat-box .s-icon { font-size: 1.6rem; display: block; margin-bottom: 2px; }
+    .stat-box .s-val  { font-size: 2rem; font-weight: 800; display: block;
+      line-height: 1.1; color: var(--brand); }
+    .stat-box .s-lbl  { font-size: .6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--ink-soft); margin-top: 3px; display: block; }
+
+    /* ── Date range ── */
+    .date-bar {
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      padding: 12px 14px 0;
+    }
+    .date-bar label { font-size: .75rem; font-weight: 600; color: var(--ink-soft); }
+    .date-bar input[type=date] {
+      padding: 7px 10px; border: 1.5px solid var(--border); border-radius: 999px;
+      font-size: .78rem; background: #fff; color: var(--ink);
+      -webkit-appearance: none; appearance: none;
+    }
+    .preset-row { display: flex; gap: 5px; padding: 8px 14px 0; flex-wrap: wrap; }
+    .preset-btn {
+      padding: 5px 12px; border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: #fff; font-size: .72rem; font-weight: 600;
+      color: var(--ink-soft); cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .preset-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+    /* ── Charts row ── */
+    .charts-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding: 12px 14px 0;
+    }
+    .chart-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      padding: 14px 12px 12px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04); overflow: hidden;
+    }
+    .chart-card-title {
+      font-size: .8rem; font-weight: 700; color: var(--ink);
+      margin-bottom: 12px; display: flex; align-items: center; gap: 5px;
+    }
+
+    /* Bar chart */
+    .bar-chart {
+      display: flex; align-items: flex-end; gap: 3px;
+      height: 110px; overflow-x: auto; padding-bottom: 4px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .bar-chart::-webkit-scrollbar { display: none; }
+    .bar-group { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; min-width: 28px; }
+    .bar-stack  { display: flex; flex-direction: column; align-items: stretch; gap: 1px; width: 22px; }
+    .bar-seg    { border-radius: 3px 3px 0 0; min-height: 2px; }
+    .bar-yes    { background: var(--success); }
+    .bar-no     { background: #e57373; opacity: .8; }
+    .bar-lbl    { font-size: .58rem; color: var(--ink-soft); text-align: center; white-space: nowrap; }
+    .chart-legend { display: flex; gap: 10px; margin-top: 8px; font-size: .7rem; color: var(--ink-soft); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+
+    /* District chart */
+    .district-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+    }
+    .district-row:last-child { border-bottom: none; }
+    .dist-name { font-size: .78rem; font-weight: 600; color: var(--ink); flex: 0 0 auto; min-width: 0;
+      max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dist-bar  { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .dist-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-light)); border-radius: 4px; transition: width .5s; }
+
+    /* ── Leads table card ── */
+    .table-card {
+      margin: 12px 14px;
+      background: #fff; border-radius: 14px;
+      border: 1px solid var(--border); overflow: clip;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    /* Horizontal scroll only — page scrolls vertically */
+    .table-card .table-wrap {
+      overflow-x: auto;
+      overflow-y: visible;
+      overscroll-behavior-x: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .table-card-header h3 { font-size: .88rem; font-weight: 700; color: var(--ink); }
+    .table-card table { width: 100%; border-collapse: collapse; }
+    .table-card th {
+      background: var(--brand-ultra); padding: 9px 12px;
+      font-size: .64rem; font-weight: 700; text-align: left;
+      color: var(--brand); text-transform: uppercase;
+      letter-spacing: .06em; border-bottom: 1.5px solid var(--border);
+      white-space: nowrap;
+    }
+    .table-card td {
+      padding: 10px 12px; font-size: .81rem;
+      color: var(--ink-mid); border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .table-card tr:last-child td { border-bottom: none; }
+    .sale-yes { display:inline-block; background:#e8f5e9; color:#2e7d32;
+      padding:3px 9px; border-radius:999px; font-size:.7rem; font-weight:700; }
+    .sale-no  { display:inline-block; background:#fce4ec; color:#c62828;
+      padding:3px 9px; border-radius:999px; font-size:.7rem; font-weight:700; }
+
+    /* Photo lightbox */
+    .photo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88);
+      z-index:9000; align-items:center; justify-content:center; }
+    .photo-modal.show { display:flex; }
+    .photo-modal img { max-width:90vw; max-height:88vh; border-radius:10px; }
+    .photo-modal-close { position:absolute; top:18px; right:18px; background:rgba(255,255,255,.15);
+      border:none; color:#fff; font-size:1.4rem; width:40px; height:40px; border-radius:50%; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; }
+
+    @media (max-width: 380px) {
+      .stat-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="app-header">
+  <a href="/salesman/dashboard.html" class="header-back">←</a>
+  <span class="header-title">📊 Sales Report</span>
+  <button onclick="openCSVMenu()" class="header-action" title="Export CSV" style="font-size:.7rem;font-weight:700;width:auto;padding:0 10px;border-radius:999px;border:1.5px solid var(--border);background:#fff;position:relative;">⬇ CSV</button>
+</header>
+
+<!-- CSV EXPORT MENU -->
+<div id="csvMenuOverlay" style="display:none;position:fixed;inset:0;z-index:800;" onclick="closeCSVMenu()"></div>
+<div id="csvMenu" style="display:none;position:fixed;top:58px;right:14px;z-index:801;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);min-width:220px;overflow:hidden;">
+  <div style="padding:10px 14px 6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);">Export CSV</div>
+  <button onclick="exportCSV();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+    <span>📋</span> All My Leads
+  </button>
+  <button onclick="exportCSVByDate();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+    <span>📅</span> By Date (With Summary)
+  </button>
+  <button onclick="exportCSVBySalesman();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+    <span>📊</span> Summary Report
+  </button>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stat-row">
+  <div class="stat-box">
+    <span class="s-icon">📅</span>
+    <span class="s-val" id="statTodayV">—</span>
+    <span class="s-lbl">Today Visit</span>
+  </div>
+  <div class="stat-box">
+    <span class="s-icon">🛍</span>
+    <span class="s-val" id="statTodayO">—</span>
+    <span class="s-lbl">Today Order</span>
+  </div>
+</div>
+<div class="stat-row" style="padding-top:10px">
+  <div class="stat-box">
+    <span class="s-icon">🗒</span>
+    <span class="s-val" id="statTodayL">—</span>
+    <span class="s-lbl">Today Leads</span>
+  </div>
+  <div class="stat-box">
+    <span class="s-icon">🗓</span>
+    <span class="s-val" id="statMonthL">—</span>
+    <span class="s-lbl">Month Leads</span>
+  </div>
+</div>
+
+<!-- DATE RANGE -->
+<div class="date-bar">
+  <label for="fromDate">From<input type="date" id="fromDate" /></label>
+  <label for="toDate">To<input type="date" id="toDate" /></label>
+  <button class="btn btn-primary btn-sm" onclick="applyRange()" style="border-radius:999px">Apply</button>
+</div>
+<div class="preset-row">
+  <button class="preset-btn" onclick="setPreset('today', this)">Today</button>
+  <button class="preset-btn" onclick="setPreset('week', this)">This Week</button>
+  <button class="preset-btn active" onclick="setPreset('month', this)">This Month</button>
+  <button class="preset-btn" onclick="setPreset('all', this)">All Time</button>
+</div>
+
+<!-- CHARTS ROW -->
+<div class="charts-row">
+  <!-- Bar chart -->
+  <div class="chart-card">
+    <div class="chart-card-title">📅 Daily Leads Trend</div>
+    <div class="bar-chart" id="barChart">
+      <div style="color:var(--ink-soft);font-size:.78rem;margin:auto"><div class="spinner"></div></div>
+    </div>
+    <div class="chart-legend">
+      <span><span class="legend-dot" style="background:var(--success)"></span>Sale YES</span>
+      <span><span class="legend-dot" style="background:#e57373"></span>Sale NO</span>
+    </div>
+  </div>
+
+  <!-- District chart -->
+  <div class="chart-card">
+    <div class="chart-card-title">🗺 By District</div>
+    <div id="districtChart">
+      <div style="text-align:center;padding:20px"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADS TABLE -->
+<div class="table-card">
+  <div class="table-card-header">
+    <h3>📋 Leads in Range</h3>
+    <span id="leadsCountBadge" style="font-size:.78rem;color:var(--ink-soft);font-weight:600"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Shop</th><th>Type</th><th>Owner</th>
+          <th>Village</th><th>Taluka</th><th>District</th><th>Sale?</th><th>Photo</th>
+        </tr>
+      </thead>
+      <tbody id="reportLeadsBody">
+        <tr><td colspan="9" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BOTTOM CLEARANCE -->
+<div style="height:calc(var(--bottom-nav-h, 68px) + env(safe-area-inset-bottom, 0px) + 16px)"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Leads</span></a>
+    <div class="bnav-fab"><a href="/salesman/geo-lead.html" class="bnav-fab-btn" aria-label="Add Geo Lead" style="display:flex;align-items:center;justify-content:center;text-decoration:none">📍</a></div>
+    <a href="/salesman/reports.html" class="bnav-item active"><span class="bnav-icon">📈</span><span>Reports</span></a>
+    <button onclick="salesmanLogout()" class="bnav-item" style="background:none;border:none;cursor:pointer"><span class="bnav-icon">🚪</span><span>Logout</span></button>
+  </div>
+</nav>
+
+<!-- PHOTO LIGHTBOX -->
+<div class="photo-modal" id="photoModal" onclick="closePhotoModal()">
+  <button class="photo-modal-close" onclick="closePhotoModal()">✕</button>
+  <img id="photoModalImg" src="" alt="Proof" onclick="event.stopPropagation()" />
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE" src="/salesman/js/salesman.js"></script>
+<script nonce="CSP_NONCE">
+function openCSVMenu() {
+  document.getElementById('csvMenu').style.display = 'block';
+  document.getElementById('csvMenuOverlay').style.display = 'block';
+}
+function closeCSVMenu() {
+  document.getElementById('csvMenu').style.display = 'none';
+  document.getElementById('csvMenuOverlay').style.display = 'none';
+}
+
+/* Export with a daily summary section prepended */
+async function exportCSVByDate() {
+  const from = (document.getElementById('fromDate') || {}).value || '';
+  const to   = (document.getElementById('toDate')   || {}).value || '';
+  let url = '/api/v1/salesman/leads';
+  const qs = [];
+  if (from) qs.push('from=' + from);
+  if (to)   qs.push('to=' + to);
+  if (qs.length) url += '?' + qs.join('&');
+
+  try {
+    const res   = await apiFetch(url);
+    const json  = await res.json();
+    const leads = Array.isArray(json.data) ? json.data : [];
+    if (!leads.length) { showToast('No data to export', 'error'); return; }
+
+    /* Build daily summary */
+    const byDate = {};
+    leads.forEach(function(l) {
+      const d = l.visited_at ? l.visited_at.slice(0, 10) : 'Unknown';
+      if (!byDate[d]) byDate[d] = { total: 0, yes: 0, no: 0 };
+      byDate[d].total++;
+      if (l.sale_status === 'YES') byDate[d].yes++; else byDate[d].no++;
+    });
+
+    const summaryHeader = ['Date', 'Total Leads', 'Sale YES', 'Sale NO', 'Conversion %'];
+    const summaryRows   = Object.keys(byDate).sort().map(function(d) {
+      const s = byDate[d];
+      const cv = s.total > 0 ? Math.round((s.yes / s.total) * 100) : 0;
+      return [d, s.total, s.yes, s.no, cv + '%'];
+    });
+
+    const leadsHeader = ['#','Shop Name','Shop Type','Owner','Mobile','Village','Taluka','District','Sale Status','Notes','Products','Total Value','Visited At'];
+    const leadsRows   = leads.map(function(l, i) {
+      var prodStr = '';
+      var prodTotal = 0;
+      if (Array.isArray(l.products) && l.products.length) {
+        prodStr = l.products.map(function(p){
+          return _esc(p.name) + ' x' + (p.quantity||p.qty||1) + ' @₹' + parseFloat(p.price||0).toFixed(0);
+        }).join('; ');
+        prodTotal = l.products.reduce(function(s,p){
+          return s + parseFloat(p.total||(parseFloat(p.price||0)*(p.quantity||p.qty||1)));
+        }, 0);
+      }
+      return [i+1, l.shop_name, l.shop_type||'', l.owner_name, l.mobile,
+              l.village, l.taluka, l.district, l.sale_status,
+              (l.notes||'').replace(/,/g,' '),
+              prodStr,
+              prodTotal > 0 ? '₹' + prodTotal.toFixed(0) : '',
+              l.visited_at ? new Date(l.visited_at).toLocaleString('en-IN') : ''];
+    });
+
+    const toCSVRow = function(r) { return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); };
+
+    const csv = [
+      '== DAILY SUMMARY ==',
+      toCSVRow(summaryHeader),
+      ...summaryRows.map(toCSVRow),
+      '',
+      '== LEAD DETAILS ==',
+      toCSVRow(leadsHeader),
+      ...leadsRows.map(toCSVRow)
+    ].join('\n');
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'my-report-by-date-' + (from||'all') + '-to-' + (to||'all') + '.csv';
+    a.click();
+    showToast('CSV exported ✓', 'success');
+  } catch(e) {
+    showToast('Export failed: ' + e.message, 'error');
+  }
+}
+
+/* Export summary: one row with totals + conversion */
+async function exportCSVBySalesman() {
+  const from = (document.getElementById('fromDate') || {}).value || '';
+  const to   = (document.getElementById('toDate')   || {}).value || '';
+  let url = '/api/v1/salesman/leads';
+  const qs = [];
+  if (from) qs.push('from=' + from);
+  if (to)   qs.push('to=' + to);
+  if (qs.length) url += '?' + qs.join('&');
+
+  try {
+    const res   = await apiFetch(url);
+    const json  = await res.json();
+    const leads = Array.isArray(json.data) ? json.data : [];
+    if (!leads.length) { showToast('No data to export', 'error'); return; }
+
+    const total = leads.length;
+    const yes   = leads.filter(function(l){ return l.sale_status === 'YES'; }).length;
+    const cv    = total > 0 ? Math.round((yes / total) * 100) : 0;
+
+    /* By-shop-type breakdown */
+    const byType = {};
+    leads.forEach(function(l) {
+      const t = l.shop_type || 'Other';
+      if (!byType[t]) byType[t] = { total: 0, yes: 0 };
+      byType[t].total++;
+      if (l.sale_status === 'YES') byType[t].yes++;
+    });
+
+    const toCSVRow = function(r) { return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); };
+
+    const lines = [
+      '== MY PERFORMANCE SUMMARY ==',
+      toCSVRow(['Period', from + ' to ' + to]),
+      toCSVRow(['Total Leads', total]),
+      toCSVRow(['Sale YES', yes]),
+      toCSVRow(['Sale NO', total - yes]),
+      toCSVRow(['Conversion %', cv + '%']),
+      '',
+      '== BY SHOP TYPE ==',
+      toCSVRow(['Shop Type', 'Total', 'YES', 'NO', 'Conversion %']),
+      ...Object.keys(byType).map(function(t) {
+        const s = byType[t];
+        return toCSVRow([t, s.total, s.yes, s.total - s.yes, (s.total > 0 ? Math.round((s.yes/s.total)*100) : 0) + '%']);
+      })
+    ];
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+    a.download = 'my-summary-' + (from||'all') + '-to-' + (to||'all') + '.csv';
+    a.click();
+    showToast('Summary CSV exported ✓', 'success');
+  } catch(e) {
+    showToast('Export failed: ' + e.message, 'error');
+  }
+}
+</script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

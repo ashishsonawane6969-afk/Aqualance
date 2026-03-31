@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>My Deliveries — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/delivery/css/delivery.css" />
+
+  <style>
+    body { background: #f2f4ef; }
+
+    /* Stat cards */
+    .stat-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; padding: 14px 14px 0;
+    }
+    .stat-box {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      padding: 12px 8px 10px; text-align: center;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .stat-box .s-icon { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+    .stat-box .s-val  { font-size: 1.7rem; font-weight: 800; display: block;
+      line-height: 1.1; color: var(--brand); }
+    .stat-box .s-lbl  { font-size: .58rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--ink-soft); margin-top: 3px; display: block; }
+    .stat-box.green .s-val { color: var(--success); }
+    .stat-box.gold  .s-val { color: var(--gold); }
+
+    /* Order card */
+    .order-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      overflow: hidden; margin-bottom: 10px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .order-card:active { box-shadow: var(--sh-sm); }
+    .order-card-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding: 12px 14px; background: var(--brand-ultra); border-bottom: 1px solid var(--border);
+    }
+    .order-ref-sm { font-weight: 700; font-size: .82rem; color: var(--brand); }
+    .order-card-body { padding: 10px 14px; font-size: .82rem; color: var(--ink-soft); line-height: 1.7; }
+    .order-card-footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .map-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 9px 14px; background: #1a73e8; color: #fff;
+      border-radius: 999px; font-size: .78rem; font-weight: 600;
+      -webkit-tap-highlight-color: transparent; border: none; cursor: pointer;
+    }
+    .map-btn:active { opacity: .85; transform: scale(.96); }
+    .deliver-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 9px 14px; background: var(--success); color: #fff;
+      border-radius: 999px; font-size: .78rem; font-weight: 600;
+      -webkit-tap-highlight-color: transparent; border: none; cursor: pointer;
+    }
+    .deliver-btn:active { opacity: .85; transform: scale(.96); }
+    .transit-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 9px 14px; background: #f59e0b; color: #fff;
+      border-radius: 999px; font-size: .78rem; font-weight: 600;
+      -webkit-tap-highlight-color: transparent; border: none; cursor: pointer;
+    }
+    .transit-btn:active { opacity: .85; transform: scale(.96); }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="app-header">
+  <div class="header-logo">
+    <div class="logo-dot">🚴</div>
+    Aqualence
+  </div>
+  <span id="sidebarName" style="font-size:.78rem;color:var(--ink-soft);flex:1;text-align:center;"></span>
+  <button onclick="loadMyOrders()" class="header-action" title="Refresh">↻</button>
+  <button onclick="deliveryLogout()" class="header-action" title="Logout">🚪</button>
+</header>
+
+<!-- STAT CARDS -->
+<div class="stat-row">
+  <div class="stat-box">
+    <span class="s-icon">📋</span>
+    <span class="s-val" id="statTotal">—</span>
+    <span class="s-lbl">Assigned</span>
+  </div>
+  <div class="stat-box gold">
+    <span class="s-icon">⏳</span>
+    <span class="s-val" id="statPending">—</span>
+    <span class="s-lbl">Pending</span>
+  </div>
+  <div class="stat-box green">
+    <span class="s-icon">✅</span>
+    <span class="s-val" id="statDone">—</span>
+    <span class="s-lbl">Delivered</span>
+  </div>
+</div>
+
+<!-- FILTER PILLS -->
+<div class="cat-bar" style="margin-top:12px">
+  <div class="cat-bar-inner">
+    <button class="cat-pill active" onclick="filterDeliveries('all', this)">All</button>
+    <button class="cat-pill" onclick="filterDeliveries('assigned', this)">📋 Assigned</button>
+    <button class="cat-pill" onclick="filterDeliveries('out_for_delivery', this)">🚴 In Transit</button>
+    <button class="cat-pill" onclick="filterDeliveries('delivered', this)">✅ Delivered</button>
+  </div>
+</div>
+
+<!-- ORDERS LIST -->
+<main style="padding:12px;padding-bottom:calc(var(--bottom-nav-h) + var(--safe-bottom) + 20px)">
+  <div id="ordersContainer">
+    <div class="loading-overlay"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal-overlay" id="orderDetailModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>📦 Order Details</h3>
+      <button class="modal-close" onclick="closeModal('orderDetailModal')">✕</button>
+    </div>
+    <div id="deliveryOrderDetail" style="padding:14px 18px 18px">Loading…</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE" src="/delivery/js/delivery.js"></script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

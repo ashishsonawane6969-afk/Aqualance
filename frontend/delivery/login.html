@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Delivery Login — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/delivery/css/delivery.css" />
+
+  </head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="l-icon">🚴</div>
+      <div class="brand">Aqualence Ventures</div>
+      <div class="sub">Delivery Partner Portal</div>
+    </div>
+    <div class="login-title">Delivery Login</div>
+    <div id="loginError" class="login-error hidden"></div>
+    <form id="deliveryLoginForm" novalidate>
+      <div class="form-group">
+        <label for="phone">Phone Number
+          <input type="tel" id="phone" placeholder="Enter your phone number" maxlength="10" required autocomplete="username" inputmode="numeric" />
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="password">Password
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" />
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Login</button>
+    </form>
+    
+    </div>
+  </div>
+</div>
+<script nonce="CSP_NONCE" src="/delivery/js/delivery.js"></script>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

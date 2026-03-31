@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Contact Us — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+  <style>
+    body { background: #f2f4ef; }
+
+    /* ── Hero banner ── */
+    .contact-hero {
+      background: linear-gradient(135deg, #0f1f05 0%, #073a6e 45%, var(--brand) 100%);
+      padding: 32px 16px 36px; text-align: center; position: relative; overflow: hidden;
+    }
+    .contact-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 50%, rgba(200,147,42,.15) 0%, transparent 60%);
+    }
+    .contact-hero h1 {
+      font-family: var(--font-head); font-size: 1.6rem; color: #fff;
+      position: relative; margin-bottom: 8px;
+    }
+    .contact-hero p {
+      font-size: .85rem; color: rgba(255,255,255,.72); position: relative;
+      max-width: 360px; margin: 0 auto; line-height: 1.6;
+    }
+
+    /* ── Section wrapper ── */
+    .contact-wrap {
+      max-width: 700px; margin: 0 auto; padding: 18px 14px;
+    }
+
+    /* ── Quick-call strip ── */
+    .quick-call {
+      background: var(--brand); border-radius: 16px; padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      margin-bottom: 14px; box-shadow: 0 4px 18px rgba(21,101,168,.28);
+    }
+    .quick-call-text { color: #fff; }
+    .quick-call-text .qc-label { font-size: .7rem; opacity: .8; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em; }
+    .quick-call-text .qc-number { font-size: 1.35rem; font-weight: 800; letter-spacing: .02em; margin-top: 2px; }
+    .quick-call a.call-btn {
+      background: #fff; color: var(--brand); border-radius: 999px;
+      padding: 10px 20px; font-size: .85rem; font-weight: 700;
+      white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    }
+    .quick-call a.call-btn:active { opacity: .88; transform: scale(.96); }
+
+    /* ── Info cards ── */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;
+    }
+    .info-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      padding: 16px 14px; box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .info-card .ic-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+    .info-card .ic-title { font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--ink-soft); margin-bottom: 4px; }
+    .info-card .ic-val { font-size: .88rem; font-weight: 600; color: var(--ink); line-height: 1.5; }
+    .info-card a { color: var(--brand); font-weight: 700; }
+
+    /* ── Hours card ── */
+    .hours-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      padding: 16px 16px 14px; margin-bottom: 14px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .hours-card h3 {
+      font-size: .82rem; font-weight: 700; color: var(--ink); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .hours-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .84rem;
+    }
+    .hours-row:last-child { border-bottom: none; }
+    .hours-day { color: var(--ink-mid); font-weight: 600; }
+    .hours-time { color: var(--brand); font-weight: 700; }
+    .hours-time.closed { color: var(--error); }
+    .open-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--success-pale); color: var(--success);
+      border-radius: 999px; padding: 2px 9px; font-size: .68rem; font-weight: 700;
+      margin-left: 8px;
+    }
+    .open-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success); display: inline-block; }
+
+    /* ── WhatsApp CTA ── */
+    .whatsapp-card {
+      background: #e8f5e9; border: 1.5px solid #a5d6a7; border-radius: 14px;
+      padding: 16px; display: flex; align-items: center; gap: 14px;
+      margin-bottom: 14px;
+    }
+    .whatsapp-card .wa-icon { font-size: 2.4rem; flex-shrink: 0; }
+    .whatsapp-card .wa-text { flex: 1; }
+    .whatsapp-card .wa-text h3 { font-size: .88rem; font-weight: 700; color: #1b5e20; margin-bottom: 3px; }
+    .whatsapp-card .wa-text p { font-size: .76rem; color: #388e3c; line-height: 1.4; }
+    .wa-btn {
+      background: #25d366; color: #fff; border-radius: 999px; padding: 10px 18px;
+      font-size: .82rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .wa-btn:active { opacity: .88; transform: scale(.96); }
+
+    /* ── Map placeholder ── */
+    .map-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      overflow: hidden; margin-bottom: 14px; box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .map-card h3 {
+      font-size: .82rem; font-weight: 700; color: var(--ink);
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .map-embed {
+      width: 100%; height: 220px; border: none; display: block;
+    }
+    .map-directions {
+      padding: 10px 14px; display: flex; justify-content: flex-end;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Contact form ── */
+    .form-card {
+      background: #fff; border-radius: 14px; border: 1px solid var(--border);
+      padding: 16px 16px 18px; margin-bottom: 14px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+    }
+    .form-card h3 {
+      font-size: .88rem; font-weight: 700; color: var(--ink);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+    }
+    .form-card .form-group { margin-bottom: 12px; }
+    .form-card label { font-size: .75rem; font-weight: 600; color: var(--ink-mid); display: block; margin-bottom: 5px; }
+    .form-card input,
+    .form-card select,
+    .form-card textarea {
+      width: 100%; padding: 11px 13px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 16px; color: var(--ink);
+      background: var(--surface); font-family: var(--font-body);
+      -webkit-appearance: none; appearance: none;
+      transition: border-color .15s;
+    }
+    .form-card input:focus,
+    .form-card select:focus,
+    .form-card textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(21,101,168,.1); }
+    .form-card textarea { resize: vertical; min-height: 90px; }
+    .form-success { display: none; background: var(--success-pale); border: 1px solid #a5d6a7;
+      border-radius: 10px; padding: 14px; text-align: center; font-size: .86rem;
+      color: #1b5e20; font-weight: 600; margin-bottom: 12px; }
+
+    @media (max-width: 420px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .quick-call { flex-direction: column; text-align: center; }
+      .whatsapp-card { flex-direction: column; text-align: center; }
+    }
+    @media (min-width: 700px) {
+      .contact-hero { padding: 48px 20px 52px; }
+      .contact-hero h1 { font-size: 2.2rem; }
+      .info-grid { grid-template-columns: repeat(4, 1fr); }
+      .map-embed { height: 300px; }
+      .contact-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="/index.html" class="logo" aria-label="Home">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">Aqualence <span>Ventures</span></div>
+        <div class="logo-sub">iKrish Wellness</div>
+      </div>
+    </a>
+    <nav class="nav-actions">
+      <a href="/index.html" class="header-action" title="Back to Shop">🏠</a>
+      <a href="/cart.html" class="cart-btn" title="Cart">
+        🛒<span class="cart-count" id="cartCount">0</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="contact-hero">
+  <h1>📞 Contact Us</h1>
+  <p>We're here to help! Reach us by call, WhatsApp, or visit our store in Sangamner.</p>
+</div>
+
+<div class="contact-wrap">
+
+  <!-- QUICK CALL -->
+  <div class="quick-call">
+    <div class="quick-call-text">
+      <div class="qc-label">📞 Call us directly</div>
+      <div class="qc-number">9764636636</div>
+    </div>
+    <a href="tel:9764636636" class="call-btn">📞 Call Now</a>
+  </div>
+
+  <!-- INFO CARDS -->
+  <div class="info-grid">
+    <div class="info-card">
+      <span class="ic-icon">📍</span>
+      <div class="ic-title">Address</div>
+      <div class="ic-val">Ghulewadi, Sangamner<br>Dist. Ahmednagar — 422605, MH</div>
+    </div>
+    <div class="info-card">
+      <span class="ic-icon">📱</span>
+      <div class="ic-title">Phone</div>
+      <div class="ic-val"><a href="tel:9764636636">9764 636 636</a></div>
+    </div>
+    <div class="info-card">
+      <span class="ic-icon">🕐</span>
+      <div class="ic-title">Weekdays</div>
+      <div class="ic-val">Mon – Sat<br>9:00 AM – 7:00 PM</div>
+    </div>
+    <div class="info-card">
+      <span class="ic-icon">📦</span>
+      <div class="ic-title">Delivery Area</div>
+      <div class="ic-val">Sangamner &amp; nearby villages</div>
+    </div>
+  </div>
+
+  <div class="contact-two-col">
+    <!-- WHATSAPP -->
+    <div class="whatsapp-card">
+      <div class="wa-icon">💬</div>
+      <div class="wa-text">
+        <h3>Chat on WhatsApp</h3>
+        <p>Order queries, product info &amp; support — get a quick reply on WhatsApp.</p>
+      </div>
+      <a href="https://wa.me/917378656656?text=Hi%20Aqualence%20Ventures%2C%20I%20need%20help%20with%20an%20order." target="_blank" rel="noopener" class="wa-btn">WhatsApp</a>
+    </div>
+
+    <!-- HOURS -->
+    <div class="hours-card">
+      <h3>🕐 Business Hours <span class="open-badge" id="openStatus"></span></h3>
+      <div class="hours-row"><span class="hours-day">Monday – Friday</span><span class="hours-time">9:00 AM – 7:00 PM</span></div>
+      <div class="hours-row"><span class="hours-day">Saturday</span><span class="hours-time">9:00 AM – 6:00 PM</span></div>
+      <div class="hours-row"><span class="hours-day">Sunday</span><span class="hours-time closed">Closed</span></div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map-card">
+    <h3>📍 Find Us</h3>
+    <iframe
+      class="map-embed"
+      src="https://maps.google.com/maps?q=Sangamner,Ahmednagar,Maharashtra&z=13&output=embed"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+      sandbox="allow-scripts allow-same-origin"
+      title="Aqualence Ventures location map"
+      allowfullscreen>
+    </iframe>
+    <div class="map-directions">
+      <a href="https://maps.google.com/?q=Sangamner,Ahmednagar,Maharashtra" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+        🗺 Open in Maps
+      </a>
+    </div>
+  </div>
+
+  <!-- SEND A MESSAGE FORM -->
+  <div class="form-card">
+    <h3>✉️ Send a Message</h3>
+    <div class="form-success" id="formSuccess">✅ Thank you! We'll get back to you shortly.</div>
+    <form id="contactForm" novalidate>
+      <div class="form-group">
+        <label for="cName">Your Name *
+          <input type="text" id="cName" placeholder="Ramesh Sharma" required />
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label for="cPhone">Phone *
+            <input type="tel" id="cPhone" placeholder="9876543210" maxlength="10" inputmode="numeric" required />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="cTopic">Topic
+            <select id="cTopic">
+          </label>
+            <option value="Order Query">Order Query</option>
+            <option value="Product Info">Product Info</option>
+            <option value="Complaint">Complaint</option>
+            <option value="Distributor Enquiry">Distributor Enquiry</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="cMsg">Message *
+          <textarea id="cMsg" placeholder="Write your message here…" required></textarea>
+        </label>
+      </div>
+      <div id="contactError" style="color:var(--error);font-size:.82rem;margin-bottom:10px;display:none"></div>
+      <button type="submit" class="btn btn-primary btn-full" id="contactSubmitBtn">📤 Send Message</button>
+    </form>
+  </div>
+
+</div><!-- /.contact-wrap -->
+
+<!-- bottom clearance -->
+<div style="height:calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 16px)"></div>
+
+<!-- FOOTER -->
+<footer role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand-col">
+      <div class="footer-logo">🌿 Aqualence Ventures</div>
+      <p class="footer-tagline">Premium iKrish Wellness products delivered to your door.</p>
+      <div class="footer-contact">
+        <div>📍 Ghulewadi, Sangamner — 422605, MH</div>
+        <div>📞 <a href="tel:9764636636">9764636636</a></div>
+      </div>
+    </div>
+    <div class="footer-links-row">
+      <div class="footer-links-group">
+        <h4>Quick Links</h4>
+        <a href="/index.html">Home</a>
+        <a href="/cart.html">Cart</a>
+        <a href="/checkout.html">Checkout</a>
+        <a href="/contact.html">Contact Us</a>
+      </div>
+      <div class="footer-links-group">
+        <h4>Portals</h4>
+        <a href="/admin/login.html">Admin</a>
+        <a href="/delivery/login.html">Delivery</a>
+        <a href="/salesman/login.html">Salesman</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Aqualence Ventures. All rights reserved.</span>
+  </div>
+</footer>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" aria-label="Main navigation">
+  <div class="bottom-nav-inner">
+    <a href="/index.html" class="bnav-item"><span class="bnav-icon">🏠</span><span>Home</span></a>
+    <a href="/index.html#products" class="bnav-item"><span class="bnav-icon">🛍</span><span>Shop</span></a>
+    <a href="/cart.html" class="bnav-fab" aria-label="Cart"><div class="bnav-fab-btn">🛒</div></a>
+    <a href="/checkout.html" class="bnav-item"><span class="bnav-icon">📦</span><span>Order</span></a>
+    <a href="/contact.html" class="bnav-item active"><span class="bnav-icon">📞</span><span>Contact</span></a>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script nonce="CSP_NONCE">
+/* ── Cart count ── */
+try {
+  const cart = JSON.parse(localStorage.getItem('aq_cart') || '[]');
+  const total = cart.reduce(function(s, i){ return s + (i.qty || 0); }, 0);
+  const el = document.getElementById('cartCount');
+  if (el) el.textContent = total;
+} catch(e) {}
+
+/* ── Open/closed status ── */
+(function() {
+  const el = document.getElementById('openStatus');
+  if (!el) return;
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 6=Sat
+  const h   = now.getHours();
+  let open = false;
+  if (day >= 1 && day <= 5 && h >= 9 && h < 19) open = true;
+  if (day === 6 && h >= 9 && h < 18) open = true;
+  el.textContent = open ? 'Open Now' : 'Closed';
+  el.style.background = open ? 'var(--success-pale)' : 'var(--error-pale)';
+  el.style.color       = open ? 'var(--success)'      : 'var(--error)';
+})();
+
+/* ── Contact form submit ── */
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const name  = document.getElementById('cName').value.trim();
+  const phone = document.getElementById('cPhone').value.trim();
+  const msg   = document.getElementById('cMsg').value.trim();
+  const errEl = document.getElementById('contactError');
+  const btn   = document.getElementById('contactSubmitBtn');
+  errEl.style.display = 'none';
+
+  if (!name || !phone || !msg) {
+    errEl.textContent = 'Please fill in all required fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (phone.length !== 10) {
+    errEl.textContent = 'Enter a valid 10-digit phone number.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = '⏳ Sending…'; btn.disabled = true;
+
+  /* Open WhatsApp with pre-filled message as the submission mechanism */
+  const topic = document.getElementById('cTopic').value;
+  const text  = encodeURIComponent(
+    'Hello Aqualence Ventures!\n\nName: ' + name +
+    '\nPhone: ' + phone +
+    '\nTopic: ' + topic +
+    '\nMessage: ' + msg
+  );
+  window.open('https://wa.me/917378656656?text=' + text, '_blank');
+
+  document.getElementById('contactForm').reset();
+  document.getElementById('formSuccess').style.display = 'block';
+  btn.textContent = '📤 Send Message'; btn.disabled = false;
+
+  setTimeout(function() {
+    document.getElementById('formSuccess').style.display = 'none';
+  }, 6000);
+});
+
+function showToast(msg, type) {
+  const c = document.getElementById('toastContainer');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3500);
+}
+</script>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

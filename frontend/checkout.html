@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Checkout — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+  </head>
+<body>
+
+<header class="app-header">
+  <a href="/cart.html" class="header-back">←</a>
+  <span class="header-title">📋 Checkout</span>
+  <div style="width:36px"></div>
+</header>
+
+<main style="padding-bottom:calc(var(--bottom-nav-h) + 20px)">
+  <div class="checkout-layout">
+
+    <!-- ORDER REVIEW -->
+    <div>
+      <div class="order-review" id="orderReview">
+        <h3>📦 Order Summary</h3>
+        <div id="reviewItems"></div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="reviewTotal">₹0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <div>
+      <div class="form-card">
+        <h2>🏪 Shop Details</h2>
+        <form id="checkoutForm" novalidate>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="customer_name">Your Name *
+                <input type="text" id="customer_name" placeholder="Ramesh Sharma" required />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="shop_name">Shop Name *
+                <input type="text" id="shop_name" placeholder="Sharma General Store" required />
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number *
+              <input type="tel" id="phone" placeholder="9876543210" maxlength="10" required inputmode="numeric" />
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="address">Shop Address *
+              <input type="text" id="address" placeholder="Shop No. 5, Main Road, Near Temple" required />
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city">City *
+                <input type="text" id="city" placeholder="Sangamner" required />
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="pincode">Pincode *
+                <input type="text" id="pincode" placeholder="422605" maxlength="6" required inputmode="numeric" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div style="background:var(--brand-pale);border:1px dashed var(--brand-light);border-radius:var(--r-sm);padding:14px;margin-bottom:16px;">
+            <p style="font-size:.82rem;font-weight:600;color:var(--brand);margin-bottom:10px;">📍 Location <span style="font-weight:400;color:var(--ink-soft)">(Optional — helps delivery)</span></p>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <div class="form-group" style="margin:0;flex:1">
+                <label for="latitude">Latitude
+                  <input type="number" id="latitude" step="any" placeholder="19.5741" />
+                </label>
+              </div>
+              <div class="form-group" style="margin:0;flex:1">
+                <label for="longitude">Longitude
+                  <input type="number" id="longitude" step="any" placeholder="74.2103" />
+                </label>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="getLocationBtn" style="flex-shrink:0;margin-bottom:0;">📍 GPS</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes (Optional)
+              <textarea id="notes" rows="2" placeholder="Special instructions for delivery..."></textarea>
+            </label>
+          </div>
+
+          <div id="formError" class="login-error hidden"></div>
+
+          <button type="submit" class="btn btn-primary btn-lg btn-full" id="placeOrderBtn">
+            ✅ Place Order
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="/index.html" class="bnav-item"><span class="bnav-icon">🏠</span><span>Home</span></a>
+    <a href="/index.html" class="bnav-item"><span class="bnav-icon">🛍️</span><span>Products</span></a>
+    <a href="/cart.html" class="bnav-fab"><div class="bnav-fab-btn">🛒</div></a>
+    <a href="/checkout.html" class="bnav-item active"><span class="bnav-icon">📦</span><span>Order</span></a>
+    <a href="tel:7378656656" class="bnav-item"><span class="bnav-icon">📞</span><span>Call</span></a>
+  </div>
+</nav>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/app.js"></script>
+<script nonce="CSP_NONCE" src="/js/checkout.js"></script>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

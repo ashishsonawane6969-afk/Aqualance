@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Delivery Boys — Admin | Aqualence Ventures</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    /* ── Stats row ────────────────────────────────────────────── */
+    .db-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .db-stat {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .db-stat .sv {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--brand);
+      line-height: 1;
+    }
+    .db-stat .sl {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--ink-soft);
+      margin-top: 4px;
+    }
+
+    /* ── Desktop table ────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      max-width: 100%;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .table-wrap table {
+      width: 100%;
+      border-collapse: collapse;
+      /* No min-width — let columns flex on mobile */
+    }
+    .table-wrap th,
+    .table-wrap td {
+      white-space: nowrap;         /* no cell wrapping */
+      vertical-align: middle;
+    }
+    .table-wrap td.db-phone {
+      font-family: monospace;
+      font-size: .85rem;
+      letter-spacing: .03em;
+    }
+    .table-wrap td.db-actions {
+      text-align: right;
+      padding-right: 12px;
+    }
+
+    /* ── Mobile: card view replaces table below 600px ────────── */
+    @media (max-width: 599px) {
+      .table-wrap { display: none !important; }
+      #dbCardList {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 4px 0 12px;
+      }
+      .db-card {
+        background: #fff;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      }
+      .db-card-avatar {
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e8f5e9, #a5d6a7);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+      }
+      .db-card-body { flex: 1; min-width: 0; }
+      .db-card-name {
+        font-weight: 700;
+        font-size: .9rem;
+        color: var(--ink);
+        margin-bottom: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .db-card-meta {
+        font-size: .75rem;
+        color: var(--ink-soft);
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .db-card-meta .db-phone-m {
+        font-family: monospace;
+        font-size: .78rem;
+        letter-spacing: .03em;
+      }
+      .db-card-action { flex-shrink: 0; }
+    }
+
+    @media (min-width: 600px) {
+      #dbCardList { display: none !important; }
+    }
+  </style>
+</head>
+<body class="admin-layout">
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user"><div class="name" id="sidebarName">Admin</div><div class="role">Administrator</div></div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html"    class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</a>
+      <a href="/admin/overview.html"     class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>Overview</a>
+      <a href="/admin/leaderboard.html"  class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>Leaderboard</a>
+      <a href="/admin/orders.html"       class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders</a>
+      <a href="/admin/products.html"     class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products</a>
+      <a href="/admin/salesmen.html"     class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
+      <a href="/admin/geo-map.html"      class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map</a>
+      <a href="/admin/delivery-boys.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys
+      </a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer"><button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button></div>
+  </aside>
+
+  <div class="main-area">
+    <div class="topnav">
+      <button class="mob-menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+      <h2>🚴 Delivery Boys</h2>
+      <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Delivery Boy</button>
+    </div>
+    <div class="content-area">
+      <div class="db-stats">
+        <div class="db-stat"><div class="sv" id="statTotal">—</div><div class="sl">Total</div></div>
+        <div class="db-stat"><div class="sv" id="statActive" style="color:var(--success)">—</div><div class="sl">Active</div></div>
+        <div class="db-stat"><div class="sv" id="statInactive" style="color:var(--ink-soft)">—</div><div class="sl">Inactive</div></div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <!-- Desktop table (hidden on mobile) -->
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px">#</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th style="text-align:right;padding-right:12px">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deliveryBoysBody">
+                <tr><td colspan="6" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Mobile card list (hidden on desktop) -->
+          <div id="dbCardList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><h3>➕ Add Delivery Boy</h3><button class="modal-close" onclick="closeModal('addModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label for="dbName">Full Name *<input type="text" id="dbName" placeholder="Ravi Kumar" /></label></div>
+      <div class="form-group"><label for="dbPhone">Phone Number *<input type="tel" id="dbPhone" placeholder="9876543210" maxlength="10" inputmode="numeric" /></label></div>
+      <div class="form-group"><label for="dbPassword">Password *<input type="password" id="dbPassword" placeholder="Minimum 6 characters" /></label></div>
+      <div id="addErr" style="display:none;background:#ffebee;border-radius:8px;padding:9px 12px;font-size:.78rem;color:#c62828;margin-bottom:10px"></div>
+      <button class="btn btn-primary btn-full" onclick="submitAdd()" id="addBtn">Add Delivery Boy</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMOVE CONFIRM MODAL -->
+<div class="modal-overlay" id="removeModal">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header"><h3>⚠️ Deactivate</h3><button class="modal-close" onclick="closeModal('removeModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="color:var(--ink-soft);font-size:.88rem;margin-bottom:16px">Deactivate <strong id="removeNameLabel"></strong>? They won't be able to log in.</p>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline btn-sm" style="flex:1" onclick="closeModal('removeModal')">Cancel</button>
+        <button class="btn btn-danger btn-sm" style="flex:1" id="removeConfirmBtn" onclick="doRemove()">Deactivate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html"  class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html"   class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html"     class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/salesmen.html"   class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+    <a href="/admin/geo-map.html"    class="bnav-item"><span class="bnav-icon">🗺️</span><span>Map</span></a>
+  </div>
+</nav>
+<script nonce="CSP_NONCE">
+var _removeId = null;
+(window.adminAuthRehydrate || Promise.resolve.bind(Promise, true))().then(function(ok) {
+  if (!ok) return;
+  var u=getAdminUser(); if(u) document.getElementById('sidebarName').textContent=u.name||'Admin';
+  var p=window.location.pathname.split('/').pop();
+  document.querySelectorAll('#adminBottomNav .bnav-item').forEach(function(a){a.classList.toggle('active',a.getAttribute('href')===p);});
+  document.querySelectorAll('.sidebar .nav-item').forEach(function(a){a.classList.toggle('active',a.getAttribute('href')===p);});
+  loadDeliveryBoys();
+});
+
+async function loadDeliveryBoys(){
+  var tbody   = document.getElementById('deliveryBoysBody');
+  var cardList= document.getElementById('dbCardList');
+  try{
+    var res  = await apiFetch('/api/v1/delivery/boys');
+    var data = await res.json();
+    if(!data.success) throw new Error(data.message);
+    var boys   = data.data || [];
+    var active = boys.filter(function(b){ return b.is_active; }).length;
+    document.getElementById('statTotal').textContent    = boys.length;
+    document.getElementById('statActive').textContent   = active;
+    document.getElementById('statInactive').textContent = boys.length - active;
+
+    if(!boys.length){
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--ink-soft)">No delivery boys yet. Add one above.</td></tr>';
+      if(cardList) cardList.innerHTML = '<p style="text-align:center;padding:32px;color:var(--ink-soft);font-size:.88rem">No delivery boys yet.</p>';
+      return;
+    }
+
+    /* ── Desktop table rows ─────────────────────────────────── */
+    tbody.innerHTML = boys.map(function(b, i){
+      var joined = b.created_at
+        ? new Date(b.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})
+        : '—';
+      var badge  = b.is_active
+        ? '<span class="badge badge-success">Active</span>'
+        : '<span class="badge badge-error">Inactive</span>';
+      var safeName = b.name.replace(/'/g,"\\'");
+      var action = b.is_active
+        ? '<button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error);white-space:nowrap" onclick="askRemove('+b.id+',\''+safeName+'\')" >Deactivate</button>'
+        : '<span style="font-size:.75rem;color:var(--ink-faint)">Inactive</span>';
+      return '<tr>'
+        + '<td style="color:var(--ink-soft);font-size:.78rem;width:36px">'+(i+1)+'</td>'
+        + '<td style="font-weight:700;white-space:nowrap">'+esc(b.name)+'</td>'
+        + '<td class="db-phone" style="white-space:nowrap">'+esc(b.phone)+'</td>'
+        + '<td>'+badge+'</td>'
+        + '<td style="font-size:.78rem;color:var(--ink-soft);white-space:nowrap">'+joined+'</td>'
+        + '<td class="db-actions">'+action+'</td>'
+        + '</tr>';
+    }).join('');
+
+    /* ── Mobile card list ───────────────────────────────────── */
+    if(cardList){
+      cardList.innerHTML = boys.map(function(b){
+        var joined = b.created_at
+          ? new Date(b.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})
+          : '—';
+        var statusLabel = b.is_active
+          ? '<span class="badge badge-success" style="font-size:.7rem">Active</span>'
+          : '<span class="badge badge-error"   style="font-size:.7rem">Inactive</span>';
+        var safeName = b.name.replace(/'/g,"\\'");
+        var actionBtn = b.is_active
+          ? '<button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error);font-size:.72rem;padding:4px 10px" onclick="askRemove('+b.id+',\''+safeName+'\')">Deactivate</button>'
+          : '<span style="font-size:.72rem;color:var(--ink-faint)">Inactive</span>';
+        return '<div class="db-card">'
+          + '<div class="db-card-avatar">🚴</div>'
+          + '<div class="db-card-body">'
+          +   '<div class="db-card-name">'+esc(b.name)+'</div>'
+          +   '<div class="db-card-meta">'
+          +     '<span class="db-phone-m">'+esc(b.phone)+'</span>'
+          +     statusLabel
+          +     '<span style="color:var(--ink-faint)">'+joined+'</span>'
+          +   '</div>'
+          + '</div>'
+          + '<div class="db-card-action">'+actionBtn+'</div>'
+          + '</div>';
+      }).join('');
+    }
+
+  }catch(e){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--error)">⚠️ Failed to load. <button class="btn btn-outline btn-sm" onclick="loadDeliveryBoys()">Retry</button></td></tr>';
+    if(cardList) cardList.innerHTML = '<p style="text-align:center;padding:24px;color:var(--error)">⚠️ Failed to load. <button class="btn btn-outline btn-sm" onclick="loadDeliveryBoys()">Retry</button></p>';
+    showToast(e.message, 'error');
+  }
+}
+
+function openAddModal(){
+  document.getElementById('dbName').value='';
+  document.getElementById('dbPhone').value='';
+  document.getElementById('dbPassword').value='';
+  document.getElementById('addErr').style.display='none';
+  document.getElementById('addBtn').textContent='Add Delivery Boy';
+  document.getElementById('addBtn').disabled=false;
+  openModal('addModal');
+  setTimeout(function(){document.getElementById('dbName').focus();},200);
+}
+
+async function submitAdd(){
+  var name=document.getElementById('dbName').value.trim();
+  var phone=document.getElementById('dbPhone').value.trim();
+  var password=document.getElementById('dbPassword').value;
+  var errDiv=document.getElementById('addErr');
+  var btn=document.getElementById('addBtn');
+  errDiv.style.display='none';
+  if(!name||!phone||!password){errDiv.textContent='All fields are required.';errDiv.style.display='';return;}
+  if(!/^\d{10}$/.test(phone)){errDiv.textContent='Phone must be 10 digits.';errDiv.style.display='';return;}
+  if(password.length<6){errDiv.textContent='Password must be at least 6 characters.';errDiv.style.display='';return;}
+  btn.textContent='⏳ Adding…';btn.disabled=true;
+  try{
+    var res=await apiFetch('/api/v1/delivery/boys',{method:'POST',body:JSON.stringify({name,phone,password})});
+    var data=await res.json();
+    if(!data.success)throw new Error(data.message);
+    showToast(name+' added ✓','success');
+    closeModal('addModal');
+    loadDeliveryBoys();
+  }catch(e){
+    errDiv.textContent=e.message;errDiv.style.display='';
+    btn.textContent='Add Delivery Boy';btn.disabled=false;
+  }
+}
+
+function askRemove(id,name){
+  _removeId=id;
+  document.getElementById('removeNameLabel').textContent=name;
+  openModal('removeModal');
+}
+async function doRemove(){
+  if(!_removeId)return;
+  var btn=document.getElementById('removeConfirmBtn');
+  btn.textContent='⏳…';btn.disabled=true;
+  try{
+    var res=await apiFetch('/api/v1/delivery/boys/'+_removeId,{method:'DELETE'});
+    var data=await res.json();
+    if(!data.success)throw new Error(data.message);
+    showToast('Deactivated','success');
+    closeModal('removeModal');
+    loadDeliveryBoys();
+  }catch(e){showToast(e.message,'error');}
+  finally{btn.textContent='Deactivate';btn.disabled=false;_removeId=null;}
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toggleSidebar(){var s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');var open=s.classList.toggle('open');o.classList.toggle('show',open);document.body.style.overflow=open?'hidden':'';}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show');document.body.style.overflow='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeSidebar();closeModal('addModal');closeModal('removeModal');}});
+</script>
+
+<script nonce="CSP_NONCE">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
