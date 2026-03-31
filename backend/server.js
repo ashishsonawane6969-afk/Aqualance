@@ -39,6 +39,11 @@ const path         = require('path');
 const crypto       = require('crypto');
 const fs           = require('fs');
 
+console.log("ENV CHECK:");
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_USER:", process.env.DB_USER);
+
 const { globalLimiter, mapsKeyLimiter } = require('./middleware/rateLimiter');
 const authMiddleware = require('./middleware/auth');
 
