@@ -20,7 +20,7 @@
 
 require('dotenv').config();
 const logger = require('./utils/logger');
-
+console.log("DB_HOST =", process.env.DB_HOST);
 const express = require('express');
 const cors    = require('cors');
 const helmet      = require('helmet');
