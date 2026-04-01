@@ -5,7 +5,7 @@
 
 'use strict';
 
-const API = '/api/v1';
+const API = 'https://aqualance-production.up.railway.app/api/v1';
 
 /* ─────────────────────────────────────────────────────────────
    TOAST
