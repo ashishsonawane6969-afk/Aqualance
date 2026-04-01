@@ -73,12 +73,12 @@ const pool = mysql.createPool({
         console.error('❌  Could not create database:', createErr.code || createErr.message);
         console.error('   Check DB_USER has CREATE privilege, or create the database manually:');
         console.error(`   mysql -u ${DB_USER} -p -e "CREATE DATABASE ${DB_NAME}"`);
-        process.exit(1);
+        throw new Error('DB connection failed');
       }
     } else {
       console.error('❌  MySQL connection failed:', err.code || err.message);
       console.error('   Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD in your .env');
-      process.exit(1);
+      throw new Error('DB connection failed');
     }
   }
 })();
