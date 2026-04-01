@@ -19,6 +19,7 @@
 (function (global) {
   'use strict';
 
+  const API_BASE = 'https://aqualance-production.up.railway.app';
   /* ══════════════════════════════════════════════════════════════
      0. GLOBAL AUTH GATE
      Fires /auth/me once per page load. All apiFetch calls are
@@ -51,7 +52,7 @@
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
-    fetch('/api/v1/auth/me', { credentials: 'include' })
+    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
@@ -181,6 +182,11 @@
   function adaptiveFetch(url, options, _retryCount) {
     options      = options      || {};
     _retryCount  = _retryCount  || 0;
+
+     // ✅ FIX: prepend backend URL
+  if (url.startsWith('/')) {
+    url = API_BASE + url;
+  }
     var maxRetry = NetQ.maxRetries();
     var timeout  = (options._timeout !== undefined) ? options._timeout : NetQ.timeout();
 
@@ -595,7 +601,7 @@
         // Silently re-validate the cookie without hiding the page.
         // If the cookie expired while the tab was inactive, the next
         // apiFetch will return 401 and logout() will handle the redirect.
-        fetch('/api/v1/auth/me', { credentials: 'include' })
+        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
           .then(function(res) {
             if (!res.ok) {
               // Cookie expired — log out via the appropriate logout fn
