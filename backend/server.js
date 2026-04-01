@@ -294,12 +294,29 @@ function startServer(port) {
 
 /* ── Run DB migrations then start listening ──────────────────────────────── */
 (async () => {
+  let dbReady = false;
+
   try {
     await require('./utils/ensureAuthTables').ensureAuthTables();
+    dbReady = true;
+    logger.info('✅ Database connected & tables ensured');
   } catch (e) {
-    logger.warn('Database migration warning:', e.message);
+    logger.error('❌ Database connection failed:', e.message);
+    logger.error('⚠️  Server will still start, but DB routes may fail');
   }
+
   startServer(PREFERRED_PORT);
+
+  // Optional: retry DB connection in background (Railway cold start fix)
+  if (!dbReady) {
+    setInterval(async () => {
+      try {
+        await require('./utils/ensureAuthTables').ensureAuthTables();
+        logger.info('✅ Database reconnected successfully');
+        process.exit(0); // restart cleanly (Railway auto-redeploy behavior)
+      } catch (_) {}
+    }, 10000);
+  }
 })();
 
 /* ── Process-level error guards ──────────────────────────────────────────── */
