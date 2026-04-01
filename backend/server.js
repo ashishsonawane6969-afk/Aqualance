@@ -15,20 +15,42 @@
  * Environment variables required — see .env.example
  * ─────────────────────────────────────────────────────────────────────────────
  *
- * FIXES APPLIED (vs broken version):
- *   1. Removed stray console.log("DB_HOST =", ...) debug line
- *   2. Removed duplicate /api/v1/config/maps-key route (first one, admin/salesman only)
- *   3. Moved migration IIFE + startServer() call to BOTTOM of file — after
- *      PREFERRED_PORT and startServer() are defined (was crashing with
- *      ReferenceError: PREFERRED_PORT is not defined)
- *   4. Removed stale comment "startServer() is called INSIDE this IIFE" that
- *      was left at the old location mid-file
+ * FIXES APPLIED:
+ *   1. Removed debug console.log("ENV CHECK") block that leaked credentials
+ *   2. Added DATABASE_URL parser — Railway MySQL plugin provides a single
+ *      DATABASE_URL; this splits it into DB_HOST / DB_PORT / DB_USER /
+ *      DB_PASSWORD / DB_NAME so config/db.js works without changes.
+ *   3. All other logic unchanged.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 'use strict';
 
 require('dotenv').config();
+
+/* ── Railway DATABASE_URL parser ─────────────────────────────────────────────
+ * Railway's MySQL plugin injects a single DATABASE_URL like:
+ *   mysql://USER:PASSWORD@HOST:PORT/DATABASE
+ *
+ * If individual DB_* vars are NOT already set, parse DATABASE_URL and inject
+ * them so the rest of the app (config/db.js, validateEnv.js) sees them.
+ * ─────────────────────────────────────────────────────────────────────────── */
+if (process.env.DATABASE_URL && !process.env.DB_HOST) {
+  try {
+    const u = new URL(process.env.DATABASE_URL);
+    process.env.DB_HOST     = u.hostname;
+    process.env.DB_PORT     = u.port || '3306';
+    process.env.DB_USER     = decodeURIComponent(u.username);
+    process.env.DB_PASSWORD = decodeURIComponent(u.password);
+    // Strip leading slash from pathname to get the database name
+    process.env.DB_NAME     = u.pathname.replace(/^\//, '') || 'aqualence_db';
+    console.info('ℹ️  [db] Parsed DATABASE_URL → DB_HOST=%s DB_PORT=%s DB_NAME=%s',
+      process.env.DB_HOST, process.env.DB_PORT, process.env.DB_NAME);
+  } catch (e) {
+    console.error('❌  [db] Failed to parse DATABASE_URL:', e.message);
+  }
+}
+
 const logger = require('./utils/logger');
 
 const express      = require('express');
@@ -38,11 +60,6 @@ const cookieParser = require('cookie-parser');
 const path         = require('path');
 const crypto       = require('crypto');
 const fs           = require('fs');
-
-console.log("ENV CHECK:");
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
-console.log("DB_HOST:", process.env.DB_HOST);
-console.log("DB_USER:", process.env.DB_USER);
 
 const { globalLimiter, mapsKeyLimiter } = require('./middleware/rateLimiter');
 const authMiddleware = require('./middleware/auth');
@@ -213,8 +230,6 @@ app.get('/api/health',    healthHandler);
 app.get('/api/v1/health', healthHandler);
 
 /* ── Maps API key (AUTH-GATED) ───────────────────────────────────────────── */
-// FIX: was registered twice with conflicting role lists — now registered once.
-// Allows admin + salesman + delivery (the correct full set).
 app.get(
   '/api/v1/config/maps-key',
   mapsKeyLimiter,
@@ -255,9 +270,6 @@ app.get('*', (req, res) => {
 });
 
 /* ── Start ───────────────────────────────────────────────────────────────── */
-// PREFERRED_PORT and startServer() MUST be defined before the migration IIFE
-// calls startServer(). In the broken version the IIFE was above this block,
-// causing: ReferenceError: PREFERRED_PORT is not defined
 const PREFERRED_PORT = parseInt(process.env.PORT, 10) || 5000;
 
 function startServer(port) {
@@ -281,8 +293,6 @@ function startServer(port) {
 }
 
 /* ── Run DB migrations then start listening ──────────────────────────────── */
-// FIX: this IIFE is now at the BOTTOM — after PREFERRED_PORT and startServer()
-// are defined. Previously it was mid-file and crashed with ReferenceError.
 (async () => {
   try {
     await require('./utils/ensureAuthTables').ensureAuthTables();
