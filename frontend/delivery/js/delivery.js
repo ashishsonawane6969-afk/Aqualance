@@ -1,5 +1,5 @@
 /* ─── delivery.js ─────────────────────────────────────────── */
-const API = '/api/v1';
+const API = 'https://aqualance-production.up.railway.app/api/v1';
 
 /* ── XSS Guard: escape all DB values before inserting into innerHTML ────── */
 // Any field that originated from user input (shop_name, customer_name, address,
