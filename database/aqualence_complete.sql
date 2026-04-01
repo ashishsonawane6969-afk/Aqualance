@@ -9,14 +9,21 @@
 --   ✅ DigitalOcean Managed MySQL
 --   ✅ Any MySQL 5.7+ or 8.0+ host
 --
--- HOW TO RUN:
+-- HOW TO RUN ON RAILWAY:
+--   1. Open your Railway MySQL service → Data tab → Query
+--   2. Paste this entire file and run it
+--   OR connect via a MySQL client using Railway's connection details
+--
+-- HOW TO RUN LOCALLY:
 --   Workbench : File → Open SQL Script → Execute All (⚡)
 --   phpMyAdmin: Import tab → choose this file → Go
---   CLI       : mysql -u root -p < aqualence_complete.sql
+--   CLI       : mysql -u root -p aqualence_db < aqualence_complete.sql
+--
+-- NOTE: CREATE DATABASE and USE statements removed for Railway
+--       compatibility. Railway pre-creates the database for you.
+--       Run this script while already connected to your database.
 --
 -- NO stored procedures, NO DELIMITER, NO SOURCE commands.
--- All "IF NOT EXISTS / IF EXISTS" guards use plain ALTER TABLE
--- with duplicate-column checks handled by pre-DROP approach.
 --
 -- LOGIN CREDENTIALS (after import):
 --   Admin    : phone 9000000001  password Admin@123
@@ -24,12 +31,6 @@
 --   Delivery : phone 9000000003  password Delivery@123
 --   Salesman : phone 9000000004  password Sales@123
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS `aqualence_db`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `aqualence_db`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = '';
@@ -348,5 +349,5 @@ SELECT
   t.table_name,
   t.table_rows AS approx_rows
 FROM information_schema.tables t
-WHERE t.table_schema = 'aqualence_db'
+WHERE t.table_schema = DATABASE()
 ORDER BY t.table_name;
