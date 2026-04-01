@@ -5,6 +5,18 @@
 
 'use strict';
 
+// 🔥 FORCE all fetch calls to use Railway backend
+const ORIGINAL_FETCH = window.fetch;
+
+window.fetch = function (url, options = {}) {
+  if (typeof url === 'string' && url.startsWith('/api')) {
+    url = 'https://aqualance-production.up.railway.app' + url;
+  }
+  return ORIGINAL_FETCH(url, options);
+};
+
+
+
 const API = 'https://aqualance-production.up.railway.app/api/v1';
 
 /* ─────────────────────────────────────────────────────────────
