@@ -377,6 +377,12 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeSidebar();closeModal('addModal');closeModal('removeModal');}});
 </script>
 
+<!-- Vercel Speed Insights -->
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+
 <script nonce="CSP_NONCE">
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
