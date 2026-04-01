@@ -7,7 +7,7 @@
 
 'use strict';
 
-const _productAPI = '/api/v1';
+const _productAPI = 'https://aqualance-production.up.railway.app/api/v1';
 
 /* ── Safe HTML escape ──────────────────────────────────────── */
 function _esc(str) {
