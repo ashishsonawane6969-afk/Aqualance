@@ -15,6 +15,8 @@
  *   8. Saves last known data to sessionStorage as a fallback
  * ─────────────────────────────────────────────────────────────────
  */
+console.log("✅ NEW network.js LOADED");
+
 
 (function (global) {
   'use strict';
