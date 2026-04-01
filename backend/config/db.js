@@ -26,7 +26,7 @@ const DB_USER  = process.env.DB_USER || 'root';
 const DB_PASS  = process.env.DB_PASSWORD || '';
 
 const sslConfig = process.env.DB_SSL === 'true'
-  ? { rejectUnauthorized: true }
+  ? { rejectUnauthorized: false }
   : false;
 
 // Pool used by all controllers — always targets aqualence_db
