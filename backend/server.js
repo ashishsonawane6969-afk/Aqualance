@@ -245,15 +245,6 @@ app.get('/', (req, res) => {
 
 
 
-app.get('/test-products', async (req, res) => {
-  try {
-    const db = require('./config/db');
-    const [rows] = await db.query('SELECT 1');
-    res.json({ success: true, rows });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 
 
