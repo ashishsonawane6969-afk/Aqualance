@@ -10,11 +10,7 @@ let pool;
 async function connectDB() {
   try {
     pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10) || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
+      uri: process.env.DATABASE_URL,   // ✅ USE THIS ONLY
 
       waitForConnections: true,
       connectionLimit: parseInt(process.env.DB_POOL_SIZE, 10) || 10,
@@ -22,17 +18,21 @@ async function connectDB() {
 
       connectTimeout: 10000,
 
-      ssl: process.env.DB_SSL === 'true'
-        ? { rejectUnauthorized: false }
-        : false,
+      ssl: false   // ✅ FORCE DISABLE SSL (Railway MySQL)
     });
 
-    // 🔥 TEST CONNECTION (IMPORTANT)
+    // 🔥 TEST CONNECTION
     const conn = await pool.getConnection();
-    console.log(`✅ MySQL connected — ${process.env.DB_NAME}`);
+    console.log("✅ MySQL connected successfully");
     conn.release();
 
     return pool;
+
+  } catch (err) {
+    console.error("❌ MySQL connection failed:", err.message);
+    throw err;
+  }
+}
 
   } catch (err) {
     console.error('❌ MySQL connection failed:', err.message);
