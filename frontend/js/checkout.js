@@ -4,6 +4,10 @@ function renderReview() {
   const cart  = getCart();
   const items = document.getElementById('reviewItems');
   const total = document.getElementById('reviewTotal');
+  
+  // frontend/js/checkout.js — use the absolute URL explicitly
+const res = await _fetcher('https://aqualance-production.up.railway.app/api/v1/orders', {
+  
   if (!items) return;
 
   if (!cart.length) {
