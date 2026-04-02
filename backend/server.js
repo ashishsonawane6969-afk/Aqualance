@@ -243,27 +243,28 @@ app.get('/', (req, res) => {
 });
 
 /* ── Start ───────────────────────────────────────────────────────────────── */
-const PREFERRED_PORT = parseInt(process.env.PORT, 10) || 5000;
+const PORT = process.env.PORT || 5000;
 
-function startServer(port) {
-  const server = app.listen(port, () => {
-    if (port !== PREFERRED_PORT) {
-      console.warn(`\n⚠️   Port ${PREFERRED_PORT} was in use — started on port ${port} instead.`);
-      console.warn(`   Update PORT=${port} in your .env, or stop the process on ${PREFERRED_PORT}.\n`);
-    }
-    logger.info(`🚀  Aqualence Ventures running on http://localhost:${port}\n`);
-  });
+(async () => {
+  try {
+    // ✅ connect DB
+    await connectDB();
 
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`⚠️   Port ${port} is in use — trying ${port + 1}…`);
-      startServer(port + 1);
-      return;
-    }
-    logger.error('Server error:', err);
+    // ✅ run migrations
+    await require('./utils/ensureAuthTables').ensureAuthTables();
+
+    logger.info('✅ Database ready');
+
+    // ✅ START SERVER (CRITICAL FIX)
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error('❌ Startup failed:', err);
     process.exit(1);
-  });
-}
+  }
+})();
 
 /* ── Run DB migrations then start listening ──────────────────────────────── */
 (async () => {
@@ -291,20 +292,9 @@ app.get('/', (req, res) => {
   });
 });
   
-  startServer(PREFERRED_PORT);
 
   // Retry logic (unchanged)
-  if (!dbReady) {
-    setInterval(async () => {
-      try {
-        await connectDB(); // ✅ ADD THIS ALSO
-        await require('./utils/ensureAuthTables').ensureAuthTables();
-        logger.info('✅ Database reconnected successfully');
-        process.exit(0);
-      } catch (_) {}
-    }, 10000);
-  }
-})();
+ 
 /* ── Process-level error guards ──────────────────────────────────────────── */
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('[unhandledRejection]', 'Promise:', promise, 'Reason:', reason);
