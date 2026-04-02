@@ -62,15 +62,18 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle same-origin requests
-  if (url.origin !== location.origin) return;
-
-  // API calls → Network-First (never serve stale API data from cache)
-  if (url.pathname.startsWith('/api/')) {
+  // ✅ Handle Railway API calls (cross-origin) — Network-First
+const RAILWAY_API = 'https://aqualance-production.up.railway.app';
+  
+  if (url.origin === RAILWAY_API) {
     event.respondWith(networkFirst(request));
     return;
   }
 
+  // Only handle same-origin requests for everything else
+  if (url.origin !== location.origin) return;
+  // ... rest of existing logic
+});
   // Static assets (CSS/JS/images/fonts) → Cache-First
   if (
     request.destination === 'script'  ||
