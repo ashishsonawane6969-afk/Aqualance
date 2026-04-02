@@ -95,14 +95,15 @@ app.use((req, res, next) => {
       directives: {
         defaultSrc:    ["'self'"],
       // backend/server.js — Change single quotes to backtick
+// backend/server.js — simplify the CSP directive
 scriptSrc: [
   "'self'",
-  `'nonce-${res.locals.cspNonce}'`,  // ✅ backtick template literal
   'https://maps.googleapis.com',
   'https://unpkg.com',
   'https://cdnjs.cloudflare.com',
+  // Remove the broken nonce — external script src allowlist is sufficient
 ],
-        scriptSrcAttr: ["'unsafe-inline'"],
+scriptSrcAttr: ["'none'"],  // remove 'unsafe-inline'
         styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
         imgSrc:        ["'self'", 'data:', 'blob:', 'https:'],
