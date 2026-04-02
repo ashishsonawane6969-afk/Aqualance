@@ -10,7 +10,7 @@ let pool;
 async function connectDB() {
   try {
     pool = mysql.createPool({
-      uri: process.env.DATABASE_URL,   // ✅ USE THIS ONLY
+      uri: process.env.DATABASE_URL,   // ✅ Railway connection
 
       waitForConnections: true,
       connectionLimit: parseInt(process.env.DB_POOL_SIZE, 10) || 10,
@@ -18,7 +18,7 @@ async function connectDB() {
 
       connectTimeout: 10000,
 
-      ssl: false   // ✅ FORCE DISABLE SSL (Railway MySQL)
+      ssl: false   // ✅ IMPORTANT: Railway MySQL doesn't need SSL
     });
 
     // 🔥 TEST CONNECTION
@@ -30,16 +30,6 @@ async function connectDB() {
 
   } catch (err) {
     console.error("❌ MySQL connection failed:", err.message);
-    throw err;
-  }
-}
-
-  } catch (err) {
-    console.error('❌ MySQL connection failed:', err.message);
-
-    // 🚫 DO NOT try to CREATE DATABASE on Railway
-    // 🚫 DO NOT process.exit()
-
     throw err;
   }
 }
