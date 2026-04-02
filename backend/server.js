@@ -242,17 +242,22 @@ const PORT = process.env.PORT || 5000;
 
 (async () => {
   try {
-    // ✅ Connect DB
     await connectDB();
-
-    // ✅ Run migrations
     await require('./utils/ensureAuthTables').ensureAuthTables();
 
     console.log('✅ Database ready');
 
-    // ✅ Start server
+    // 🔥 REGISTER ROUTES AFTER DB READY
+    app.use('/api/v1/auth',     require('./routes/auth'));
+    app.use('/api/v1/products', require('./routes/products'));
+    app.use('/api/v1/orders',   require('./routes/orders'));
+    app.use('/api/v1/delivery', require('./routes/delivery'));
+    app.use('/api/v1/salesman', require('./routes/salesman'));
+    app.use('/api/v1/geo',      require('./routes/geo'));
+    app.use('/api/v1/ai',       require('./routes/ai'));
+
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(🚀 Server running on port ${PORT});
+      console.log(`🚀 Server running on port ${PORT}`);
     });
 
   } catch (err) {
