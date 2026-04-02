@@ -70,10 +70,9 @@ const app = express();
 /* ── Trust proxy ─────────────────────────────────────────────────────────── */
 // Required so express-rate-limit reads the real client IP behind nginx/LB.
 // Set TRUST_PROXY=true in Railway env vars.
-if (process.env.TRUST_PROXY === 'true') {
+if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
-
 /* ── Validate critical dependencies at startup ───────────────────────────── */
 // bcrypt is loaded via utils/bcrypt.js which auto-falls back to bcryptjs.
 require('./utils/bcrypt');
