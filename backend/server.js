@@ -137,9 +137,21 @@ scriptSrc: [
 /* ── CORS ────────────────────────────────────────────────────────────────── */
 // OWASP A05: explicit allowlist — no wildcard origins.
 // In Railway set: ALLOWED_ORIGINS=https://your-app.vercel.app
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-  : ['http://localhost:5000', 'http://127.0.0.1:5000'];
+// backend/server.js
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+if (allowedOrigins.length === 0) {
+  throw new Error('ALLOWED_ORIGINS env var is required. Set it to your Vercel URL.');
+}
+```
+
+**Railway env var to set:**
+```
+ALLOWED_ORIGINS=https://aqualance.vercel.app
+
 
 app.use(cors({
   origin: (origin, callback) => {
