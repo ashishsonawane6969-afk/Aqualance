@@ -221,14 +221,14 @@ app.use('/api/config/maps-key', (req, res) => {
 
 /* ── Global error handler ────────────────────────────────────────────────── */
 // eslint-disable-next-line no-unused-vars
-app.use((err, req, res, _next) => {
-  console.error([${new Date().toISOString()}] ${req.method} ${req.path} — ${err.message});
-  if (err.message === 'Not allowed by CORS') {
-    return res.status(403).json({ success: false, message: 'CORS: origin not allowed' });
-  }
-  res.status(500).json({ success: false, message: 'Internal server error' });
-});
+app.use((err, req, res, next) => {
+  console.error("🔥 ERROR:", err); // full error
 
+  res.status(500).json({
+    success: false,
+    message: err.message || 'Internal server error'
+  });
+});
 /* ── Root route (Railway health check) ─────────────────────────── */
 app.get('/', (req, res) => {
   res.json({
@@ -236,6 +236,22 @@ app.get('/', (req, res) => {
     message: 'Aqualence API running'
   });
 });
+
+
+
+app.get('/test-products', async (req, res) => {
+  try {
+    const db = require('./config/db');
+    const [rows] = await db.query('SELECT 1');
+    res.json({ success: true, rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
 
 /* ── Start Server (Railway-safe) ───────────────────────────────── */
 const PORT = process.env.PORT || 5000;
