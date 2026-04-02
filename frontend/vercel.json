@@ -1,1 +1,17 @@
 
+{
+  "rewrites": [
+    { "source": "/admin/(.*)", "destination": "/admin/$1" },
+    { "source": "/salesman/(.*)", "destination": "/salesman/$1" },
+    { "source": "/delivery/(.*)", "destination": "/delivery/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ]
+}
