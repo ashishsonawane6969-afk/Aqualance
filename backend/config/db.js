@@ -47,4 +47,8 @@ function getPool() {
 module.exports = {
   connectDB,
   getPool,
+  query: async (...args) => {
+    if (!pool) throw new Error("DB not initialized");
+    return pool.query(...args);
+  }
 };
