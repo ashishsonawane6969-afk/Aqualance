@@ -29,8 +29,9 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Production: /var/log/aqualence/  (create + chown before deploy)
 // Development: ./logs/ (relative to backend/)
 const LOG_DIR = isProduction
-  ? '/var/log/aqualence'
+  ? (process.env.LOG_DIR || path.join(__dirname, '../logs'))  // ✅ Railway-safe
   : path.join(__dirname, '../logs');
+
 
 // Ensure log directory exists (development only — in production use provisioning)
 if (!isProduction) {
