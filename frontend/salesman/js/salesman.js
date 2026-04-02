@@ -37,8 +37,8 @@ async function salesLogout() {
   if (_salesLoggingOut) return;
   _salesLoggingOut = true;
   try {
-    await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-  } catch (_) { /* best-effort */ }
+    await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); // ✅
+  } catch (_) {}
   sessionStorage.removeItem('aq_sales_user');
   window.location.replace('/salesman/login.html');
 }
