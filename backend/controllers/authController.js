@@ -57,11 +57,12 @@ const BCRYPT_ROUNDS       = parseInt(process.env.BCRYPT_ROUNDS, 10) || 12;
 const DUMMY_HASH = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbNXQ9Dey';
 
 /* ── Cookie config ───────────────────────────────────────────────────────── */
+// backend/controllers/authController.js
 function cookieOptions(maxAgeMs) {
   return {
-    httpOnly: true,                                        // Fix 2: JS cannot read this
-    secure:   process.env.NODE_ENV === 'production',       // HTTPS only in prod
-    sameSite: 'Strict',                                    // no cross-site requests
+    httpOnly: true,
+    secure:   process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // 🔥 CRITICAL FIX
     maxAge:   maxAgeMs,
     path:     '/',
   };
