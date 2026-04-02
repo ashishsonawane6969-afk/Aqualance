@@ -32,9 +32,9 @@ async function deliveryLogout() {
   if (_deliveryLoggingOut) return;
   _deliveryLoggingOut = true;
   try {
-    await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-  } catch (_) { /* best-effort */ }
-  sessionStorage.removeItem('aq_delivery_user');
+    await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); // ✅
+  } catch (_) {}
+  sessionStorage.removeItem('aq_sales_user');
   window.location.replace('/delivery/login.html');
 }
 window.deliveryLogout = deliveryLogout;
