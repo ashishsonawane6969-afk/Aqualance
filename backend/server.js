@@ -105,12 +105,13 @@ app.use((req, res, next) => {
         styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
         imgSrc:        ["'self'", 'data:', 'blob:', 'https:'],
-       connectSrc: [
+      connectSrc: [
   "'self'",
   'https://maps.googleapis.com',
   'https://nominatim.openstreetmap.org',
   'https://*.tile.openstreetmap.org',
-  'https://aqualance-production.up.railway.app' // ✅ ADD THIS
+  'https://aqualance-production.up.railway.app',
+  'https://aqualance.vercel.app' // 🔥 ADD THIS
 ],
         frameSrc:      ['https://maps.google.com', 'https://www.google.com'],
         objectSrc:     ["'none'"],
@@ -283,6 +284,13 @@ function startServer(port) {
     logger.error('⚠️  Server will still start, but DB routes may fail');
   }
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Aqualence API is running'
+  });
+});
+  
   startServer(PREFERRED_PORT);
 
   // Retry logic (unchanged)
