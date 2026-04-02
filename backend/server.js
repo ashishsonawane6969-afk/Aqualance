@@ -105,7 +105,13 @@ app.use((req, res, next) => {
         styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
         imgSrc:        ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc:    ["'self'", 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://*.tile.openstreetmap.org'],
+       connectSrc: [
+  "'self'",
+  'https://maps.googleapis.com',
+  'https://nominatim.openstreetmap.org',
+  'https://*.tile.openstreetmap.org',
+  'https://aqualance-production.up.railway.app' // ✅ ADD THIS
+],
         frameSrc:      ['https://maps.google.com', 'https://www.google.com'],
         objectSrc:     ["'none'"],
       },
@@ -162,38 +168,6 @@ app.use(cookieParser());
 app.use(globalLimiter);
 
 /* ── Serve frontend statically — inject CSP nonce into HTML pages ────────── */
-const frontendDir = path.join(__dirname, '../frontend');
-
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/') || req.path.startsWith('/.well-known/')) return next();
-
-  let checkPath = req.path;
-  const ext = path.extname(checkPath);
-
-  if (checkPath === '/') {
-    checkPath = '/index.html';
-  } else if (!ext) {
-    checkPath += '.html';
-  } else if (ext !== '.html') {
-    return next();
-  }
-
-  let filePath = path.join(frontendDir, checkPath);
-
-  if (!filePath.startsWith(frontendDir + path.sep) && filePath !== frontendDir) {
-    return next();
-  }
-
-  fs.readFile(filePath, 'utf8', (err, html) => {
-    if (err) return next();
-    const injected = html.replace(/CSP_NONCE/g, res.locals.cspNonce);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(injected);
-  });
-});
-
-// Static assets (JS, CSS, images, fonts)
-app.use(express.static(frontendDir));
 
 /* ── TWA Digital Asset Links (Play Store) ───────────────────────────────── */
 app.get('/.well-known/assetlinks.json', (req, res) => {
@@ -260,13 +234,10 @@ app.use((err, req, res, _next) => {
 });
 
 /* ── Catch-all: serve SPA (with nonce injection) ─────────────────────────── */
-app.get('*', (req, res) => {
-  const indexPath = path.join(__dirname, '../frontend/index.html');
-  fs.readFile(indexPath, 'utf8', (err, html) => {
-    if (err) return res.status(404).send('Not found');
-    const injected = html.replace(/CSP_NONCE/g, res.locals.cspNonce);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(injected);
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Aqualence API running',
+    status: 'ok'
   });
 });
 
