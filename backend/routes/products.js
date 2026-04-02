@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// const ctrl = require('../controllers/productController');
+const ctrl = require('../controllers/productController');
 // const auth = require('../middleware/auth');
 // const { authenticatedLimiter } = require('../middleware/rateLimiter');
 // const { validate } = require('../middleware/validate');
