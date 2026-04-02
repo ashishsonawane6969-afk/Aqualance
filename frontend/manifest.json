@@ -37,14 +37,5 @@
       "description": "View delivery assignments"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/images/screenshot-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Home — Product Catalogue"
-    }
-  ],
   "prefer_related_applications": false
 }
