@@ -47,22 +47,19 @@ if (isProd) {
 }
 
 /* ── Rule 3: DB_USER must not be root in production ─────────────────────── */
-if (isProd && (process.env.DB_USER || '').toLowerCase() === 'root') {
-  errors.push('DB_USER=root is not allowed in production. ' +
-    'Create a dedicated user: run database/aqualence_complete.sql');
+/* ── Rule 3 (UPDATED): DATABASE_URL must exist ─────────────────────────── */
+if (!process.env.DATABASE_URL) {
+  errors.push('DATABASE_URL is not set. Required for Railway MySQL connection.');
 }
 
+
 /* ── Rule 4: TRUST_PROXY must be true in production (nginx required for HTTPS) */
-if (isProd && process.env.TRUST_PROXY !== 'true') {
-  warnings.push('TRUST_PROXY is not set to "true". ' +
-    'Rate limiting will use the proxy IP instead of the real client IP when behind nginx. ' +
-    'Set TRUST_PROXY=true in .env.');
+/* ── Rule 4 (UPDATED): Prevent localhost DB in production ─────────────── */
+if (isProd && process.env.DATABASE_URL && process.env.DATABASE_URL.includes('localhost')) {
+  errors.push('DATABASE_URL should not point to localhost in production.');
 }
 
 /* ── Rule 5: DB_PASSWORD must not be the default placeholder ────────────── */
-if (isProd && (process.env.DB_PASSWORD === 'root' || process.env.DB_PASSWORD === 'CHANGE_ME_STRONG_PASSWORD' || !process.env.DB_PASSWORD)) {
-  errors.push('DB_PASSWORD is set to a default/empty value. Set a strong password in production.');
-}
 
 /* ── Rule 6: GOOGLE_MAPS_API_KEY — warn if placeholder ─────────────────── */
 if ((process.env.GOOGLE_MAPS_API_KEY || '') === 'YOUR_GOOGLE_MAPS_API_KEY_HERE' ||
