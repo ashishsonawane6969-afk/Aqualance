@@ -94,13 +94,14 @@ app.use((req, res, next) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc:    ["'self'"],
-        scriptSrc:     [
-          "'self'",
-          'nonce-${res.locals.cspNonce}',
-          'https://maps.googleapis.com',
-          'https://unpkg.com',
-          'https://cdnjs.cloudflare.com',
-        ],
+      // backend/server.js — Change single quotes to backtick
+scriptSrc: [
+  "'self'",
+  `'nonce-${res.locals.cspNonce}'`,  // ✅ backtick template literal
+  'https://maps.googleapis.com',
+  'https://unpkg.com',
+  'https://cdnjs.cloudflare.com',
+],
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
