@@ -142,22 +142,17 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) {
-      // Allow no-origin requests (curl/Postman) in dev only
-      if (process.env.NODE_ENV === 'production') {
-        return callback(new Error('Missing Origin header'), false);
-      }
+    // ✅ CRITICAL: allow no-origin (Railway, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Not allowed by CORS'), false);
-  },
-  credentials:    true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  methods:        ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  maxAge:         86_400,
-}));
 
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 /* ── Body parsers ────────────────────────────────────────────────────────── */
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
