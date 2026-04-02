@@ -3,7 +3,7 @@ const router = express.Router();
 
 const ctrl = require('../controllers/productController');
 // const auth = require('../middleware/auth');
-// const { authenticatedLimiter } = require('../middleware/rateLimiter');
+const { authenticatedLimiter } = require('../middleware/rateLimiter');
 // const { validate } = require('../middleware/validate');
 // const { productWriteSchema, productQuerySchema } = require('../validation/schemas');
 
