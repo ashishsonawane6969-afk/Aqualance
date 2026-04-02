@@ -28,6 +28,7 @@
 
 require('dotenv').config();
 
+const { connectDB } = require('./config/db');
 /* ── Railway DATABASE_URL parser ─────────────────────────────────────────────
  * Railway's MySQL plugin injects a single DATABASE_URL like:
  *   mysql://USER:PASSWORD@HOST:PORT/DATABASE
@@ -297,9 +298,15 @@ function startServer(port) {
   let dbReady = false;
 
   try {
+    // ✅ STEP 1: CONNECT DATABASE FIRST
+    await connectDB();
+
+    // ✅ STEP 2: THEN RUN MIGRATIONS
     await require('./utils/ensureAuthTables').ensureAuthTables();
+
     dbReady = true;
     logger.info('✅ Database connected & tables ensured');
+
   } catch (e) {
     logger.error('❌ Database connection failed:', e.message);
     logger.error('⚠️  Server will still start, but DB routes may fail');
@@ -307,18 +314,18 @@ function startServer(port) {
 
   startServer(PREFERRED_PORT);
 
-  // Optional: retry DB connection in background (Railway cold start fix)
+  // Retry logic (unchanged)
   if (!dbReady) {
     setInterval(async () => {
       try {
+        await connectDB(); // ✅ ADD THIS ALSO
         await require('./utils/ensureAuthTables').ensureAuthTables();
         logger.info('✅ Database reconnected successfully');
-        process.exit(0); // restart cleanly (Railway auto-redeploy behavior)
+        process.exit(0);
       } catch (_) {}
     }, 10000);
   }
 })();
-
 /* ── Process-level error guards ──────────────────────────────────────────── */
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('[unhandledRejection]', 'Promise:', promise, 'Reason:', reason);
