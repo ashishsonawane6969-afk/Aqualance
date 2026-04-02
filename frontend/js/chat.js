@@ -19,7 +19,9 @@
 (function () {
 
   /* ── Constants ─────────────────────────────────────────────────────────── */
-  const API_URL       = '/api/v1/ai/chat';
+  // ✅ AFTER — use the same constant pattern as all other JS files
+const API = 'https://aqualance-production.up.railway.app/api/v1';
+const API_URL = `${API}/ai/chat`;
   const MAX_HISTORY   = 12;   // turns to keep in memory (matches server cap)
   const MIN_INTERVAL  = 2100; // ms — slightly above server's 2s cooldown
   const SUGGESTED_QS  = [
