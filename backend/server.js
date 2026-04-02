@@ -234,28 +234,28 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-/* ── Catch-all: serve SPA (with nonce injection) ─────────────────────────── */
+/* ── Root route (Railway health check) ─────────────────────────── */
 app.get('/', (req, res) => {
   res.json({
-    message: 'Aqualence API running',
-    status: 'ok'
+    status: 'ok',
+    message: 'Aqualence API running'
   });
 });
 
-/* ── Start ───────────────────────────────────────────────────────────────── */
+/* ── Start Server (Railway-safe) ───────────────────────────────── */
 const PORT = process.env.PORT || 5000;
 
 (async () => {
   try {
-    // ✅ connect DB
+    // ✅ Connect DB
     await connectDB();
 
-    // ✅ run migrations
+    // ✅ Run migrations
     await require('./utils/ensureAuthTables').ensureAuthTables();
 
-    logger.info('✅ Database ready');
+    console.log('✅ Database ready');
 
-    // ✅ START SERVER (CRITICAL FIX)
+    // ✅ Start server
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
@@ -266,46 +266,17 @@ const PORT = process.env.PORT || 5000;
   }
 })();
 
-/* ── Run DB migrations then start listening ──────────────────────────────── */
-(async () => {
-  let dbReady = false;
-
-  try {
-    // ✅ STEP 1: CONNECT DATABASE FIRST
-    await connectDB();
-
-    // ✅ STEP 2: THEN RUN MIGRATIONS
-    await require('./utils/ensureAuthTables').ensureAuthTables();
-
-    dbReady = true;
-    logger.info('✅ Database connected & tables ensured');
-
-  } catch (e) {
-    logger.error('❌ Database connection failed:', e.message);
-    logger.error('⚠️  Server will still start, but DB routes may fail');
-  }
-
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Aqualence API is running'
-  });
-});
-  
-
-  // Retry logic (unchanged)
- 
-/* ── Process-level error guards ──────────────────────────────────────────── */
+/* ── Process-level error guards ───────────────────────────────── */
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('[unhandledRejection]', 'Promise:', promise, 'Reason:', reason);
+  console.error('[unhandledRejection]', reason);
 });
 
 process.on('uncaughtException', (err) => {
-  logger.error('[uncaughtException] FATAL — process will restart', err);
+  console.error('[uncaughtException]', err);
   process.exit(1);
 });
 
 process.on('SIGTERM', () => {
-  logger.info('[SIGTERM] Graceful shutdown initiated…');
+  console.log('[SIGTERM] Shutting down...');
   process.exit(0);
 });
