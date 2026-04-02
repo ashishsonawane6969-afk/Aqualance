@@ -19,12 +19,13 @@ const CACHE_NAME    = 'aqualence-v1';
 const OFFLINE_URL   = '/offline.html';
 
 // Static assets to pre-cache on install
+// frontend/sw.js
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/offline.html',
   '/manifest.json',
-  '/css/app.css',
+  '/customer.css',   // ✅ was '/css/app.css' — file doesn't exist
   '/js/app.js',
   '/js/network.js',
   '/images/icon-192.png',
