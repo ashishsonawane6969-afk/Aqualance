@@ -93,27 +93,12 @@ app.use((req, res, next) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc:    ["'self'"],
-      // backend/server.js — Change single quotes to backtick
-// backend/server.js — simplify the CSP directive
-scriptSrc: [
-  "'self'",
-  'https://maps.googleapis.com',
-  'https://unpkg.com',
-  'https://cdnjs.cloudflare.com',
-  // Remove the broken nonce — external script src allowlist is sufficient
-],
-scriptSrcAttr: ["'none'"],  // remove 'unsafe-inline'
+        scriptSrc:     ["'self'", 'https://maps.googleapis.com', 'https://unpkg.com', 'https://cdnjs.cloudflare.com'],
+        scriptSrcAttr: ["'none'"],
         styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
         fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
         imgSrc:        ["'self'", 'data:', 'blob:', 'https:'],
-      connectSrc: [
-  "'self'",
-  'https://maps.googleapis.com',
-  'https://nominatim.openstreetmap.org',
-  'https://*.tile.openstreetmap.org',
-  'https://aqualance-production.up.railway.app',
-  'https://aqualance.vercel.app' // 🔥 ADD THIS
-],
+        connectSrc:    ["'self'", 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://*.tile.openstreetmap.org', 'https://aqualance-production.up.railway.app', 'https://aqualance.vercel.app'],
         frameSrc:      ['https://maps.google.com', 'https://www.google.com'],
         objectSrc:     ["'none'"],
       },
@@ -137,7 +122,6 @@ scriptSrcAttr: ["'none'"],  // remove 'unsafe-inline'
 /* ── CORS ────────────────────────────────────────────────────────────────── */
 // OWASP A05: explicit allowlist — no wildcard origins.
 // In Railway set: ALLOWED_ORIGINS=https://your-app.vercel.app
-// backend/server.js
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(o => o.trim())
@@ -146,12 +130,6 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 if (allowedOrigins.length === 0) {
   throw new Error('ALLOWED_ORIGINS env var is required. Set it to your Vercel URL.');
 }
-```
-
-**Railway env var to set:**
-```
-ALLOWED_ORIGINS=https://aqualance.vercel.app
-
 
 app.use(cors({
   origin: (origin, callback) => {
