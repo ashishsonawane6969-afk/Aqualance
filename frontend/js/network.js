@@ -569,6 +569,20 @@ console.log("✅ NEW network.js LOADED");
     }
   };
 
+
+
+  // frontend/js/network.js — add this block inside the IIFE, before the init() call
+// Patch native window.fetch so every portal benefits without touching 30+ call sites
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = function(url, options) {
+  if (typeof url === 'string' && url.startsWith('/api')) {
+    url = API_BASE + url;  // API_BASE = 'https://aqualance-production.up.railway.app'
+  }
+  return _nativeFetch(url, options);
+};
+
+  
+
   /* ══════════════════════════════════════════════════════════════
      INIT — run when DOM is ready
   ══════════════════════════════════════════════════════════════ */
