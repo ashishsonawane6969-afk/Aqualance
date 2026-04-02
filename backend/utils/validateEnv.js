@@ -40,10 +40,13 @@ if (isProd) {
       'Set it to your domain, e.g. https://yourdomain.com');
   }
   // Warn if localhost is still in the origin list
-  const hasLocalhost = origins.some(o => o.includes('localhost') || o.includes('127.0.0.1'));
-  if (hasLocalhost) {
-    warnings.push('ALLOWED_ORIGINS contains a localhost entry — this should be your production domain.');
-  }
+ // backend/utils/validateEnv.js
+const hasLocalhost = origins.some(o => o.includes('localhost') || o.includes('127.0.0.1'));
+if (hasLocalhost) {
+  // ❌ BEFORE: warnings.push(...)
+  // ✅ AFTER:
+  errors.push('ALLOWED_ORIGINS contains localhost — this will block all Vercel traffic in production.');
+}
 }
 
 /* ── Rule 3: DB_USER must not be root in production ─────────────────────── */
