@@ -193,13 +193,6 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
 });
 
 /* ── API Routes ──────────────────────────────────────────────────────────── */
-app.use('/api/v1/auth',     require('./routes/auth'));
-app.use('/api/v1/products', require('./routes/products'));
-app.use('/api/v1/orders',   require('./routes/orders'));
-app.use('/api/v1/delivery', require('./routes/delivery'));
-app.use('/api/v1/salesman', require('./routes/salesman'));
-app.use('/api/v1/geo',      require('./routes/geo'));
-app.use('/api/v1/ai',       require('./routes/ai'));
 
 /* ── Health check ────────────────────────────────────────────────────────── */
 function healthHandler(_, res) {
