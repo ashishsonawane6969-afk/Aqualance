@@ -83,4 +83,9 @@ router.post( '/mfa/setup',   authenticatedLimiter, auth(['admin']), mfaCtrl.setu
 router.post( '/mfa/enable',  authenticatedLimiter, auth(['admin']), validate(mfaOtpSchema), mfaCtrl.enable);
 router.post( '/mfa/disable', authenticatedLimiter, auth(['admin']), validate(mfaOtpSchema), mfaCtrl.disable);
 
-module.exports = router;
+module.exports = function (roles = []) {
+  return (req, res, next) => {
+    // your auth logic
+    next();
+  };
+};
