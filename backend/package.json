@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
+    "seed:products": "node scripts/seed-products.js",
     "secure:lock": "npm shrinkwrap",
     "audit:check": "npm audit --audit-level=high",
     "audit:fix": "npm audit fix"
