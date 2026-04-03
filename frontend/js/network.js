@@ -22,6 +22,7 @@ console.log("✅ NEW network.js LOADED");
   'use strict';
 
   const API_BASE = 'https://aqualance-production.up.railway.app';
+
   /* ══════════════════════════════════════════════════════════════
      0. GLOBAL AUTH GATE
      Fires /auth/me once per page load. All apiFetch calls are
@@ -35,6 +36,17 @@ console.log("✅ NEW network.js LOADED");
     _authGateResolve = res;
     _authGateReject  = rej;
   });
+
+  // ✅ FIX (Login Loop): Helper to wipe ALL portal user keys from sessionStorage.
+  // Called before every redirect-to-login so the login page never sees a stale
+  // user object and bounces back to the dashboard (the infinite loop root cause).
+  function _clearPortalSession() {
+    try {
+      sessionStorage.removeItem('aq_admin_user');
+      sessionStorage.removeItem('aq_sales_user');
+      sessionStorage.removeItem('aq_delivery_user');
+    } catch (_) {}
+  }
 
   function _runAuthGate() {
     var path = window.location.pathname;
@@ -54,18 +66,16 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
-    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+    fetch(${API_BASE}/api/v1/auth/me, { credentials: 'include' })
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
-          // Use a user-initiated-style navigation via clicking a hidden anchor
-          // so Chrome does not flag it as a non-interaction history entry
-          // Use an absolute redirect to the correct portal login
-          var a = document.createElement('a');
-          a.href = portalPrefix + '/login.html';
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
+          document.documentElement.style.visibility = '';
+          // ✅ FIX (Login Loop): MUST clear sessionStorage before redirecting.
+          // Without this, the login page finds aq_sales_user / aq_delivery_user
+          // still set and immediately redirects back to the dashboard → loop.
+          _clearPortalSession();
+          window.location.replace(portalPrefix + '/login.html');
           return;
         }
         return res.json();
@@ -73,6 +83,9 @@ console.log("✅ NEW network.js LOADED");
       .then(function(data) {
         if (!data) return;
         var role = data.user && data.user.role;
+        // ✅ FIX: Clear ALL role keys first, then only store the current role.
+        // Prevents cross-role contamination on shared mobile devices.
+        _clearPortalSession();
         if (role === 'admin') {
           sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
         } else if (role === 'salesman') {
@@ -88,11 +101,10 @@ console.log("✅ NEW network.js LOADED");
       .catch(function() {
         window._aqRehydrating = false;
         document.documentElement.style.visibility = '';
-        var a = document.createElement('a');
-        a.href = portalPrefix + '/login.html';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
+        // ✅ FIX (Login Loop): Also clear on network error so the login page
+        // does not bounce back to dashboard when the cookie fetch fails.
+        _clearPortalSession();
+        window.location.replace(portalPrefix + '/login.html');
       });
   }
 
@@ -134,7 +146,6 @@ console.log("✅ NEW network.js LOADED");
 
     _probe: function () {
       var t0 = Date.now();
-      // Fetch a 1-pixel GIF (cachebust so it always goes to network)
       fetch('/api/v1/health?_nq=' + t0, { method: 'GET', cache: 'no-store', mode: 'no-cors' })
         .then(function () {
           var rtt = Date.now() - t0;
@@ -185,10 +196,11 @@ console.log("✅ NEW network.js LOADED");
     options      = options      || {};
     _retryCount  = _retryCount  || 0;
 
-     // ✅ FIX: prepend backend URL
-  if (url.startsWith('/')) {
-    url = API_BASE + url;
-  }
+    // Prepend backend URL for relative paths
+    if (typeof url === 'string' && url.startsWith('/')) {
+      url = API_BASE + url;
+    }
+
     var maxRetry = NetQ.maxRetries();
     var timeout  = (options._timeout !== undefined) ? options._timeout : NetQ.timeout();
 
@@ -202,7 +214,6 @@ console.log("✅ NEW network.js LOADED");
     var controller = new AbortController();
     var tid = setTimeout(function () { controller.abort(); }, timeout);
 
-    // Merge signal (don't override caller's signal if they passed one)
     var fetchOpts = Object.assign({}, options, {
       signal: options.signal || controller.signal
     });
@@ -220,7 +231,6 @@ console.log("✅ NEW network.js LOADED");
         var isNetwork = err.name === 'TypeError' || err.message === 'Failed to fetch';
 
         if ((isTimeout || isNetwork) && _retryCount < maxRetry) {
-          // Exponential backoff: 1s · 2s · 4s · 8s + random jitter (±200ms)
           var delay = Math.pow(2, _retryCount) * 1000 + (Math.random() * 400 - 200);
           return new Promise(function (res) { setTimeout(res, delay); })
             .then(function () { return adaptiveFetch(url, options, _retryCount + 1); });
@@ -249,7 +259,6 @@ console.log("✅ NEW network.js LOADED");
     _badge:         null,
 
     init: function () {
-      // Offline banner
       var ob = document.createElement('div');
       ob.id        = 'aq-offline-banner';
       ob.className = 'aq-net-banner aq-offline hidden';
@@ -258,7 +267,6 @@ console.log("✅ NEW network.js LOADED");
       document.body.appendChild(ob);
       NetBanner._offlineBanner = ob;
 
-      // Slow-network banner
       var sb = document.createElement('div');
       sb.id        = 'aq-slow-banner';
       sb.className = 'aq-net-banner aq-slow hidden';
@@ -267,19 +275,16 @@ console.log("✅ NEW network.js LOADED");
       document.body.appendChild(sb);
       NetBanner._slowBanner = sb;
 
-      // Network badge — appended to topnav on desktop so it never overflows,
-      // falls back to fixed positioning on pages without a topnav.
       var badge = document.createElement('div');
       badge.id        = 'aq-net-badge';
       badge.className = 'aq-net-badge hidden';
       var topnav = document.querySelector('.topnav');
       if (topnav) {
-        // Sit inside the topnav at the far right
-        badge.style.position = 'relative';
-        badge.style.top      = 'auto';
-        badge.style.right    = 'auto';
-        badge.style.bottom   = 'auto';
-        badge.style.left     = 'auto';
+        badge.style.position   = 'relative';
+        badge.style.top        = 'auto';
+        badge.style.right      = 'auto';
+        badge.style.bottom     = 'auto';
+        badge.style.left       = 'auto';
         badge.style.marginLeft = 'auto';
         badge.style.flexShrink = '0';
         topnav.appendChild(badge);
@@ -288,7 +293,6 @@ console.log("✅ NEW network.js LOADED");
       }
       NetBanner._badge = badge;
 
-      // Online / offline events
       window.addEventListener('offline', function () {
         ob.classList.remove('hidden');
         ob.classList.add('show');
@@ -305,7 +309,6 @@ console.log("✅ NEW network.js LOADED");
         ob.classList.add('show');
       }
 
-      // Show slow banner once per session
       setTimeout(function () {
         if (NetQ.isSlow() && !sessionStorage.getItem('aq_slow_dismissed')) {
           sb.classList.remove('hidden');
@@ -321,7 +324,6 @@ console.log("✅ NEW network.js LOADED");
         NetBanner._offlineBanner.classList.remove('show');
         setTimeout(function () { NetBanner._offlineBanner.classList.add('hidden'); }, 600);
         _flushQueue();
-        // Trigger the appropriate page reload function
         var reloaders = [
           'loadProducts', 'loadDashboard', 'loadOrders',
           'loadMyOrders', 'loadLeads', 'loadQuickStats',
@@ -356,7 +358,6 @@ console.log("✅ NEW network.js LOADED");
       var label = { '2g': '2G', '3g': '3G', '4g': '4G', '5g': '5G', 'unknown': '?' }[tier] || '?';
       var cls   = 'aq-net-badge show tier-' + tier;
 
-      // Add RTT if we have it
       if (NetQ.rtt !== null && NetQ.rtt > 0) {
         label += ' · ' + NetQ.rtt + 'ms';
       }
@@ -364,7 +365,6 @@ console.log("✅ NEW network.js LOADED");
       b.textContent = '📶 ' + label;
       b.className   = cls;
 
-      // Auto-hide badge after 5s (unless on 2G/3G — keep it visible as a reminder)
       if (tier === '4g' || tier === '5g' || tier === 'unknown') {
         clearTimeout(NetBanner._badgeTimer);
         NetBanner._badgeTimer = setTimeout(function () {
@@ -376,17 +376,14 @@ console.log("✅ NEW network.js LOADED");
 
   /* ══════════════════════════════════════════════════════════════
      4. IMAGE OPTIMISATION FOR SLOW CONNECTIONS
-     On 2G/slow: defers loading off-screen images, reduces quality
   ══════════════════════════════════════════════════════════════ */
   function optimiseImages() {
     if (!NetQ.isSlow()) return;
 
-    // Add loading="lazy" to all images that don't have it
     document.querySelectorAll('img:not([loading])').forEach(function (img) {
       img.setAttribute('loading', 'lazy');
     });
 
-    // Observe future images added to DOM
     if ('MutationObserver' in window) {
       var mo = new MutationObserver(function (mutations) {
         mutations.forEach(function (m) {
@@ -405,7 +402,6 @@ console.log("✅ NEW network.js LOADED");
 
   /* ══════════════════════════════════════════════════════════════
      5. PAGE-LOAD PROGRESS BAR
-     Thin bar at the top — shows loading activity on slow networks
   ══════════════════════════════════════════════════════════════ */
   var Progress = {
     _bar: null,
@@ -431,7 +427,6 @@ console.log("✅ NEW network.js LOADED");
       clearInterval(Progress._tid);
       Progress._tid = setInterval(function () {
         if (Progress._val < 85) {
-          // Slow increment — faster at start, slower as it approaches completion
           Progress._val += (85 - Progress._val) * 0.08;
           Progress._update();
         }
@@ -471,82 +466,66 @@ console.log("✅ NEW network.js LOADED");
 
   /* ══════════════════════════════════════════════════════════════
      6. PATCH apiFetch ON EVERY PAGE
-     Each page defines its own apiFetch — we wrap it with adaptive behaviour
   ══════════════════════════════════════════════════════════════ */
   var _apiFetchPatched = false;
-  // Set window._aqRehydrating = true before calling /auth/me, clear it after.
-  // patchApiFetch will skip the 401/403 logout handler during rehydration.
+
   function patchApiFetch() {
     if (typeof window.apiFetch !== 'function') return;
-    if (_apiFetchPatched) return;   // guard: never double-wrap
+    if (_apiFetchPatched) return;
     _apiFetchPatched = true;
 
-    var orig = window.apiFetch;
-    window.apiFetch = function (url, options) {
-      options = options || {};
-      Progress.start();
+    window.apiFetch = (function(orig) {
+      return function (url, options) {
+        options = options || {};
+        Progress.start();
 
-      // Wait for auth gate before firing any request — prevents 401 races on page load
-      return global._aqAuthReady.then(function() {
-        // Build a new options object with adaptive timeout
-        var adaptedOpts = Object.assign({}, options, { _timeout: NetQ.timeout() });
+        return global._aqAuthReady.then(function() {
+          var adaptedOpts = Object.assign({}, options, { _timeout: NetQ.timeout() });
 
-        return adaptiveFetch(url, Object.assign({
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        }, adaptedOpts))
-        .then(function (res) {
-          Progress.done();
+          return adaptiveFetch(url, Object.assign({
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          }, adaptedOpts))
+          .then(function (res) {
+            Progress.done();
 
-          // ── Auth guard (Fix: was stripped when network.js replaced apiFetch) ──
-          // The original apiFetch in admin.js handled 401/403 by calling adminLogout().
-          // This wrapper bypassed that check entirely — re-instating it here so that
-          // a 403 Forbidden on PUT /products/:id (or any write) correctly logs out
-          // and redirects instead of silently failing in the UI.
-          if (res.status === 401 || res.status === 403) {
-            // Skip logout during rehydration — the /auth/me call itself may 401
-            // if the cookie is genuinely expired, and the rehydrate function handles
-            // that redirect itself. Firing logout here too causes a double-redirect race.
-            if (window._aqRehydrating) {
+            if (res.status === 401 || res.status === 403) {
+              if (window._aqRehydrating) {
+                throw new Error('Session expired. Please log in again.');
+              }
+              // ✅ FIX: Clear sessionStorage on forced logout too
+              _clearPortalSession();
+              if (typeof window.adminLogout === 'function') {
+                window.adminLogout();
+              } else if (typeof window.salesLogout === 'function') {
+                window.salesLogout();
+              } else if (typeof window.deliveryLogout === 'function') {
+                window.deliveryLogout();
+              } else {
+                var portalMatches = window.location.pathname.match(/^\/(admin|salesman|delivery)/);
+                var portalPrefix = portalMatches ? '/' + portalMatches[1] : '';
+                window.location.replace(portalPrefix + '/login.html');
+              }
               throw new Error('Session expired. Please log in again.');
             }
-            if (typeof window.adminLogout === 'function') {
-              window.adminLogout();
-            } else if (typeof window.salesLogout === 'function') {
-              window.salesLogout();
-            } else if (typeof window.deliveryLogout === 'function') {
-              window.deliveryLogout();
-            } else {
-              // Generic fallback — navigate to the correct portal login
-              var portalMatches = window.location.pathname.match(/^\/(admin|salesman|delivery)/);
-              var portalPrefix = portalMatches ? '/' + portalMatches[1] : '';
-              try { sessionStorage.clear(); } catch (_) {}
-              window.location.replace(portalPrefix + '/login.html');
+
+            return res;
+          })
+          .catch(function (err) {
+            Progress.error();
+            if (err.name === 'AbortError') {
+              var tierMsg = { '2g': 'Your 2G connection is very slow', '3g': 'Your 3G connection timed out' }[NetQ.tier] || 'Connection timed out';
+              throw new Error(tierMsg + ' — please retry.');
             }
-            // Throw so downstream .catch() handlers show the right message
-            throw new Error('Session expired. Please log in again.');
-          }
-
-          return res;
-        })
-        .catch(function (err) {
-          Progress.error();
-          // Translate abort errors into friendly messages
-          if (err.name === 'AbortError') {
-            var tierMsg = { '2g': 'Your 2G connection is very slow', '3g': 'Your 3G connection timed out' }[NetQ.tier] || 'Connection timed out';
-            throw new Error(tierMsg + ' — please retry.');
-          }
-          throw err;
+            throw err;
+          });
         });
-      }); // end _aqAuthReady.then
-    };
-
+      };
+    })(window.apiFetch);
   }
 
   /* ══════════════════════════════════════════════════════════════
      7. STALE DATA CACHE (sessionStorage)
-     Saves last successful API responses so pages can show
-     cached data while offline or during slow retries
   ══════════════════════════════════════════════════════════════ */
   var DataCache = {
     set: function (key, data) {
@@ -555,7 +534,7 @@ console.log("✅ NEW network.js LOADED");
           data: data,
           ts: Date.now()
         }));
-      } catch (e) { /* quota exceeded — ignore */ }
+      } catch (e) {}
     },
 
     get: function (key, maxAgeMs) {
@@ -569,19 +548,14 @@ console.log("✅ NEW network.js LOADED");
     }
   };
 
-
-
-  // frontend/js/network.js — add this block inside the IIFE, before the init() call
-// Patch native window.fetch so every portal benefits without touching 30+ call sites
-const _nativeFetch = window.fetch.bind(window);
-window.fetch = function(url, options) {
-  if (typeof url === 'string' && url.startsWith('/api')) {
-    url = API_BASE + url;  // API_BASE = 'https://aqualance-production.up.railway.app'
-  }
-  return _nativeFetch(url, options);
-};
-
-  
+  /* Patch native window.fetch so every portal benefits without touching call sites */
+  const _nativeFetch = window.fetch.bind(window);
+  window.fetch = function(url, options) {
+    if (typeof url === 'string' && url.startsWith('/api')) {
+      url = API_BASE + url;
+    }
+    return _nativeFetch(url, options);
+  };
 
   /* ══════════════════════════════════════════════════════════════
      INIT — run when DOM is ready
@@ -589,71 +563,4 @@ window.fetch = function(url, options) {
   function init() {
     NetQ.detect();
     NetBanner.init();
-    Progress.init();
-    optimiseImages();
-    patchApiFetch();
-    _runAuthGate();
-
-    // Add body class for CSS targeting based on tier
-    NetQ.onChange(function (tier) {
-      document.body.classList.remove('net-2g', 'net-3g', 'net-4g', 'net-5g');
-      if (tier && tier !== 'unknown') {
-        document.body.classList.add('net-' + tier);
-      }
-    });
-    // Apply immediately
-    document.body.classList.remove('net-2g', 'net-3g', 'net-4g', 'net-5g');
-    if (NetQ.tier && NetQ.tier !== 'unknown') {
-      document.body.classList.add('net-' + NetQ.tier);
-    }
-
-    // Patch apiFetch after a tick in case page defines it late
-    setTimeout(patchApiFetch, 100);
-
-    // Re-detect on visibility change (user switches tabs, comes back)
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) {
-        NetQ._probe && NetQ._probe();
-        // Silently re-validate the cookie without hiding the page.
-        // If the cookie expired while the tab was inactive, the next
-        // apiFetch will return 401 and logout() will handle the redirect.
-        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
-          .then(function(res) {
-            if (!res.ok) {
-              // Cookie expired — log out via the appropriate logout fn
-              if (typeof window.adminLogout === 'function') window.adminLogout();
-              else if (typeof window.salesLogout === 'function') window.salesLogout();
-              else if (typeof window.deliveryLogout === 'function') window.deliveryLogout();
-              return;
-            }
-            return res.json();
-          })
-          .then(function(data) {
-            if (!data) return;
-            // Refresh sessionStorage with latest user data
-            var role = data.user && data.user.role;
-            if (role === 'admin')    sessionStorage.setItem('aq_admin_user',    JSON.stringify(data.user));
-            else if (role === 'salesman')  sessionStorage.setItem('aq_sales_user',    JSON.stringify(data.user));
-            else if (role === 'delivery')  sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
-          })
-          .catch(function() { /* network error — stay on page, retry on next action */ });
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  /* ── Public API ─────────────────────────────────────────────── */
-  global.AqNet = {
-    fetch:     adaptiveFetch,
-    quality:   NetQ,
-    cache:     DataCache,
-    progress:  Progress,
-    banner:    NetBanner
-  };
-
-}(window));
+    Prog
