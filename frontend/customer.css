@@ -1366,6 +1366,7 @@ textarea {
   font-weight: 600;
   margin: 14px 12px 0;
   color: var(--ink);
+  white-space: nowrap;
 }
 
 /* Category bar */
@@ -4060,6 +4061,7 @@ body {
   gap: 10px;
   max-width: 1280px;
   margin: 0 auto;
+  flex-wrap: nowrap;
 }
 
 .products-header-left {
@@ -4068,6 +4070,7 @@ body {
   gap: 10px;
   min-width: 0;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .section-title {
