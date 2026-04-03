@@ -2,9 +2,6 @@
 const API = 'https://aqualance-production.up.railway.app/api/v1';
 
 /* ── XSS Guard: escape all DB values before inserting into innerHTML ────── */
-// Any field that originated from user input (shop_name, customer_name, address,
-// notes, product_name, etc.) must be escaped before being written to innerHTML.
-// Using createTextNode is the safest approach — no regex to maintain.
 function _esc(str) {
   const d = document.createElement('div');
   d.appendChild(document.createTextNode(str != null ? String(str) : ''));
@@ -12,45 +9,50 @@ function _esc(str) {
 }
 
 /* ── Auth ─────────────────────────────────────────────────── */
-// Fix 2: Token is in httpOnly cookie — JS cannot read it.
 function getDeliveryUser() {
   try { return JSON.parse(sessionStorage.getItem('aq_delivery_user') || 'null'); }
   catch { return null; }
 }
 
 async function deliveryAuthRehydrate() {
-  // Auth gate in network.js handles rehydration — just wait for it
   if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   return !!getDeliveryUser();
 }
+
 function authHeader() {
-  // No Authorization header — cookie sent automatically via credentials:'include'
   return { 'Content-Type': 'application/json' };
 }
+
 var _deliveryLoggingOut = false;
 async function deliveryLogout() {
   if (_deliveryLoggingOut) return;
   _deliveryLoggingOut = true;
   try {
-    await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); // ✅
+    await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) {}
-  sessionStorage.removeItem('aq_sales_user');
+  // ✅ FIX (Login Loop): Was incorrectly removing 'aq_sales_user'.
+  // The delivery session key is 'aq_delivery_user'. Removing the wrong key
+  // meant sessionStorage still had the user on the login page, which then
+  // redirected straight back to the dashboard — causing an infinite loop.
+  try {
+    sessionStorage.removeItem('aq_delivery_user');
+    sessionStorage.removeItem('aq_sales_user');  // belt-and-suspenders
+    sessionStorage.removeItem('aq_admin_user');
+  } catch (_) {}
   window.location.replace('/delivery/login.html');
 }
 window.deliveryLogout = deliveryLogout;
 window.deliveryAuthRehydrate = deliveryAuthRehydrate;
 
-/* ── Fetch wrapper: auto-redirect on session expiry ──────── */
+/* ── Fetch wrapper ────────────────────────────────────────── */
 async function apiFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
-    credentials: 'include',   // Fix 2: send httpOnly cookie
+    credentials: 'include',
     headers: { ...authHeader(), ...(options.headers || {}) },
   });
-  // 401/403 handled centrally by network.js patchApiFetch — do not duplicate here
   return res;
 }
-
 
 /* ── Toast ────────────────────────────────────────────────── */
 function showToast(msg, type = 'default') {
@@ -75,7 +77,7 @@ function statusBadge(s) { return `<span class="status status-${s}">${s.replace('
 const page = window.location.pathname.split('/').pop().replace('.html', '');
 
 if (page === 'login') {
-  if (getDeliveryUser()) window.location.replace('/delivery/dashboard.html');  // fast UX redirect
+  if (getDeliveryUser()) window.location.replace('/delivery/dashboard.html');
 
   document.getElementById('deliveryLoginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
@@ -106,9 +108,7 @@ if (page === 'login') {
       if (!data.user) throw new Error('Login response missing user profile.');
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
-      // Fix 2: Token is in httpOnly cookie — store only user profile
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
-      // Fix 4: Force password change if required
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;
@@ -135,7 +135,6 @@ if (page === 'dashboard') {
     const nameEl = document.getElementById('sidebarName');
     if (nameEl && user) nameEl.textContent = user.name;
 
-    // Close modal on backdrop click
     document.querySelectorAll('.modal-overlay').forEach(el => {
       el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
     });
@@ -169,7 +168,6 @@ function renderOrders() {
   const container = document.getElementById('ordersContainer');
   if (!container) return;
 
-  // Update stat boxes
   const total     = myOrders.length;
   const pending   = myOrders.filter(o => o.status === 'assigned' || o.status === 'out_for_delivery').length;
   const delivered = myOrders.filter(o => o.status === 'delivered').length;
@@ -203,9 +201,9 @@ function renderOrders() {
           ${statusBadge(order.status)}
         </div>
         <div class="order-tile-body">
-          <div>🏪 <strong>${order.shop_name}</strong> — ${order.customer_name}</div>
-          <div>📞 <a href="tel:${order.phone}" style="color:var(--sage); font-weight:600">${order.phone}</a></div>
-          <div>📍 ${order.address}, ${order.city} — ${order.pincode}</div>
+          <div>🏪 <strong>${_esc(order.shop_name)}</strong> — ${_esc(order.customer_name)}</div>
+          <div>📞 <a href="tel:${_esc(order.phone)}" style="color:var(--sage); font-weight:600">${_esc(order.phone)}</a></div>
+          <div>📍 ${_esc(order.address)}, ${_esc(order.city)} — ${_esc(order.pincode)}</div>
           <div style="font-weight:700; color:var(--sage); margin-top:4px">💰 ₹${parseFloat(order.total_price).toFixed(2)}</div>
         </div>
         <div class="order-tile-footer">
