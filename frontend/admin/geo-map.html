@@ -14,8 +14,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" crossorigin="anonymous">
   <!-- Leaflet.js (OSM fallback) — loaded always, used only when no Google Maps key -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script nonce="CSP_NONCE" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script nonce="CSP_NONCE">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
     window._gmapsReady = false;
     window.onGMapsLoaded = function() { window._gmapsReady = true; initMap(); };
   </script>
@@ -369,8 +369,8 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
-<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <nav id="adminBottomNav">
@@ -383,7 +383,7 @@
   </div>
 </nav>
 
-<script nonce="CSP_NONCE">
+<script>
 /* ══════════════════════════════════════════════════════════
    GEO MAP — Admin (Full rewrite)
    Auth handled by admin.js above.
@@ -1174,7 +1174,7 @@ function _lfRenderZones() {
 }
 </script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
