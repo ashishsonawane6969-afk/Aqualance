@@ -2153,7 +2153,7 @@ tr:hover td {
 }
 
 select.filter-select {
-  padding: 10px 6px;
+  padding: 10px 13px;
   border: 1.5px solid var(--border);
   border-radius: var(--r-sm);
   font-size: .83rem;
@@ -4066,6 +4066,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .section-title {
@@ -4073,6 +4075,7 @@ body {
   font-size: 1.1rem;
   font-weight: 600;
   color: var(--ink);
+  white-space: nowrap;
 }
 
 .products-count {
