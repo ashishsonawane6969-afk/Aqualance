@@ -115,7 +115,7 @@ app.use((req, res, next) => {
     referrerPolicy:       { policy: 'strict-origin-when-cross-origin' },
     crossOriginOpenerPolicy:   { policy: 'same-origin' },
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: 'same-site' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // ✅ frontend on Vercel, API on Railway = cross-site
   })(req, res, next);
 });
 
