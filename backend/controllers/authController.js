@@ -59,10 +59,16 @@ const DUMMY_HASH = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbNXQ9Dey
 /* ── Cookie config ───────────────────────────────────────────────────────── */
 // backend/controllers/authController.js
 function cookieOptions(maxAgeMs) {
+  // Railway injects RAILWAY_ENVIRONMENT automatically, but NOT NODE_ENV.
+  // Check both so the cookie works whether or not NODE_ENV is manually set.
+  // SameSite=None + Secure is required because the frontend (Vercel) and
+  // the API (Railway) are on different origins.
+  const isProduction = process.env.NODE_ENV === 'production'
+                    || !!process.env.RAILWAY_ENVIRONMENT;
   return {
     httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // 🔥 CRITICAL FIX
+    secure:   isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
     maxAge:   maxAgeMs,
     path:     '/',
   };
