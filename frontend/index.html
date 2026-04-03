@@ -247,12 +247,12 @@
   <!-- BACK TO TOP -->
   <button class="back-to-top" id="backToTop" aria-label="Back to top" style="display:none">&#8679;</button>
 
-  <script nonce="CSP_NONCE" src="/js/app.js"></script>
+  <script src="/js/app.js"></script>
   <!-- AI Product Assistant widget — server-side Gemini, see backend/routes/ai.js -->
-  <script nonce="CSP_NONCE" src="/js/chat.js"></script>
-  <script nonce="CSP_NONCE" src="/js/network.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/network.js"></script>
 
-  <script nonce="CSP_NONCE">
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
