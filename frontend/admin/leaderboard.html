@@ -232,10 +232,10 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-<script nonce="CSP_NONCE" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
-<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
-<script nonce="CSP_NONCE">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
+<script>
 /* ── Leaderboard Logic ───────────────────────────────────── */
 let lbChart = null;
 
@@ -556,7 +556,7 @@ function buildLbBarChart(leaderboard) {
     <a href="/admin/salesmen.html" class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
   </div>
 </nav>
-<script nonce="CSP_NONCE">
+<script>
 function toggleSidebar(){
   var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
   var isOpen=s.classList.toggle("open");
@@ -585,7 +585,7 @@ function closeSidebar(){
 </script>
 
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
