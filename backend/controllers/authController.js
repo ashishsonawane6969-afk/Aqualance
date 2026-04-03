@@ -241,7 +241,7 @@ exports.login = async (req, res) => {
     // Compute maxAge in ms from the expiresIn string (default 7d → 604800000ms)
     const maxAgeMs = parseExpiry(expiresIn);
 
-    // Fix 2: Set httpOnly cookie — token is now inaccessible to JavaScript
+    // Fix 2: Set httpOnly cookie — token is inaccessible to JavaScript
     res.cookie(COOKIE_NAME, token, cookieOptions(maxAgeMs));
 
     console.info(
@@ -250,9 +250,14 @@ exports.login = async (req, res) => {
     );
     if (user.role === 'admin') secAlerts.adminLogin(user.id, req.ip);
 
-    // Return user profile (not the token — it's in the cookie)
+    // Return user profile + token.
+    // Cookie is the secure path (httpOnly, SameSite=None).
+    // Token is also returned in JSON so mobile browsers that block
+    // cross-site cookies (Android Chrome, iOS Safari) can store it
+    // in localStorage and send it as a Bearer header instead.
     res.json({
       success: true,
+      token,
       user: {
         id:                 user.id,
         name:               user.name,
