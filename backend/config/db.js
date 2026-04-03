@@ -47,8 +47,15 @@ function getPool() {
 module.exports = {
   connectDB,
   getPool,
+  // getConnection() — returns a pooled connection with transaction support.
+  // Used by controllers that need BEGIN/COMMIT/ROLLBACK (e.g. orderController).
+  // Caller MUST call conn.release() in a finally block to return it to the pool.
+  getConnection: async () => {
+    if (!pool) throw new Error('Database not initialized. Call connectDB() first.');
+    return pool.getConnection();
+  },
   query: async (...args) => {
-    if (!pool) throw new Error("DB not initialized");
+    if (!pool) throw new Error('DB not initialized');
     return pool.query(...args);
   }
 };
