@@ -119,7 +119,13 @@ function spinnerRow(cols, msg) {
    PAGE: LOGIN
 ══════════════════════════════════════════════════════════════ */
 if (page === 'login') {
-  if (getSalesUser()) window.location.replace('/salesman/dashboard.html');  // fast UX redirect
+  // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
+  // On mobile/PWA, sessionStorage can persist across navigations, so
+  // getSalesUser() may return a stale object even after the session expired.
+  // Instead, wait for the auth gate (/auth/me) in network.js to confirm the
+  // cookie is still valid before redirecting — network.js handles it automatically
+  // by calling _runAuthGate(), which redirects to dashboard if the cookie is valid.
+  // We only need to make sure we do NOT interfere with that flow here.
 
   const loginForm = document.getElementById('salesmanLoginForm');
   if (loginForm) {
