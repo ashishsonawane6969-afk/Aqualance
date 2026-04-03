@@ -154,7 +154,24 @@ app.use(cookieParser());
 /* ── Global baseline rate limiter ────────────────────────────────────────── */
 app.use(globalLimiter);
 
-/* ── Serve frontend statically — inject CSP nonce into HTML pages ────────── */
+/* ── Serve frontend statically ────────────────────────────────────────────── */
+// Serve frontend files from ../frontend directory
+// This allows accessing /admin/login.html, /delivery/login.html, etc.
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
+
+// SPA fallback: for any non-API route that doesn't match a file,
+// serve index.html so client-side routing works
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ success: false, message: 'Not found' });
+  }
+  // Serve index.html for all other routes (SPA fallback)
+  res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+    if (err) res.status(404).json({ success: false, message: 'Not found' });
+  });
+});
 
 /* ── TWA Digital Asset Links (Play Store) ───────────────────────────────── */
 app.get('/.well-known/assetlinks.json', (req, res) => {
@@ -213,13 +230,7 @@ app.use((err, req, res, next) => {
     message: err.message || 'Internal server error'
   });
 });
-/* ── Root route (Railway health check) ─────────────────────────── */
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Aqualence API running'
-  });
-});
+
 
 
 
