@@ -135,7 +135,7 @@ console.log("✅ NEW network.js LOADED");
     _probe: function () {
       var t0 = Date.now();
       // Fetch a 1-pixel GIF (cachebust so it always goes to network)
-      fetch('/favicon.ico?_nq=' + t0, { method: 'HEAD', cache: 'no-store', mode: 'no-cors' })
+      fetch('/api/v1/health?_nq=' + t0, { method: 'GET', cache: 'no-store', mode: 'no-cors' })
         .then(function () {
           var rtt = Date.now() - t0;
           NetQ.rtt = rtt;
