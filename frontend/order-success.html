@@ -38,14 +38,14 @@
   </div>
 </main>
 
-<script nonce="CSP_NONCE">
+<script>
   const params = new URLSearchParams(window.location.search);
   const ref = params.get('ref');
   document.getElementById('orderRef').textContent = ref ? `Order #${ref}` : 'Order Placed ✓';
 </script>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script src="/js/network.js"></script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
