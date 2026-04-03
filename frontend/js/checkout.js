@@ -4,9 +4,7 @@ function renderReview() {
   const cart  = getCart();
   const items = document.getElementById('reviewItems');
   const total = document.getElementById('reviewTotal');
-  
 
-  
   if (!items) return;
 
   if (!cart.length) {
@@ -23,7 +21,7 @@ function renderReview() {
   if (total) total.textContent = `₹${cartTotal().toFixed(2)}`;
 }
 
-/* ── Simple HTML escaper to prevent XSS in rendered content ── */
+/* ── Simple HTML escaper to prevent XSS ── */
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.appendChild(document.createTextNode(str || ''));
@@ -35,12 +33,24 @@ document.getElementById('getLocationBtn')?.addEventListener('click', () => {
   const btn = document.getElementById('getLocationBtn');
   btn.textContent = '⏳';
   btn.disabled = true;
-  if (!navigator.geolocation) {
-    btn.textContent = '📍 Auto';
+
+  // ✅ FIX: Check for HTTPS — mobile browsers (especially iOS Safari) block
+  // geolocation on non-secure origins. Without this check, the API silently
+  // fails or returns POSITION_UNAVAILABLE with no useful message.
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    btn.textContent = '📍 GPS';
     btn.disabled = false;
-    showToast('Geolocation not supported by your browser.', 'error');
+    showToast('Location requires a secure connection (HTTPS). Please enter manually.', 'error');
     return;
   }
+
+  if (!navigator.geolocation) {
+    btn.textContent = '📍 GPS';
+    btn.disabled = false;
+    showToast('Geolocation is not supported by your browser. Please enter manually.', 'error');
+    return;
+  }
+
   navigator.geolocation.getCurrentPosition(
     pos => {
       document.getElementById('latitude').value  = pos.coords.latitude.toFixed(6);
@@ -50,17 +60,41 @@ document.getElementById('getLocationBtn')?.addEventListener('click', () => {
       showToast('Location captured!', 'success');
     },
     err => {
-      btn.textContent = '📍 Auto';
+      btn.textContent = '📍 GPS';
       btn.disabled = false;
-      // Give a specific message based on the error code so users know what to do
+
+      // ✅ FIX: iOS Safari returns error code 2 (POSITION_UNAVAILABLE) when
+      // location services are OFF at the system level — not code 1 (DENIED).
+      // Without iOS-specific guidance, users never know to check Settings.
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isAndroid = /Android/.test(navigator.userAgent);
+
       const msgs = {
-        1: 'Location permission denied. Please allow location access in your browser settings.',
-        2: 'Location unavailable. Please enter coordinates manually.',
-        3: 'Location request timed out. Please try again or enter manually.',
+        // PERMISSION_DENIED
+        1: isIOS
+          ? 'Location denied. Go to Settings → Privacy & Security → Location Services → Safari → "While Using".'
+          : isAndroid
+            ? 'Location denied. Tap the 🔒 lock icon in Chrome address bar → Site settings → Location → Allow.'
+            : 'Location permission denied. Allow location access in your browser settings.',
+        // POSITION_UNAVAILABLE — iOS uses this when Location Services is OFF system-wide
+        2: isIOS
+          ? 'Location unavailable. Check Settings → Privacy & Security → Location Services is ON, then try again.'
+          : 'Location unavailable. Make sure GPS/Location is enabled on your device, or enter manually.',
+        // TIMEOUT
+        3: 'Location timed out. Move to an area with better signal and try again, or enter manually.',
       };
-      showToast(msgs[err.code] || 'Could not get location. Please enter manually.', 'error');
+
+      showToast(msgs[err.code] || 'Could not get location. Please enter coordinates manually.', 'error');
     },
-    { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+    {
+      // ✅ FIX: enableHighAccuracy:true uses GPS on mobile (not just Wi-Fi/cell tower).
+      // Increased timeout to 20s — GPS cold-start on mobile can take 10-15s.
+      // maximumAge:30000 — accept a position up to 30s old to speed up repeat taps.
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 30000,
+    }
   );
 });
 
@@ -123,7 +157,6 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async e => {
     latitude:      latVal ? parseFloat(latVal) : null,
     longitude:     lngVal ? parseFloat(lngVal) : null,
     notes:         document.getElementById('notes')?.value.trim() || '',
-    // Send only IDs and quantities — server determines price from DB
     products: cart.map(i => ({ id: i.id, quantity: i.quantity })),
   };
 
@@ -132,8 +165,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async e => {
     const _ctrl    = new AbortController();
     const _tid     = setTimeout(() => _ctrl.abort(), _timeout);
     const _fetcher = (window.AqNet && window.AqNet.fetch) ? window.AqNet.fetch : fetch;
-     // frontend/js/checkout.js — use the absolute URL explicitly
-const res = await _fetcher('https://aqualance-production.up.railway.app/api/v1/orders', {
+    const res = await _fetcher('https://aqualance-production.up.railway.app/api/v1/orders', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
