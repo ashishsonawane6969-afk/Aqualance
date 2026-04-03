@@ -203,8 +203,8 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
-<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
 
 <!-- SIDEBAR OVERLAY -->
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -221,7 +221,7 @@
   </div>
 </nav>
 
-<script nonce="CSP_NONCE">
+<script>
 /* ── Sidebar ─────────────────────────────────────── */
 function toggleSidebar(){
   var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
@@ -381,7 +381,7 @@ async function loadDashboard(){
 loadDashboard();
 </script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
