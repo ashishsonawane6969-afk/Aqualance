@@ -22,6 +22,27 @@ console.log("✅ NEW network.js LOADED");
   'use strict';
 
   const API_BASE = 'https://aqualance-production.up.railway.app';
+
+  // Helper: build headers for /auth/me and other direct fetch() calls.
+  // On mobile, cross-site cookies are blocked so we fall back to Bearer token
+  // stored in localStorage after login.
+  function _mobileAuthHeaders() {
+    var token = '';
+    try { token = localStorage.getItem('aq_token') || ''; } catch (_) {}
+    var headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return headers;
+  }
+
+  // Helper: clear ALL auth state (sessionStorage + localStorage)
+  function _clearAuthState() {
+    try {
+      sessionStorage.removeItem('aq_admin_user');
+      sessionStorage.removeItem('aq_sales_user');
+      sessionStorage.removeItem('aq_delivery_user');
+      localStorage.removeItem('aq_token');
+    } catch (_) {}
+  }
   /* ══════════════════════════════════════════════════════════════
      0. GLOBAL AUTH GATE
      Fires /auth/me once per page load. All apiFetch calls are
@@ -55,7 +76,7 @@ console.log("✅ NEW network.js LOADED");
 
     var isLoginPage = /login|change-password/.test(path);
     if (isLoginPage) {
-      fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+      fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
         .then(function(res) {
           if (res.ok) {
             return res.json().then(function(data) {
@@ -67,12 +88,8 @@ console.log("✅ NEW network.js LOADED");
               _authGateResolve(null);
             });
           } else {
-            // Session invalid/expired — clear any stale sessionStorage and show login
-            try {
-              sessionStorage.removeItem('aq_admin_user');
-              sessionStorage.removeItem('aq_sales_user');
-              sessionStorage.removeItem('aq_delivery_user');
-            } catch (_) {}
+            // Session invalid/expired — clear any stale auth state and show login
+            _clearAuthState();
             _authGateResolve(null);
           }
         })
@@ -88,18 +105,12 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
-    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
-          // ✅ FIX (Login Loop): Clear sessionStorage BEFORE redirecting to login.
-          // Without this, the login page sees the stale user object and immediately
-          // redirects back to the dashboard — causing an infinite loop on mobile.
-          try {
-            sessionStorage.removeItem('aq_admin_user');
-            sessionStorage.removeItem('aq_sales_user');
-            sessionStorage.removeItem('aq_delivery_user');
-          } catch (_) {}
+          // ✅ FIX (Login Loop): Clear ALL auth state BEFORE redirecting to login.
+          _clearAuthState();
           var a = document.createElement('a');
           a.href = portalPrefix + '/login.html';
           a.style.display = 'none';
@@ -129,11 +140,7 @@ console.log("✅ NEW network.js LOADED");
         document.documentElement.style.visibility = '';
         // ✅ FIX (Login Loop): Also clear on network error so the login page
         // does not bounce back to dashboard when the /auth/me fetch fails.
-        try {
-          sessionStorage.removeItem('aq_admin_user');
-          sessionStorage.removeItem('aq_sales_user');
-          sessionStorage.removeItem('aq_delivery_user');
-        } catch (_) {}
+        _clearAuthState();
         var a = document.createElement('a');
         a.href = portalPrefix + '/login.html';
         a.style.display = 'none';
@@ -539,7 +546,7 @@ console.log("✅ NEW network.js LOADED");
 
         return adaptiveFetch(url, Object.assign({
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
+          headers: _mobileAuthHeaders()
         }, adaptedOpts))
         .then(function (res) {
           Progress.done();
@@ -566,7 +573,7 @@ console.log("✅ NEW network.js LOADED");
               // Generic fallback — navigate to the correct portal login
               var portalMatches = window.location.pathname.match(/^\/(admin|salesman|delivery)/);
               var portalPrefix = portalMatches ? '/' + portalMatches[1] : '';
-              try { sessionStorage.clear(); } catch (_) {}
+              try { _clearAuthState(); } catch (_) {}
               window.location.replace(portalPrefix + '/login.html');
             }
             // Throw so downstream .catch() handlers show the right message
@@ -663,7 +670,7 @@ window.fetch = function(url, options) {
         // Silently re-validate the cookie without hiding the page.
         // If the cookie expired while the tab was inactive, the next
         // apiFetch will return 401 and logout() will handle the redirect.
-        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
           .then(function(res) {
             if (!res.ok) {
               // Cookie expired — log out via the appropriate logout fn
