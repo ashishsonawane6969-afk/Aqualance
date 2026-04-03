@@ -20,7 +20,11 @@ async function deliveryAuthRehydrate() {
 }
 
 function authHeader() {
-  return { 'Content-Type': 'application/json' };
+  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  const token = localStorage.getItem('aq_token');
+  return token
+    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    : { 'Content-Type': 'application/json' };
 }
 
 var _deliveryLoggingOut = false;
@@ -38,6 +42,7 @@ async function deliveryLogout() {
     sessionStorage.removeItem('aq_delivery_user');
     sessionStorage.removeItem('aq_sales_user');  // belt-and-suspenders
     sessionStorage.removeItem('aq_admin_user');
+    localStorage.removeItem('aq_token');
   } catch (_) {}
   window.location.replace('/delivery/login.html');
 }
@@ -112,6 +117,8 @@ if (page === 'login') {
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
+      // Store token in localStorage as mobile fallback for cross-site cookie issues
+      if (data.token) localStorage.setItem('aq_token', data.token);
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;
