@@ -217,8 +217,8 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
-<script nonce="CSP_NONCE" src="/admin/js/admin.js"></script>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 <nav id="adminBottomNav">
   <div class="bottom-nav-inner">
@@ -229,7 +229,7 @@
     <a href="/admin/geo-map.html"    class="bnav-item"><span class="bnav-icon">🗺️</span><span>Map</span></a>
   </div>
 </nav>
-<script nonce="CSP_NONCE">
+<script>
 var _removeId = null;
 (window.adminAuthRehydrate || Promise.resolve.bind(Promise, true))().then(function(ok) {
   if (!ok) return;
@@ -377,7 +377,7 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeSidebar();closeModal('addModal');closeModal('removeModal');}});
 </script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
