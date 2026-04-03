@@ -160,30 +160,9 @@ app.use(globalLimiter);
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 
-// SPA fallback: for any non-API route that doesn't match a file,
-// serve index.html so client-side routing works
-// ✅ ADD IT HERE — inside the async IIFE, after the routes:
-(async () => {
-  await connectDB();
-  // ...
-
-  app.use('/api/v1/auth',     require('./routes/auth'));
-  app.use('/api/v1/orders',   require('./routes/orders'));
-  // ... other routes ...
-
-  // ✅ NOW register the catch-all — API routes are already registered above
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ success: false, message: 'Not found' });
-    }
-    res.sendFile(path.join(frontendPath, 'index.html'), err => {
-      if (err) res.status(404).json({ success: false, message: 'Not found' });
-    });
-  });
-
-  app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on ${PORT}`));
-})();
-
+// NOTE: SPA catch-all is registered AFTER API routes inside the async IIFE below.
+// Placing app.get('*') here — before routes are registered — intercepts every
+// /api/* request and returns 404 before the real handlers run. Don't move it back.
 
 /* ── TWA Digital Asset Links (Play Store) ───────────────────────────────── */
 app.get('/.well-known/assetlinks.json', (req, res) => {
@@ -253,6 +232,8 @@ app.use((err, req, res, next) => {
 
 /* ── Start Server (Railway-safe) ───────────────────────────────── */
 const PORT = process.env.PORT || 5000;
+// Declared here so SIGTERM/uncaughtException handlers can call server.close()
+let httpServer = null;
 
 (async () => {
   try {
@@ -270,7 +251,21 @@ const PORT = process.env.PORT || 5000;
     app.use('/api/v1/geo',      require('./routes/geo'));
     app.use('/api/v1/ai',       require('./routes/ai'));
 
-    app.listen(PORT, '0.0.0.0', () => {
+    // ✅ SPA catch-all MUST come AFTER API routes.
+    // If registered before, it intercepts every /api/* and returns 404 immediately.
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ success: false, message: 'API route not found' });
+      }
+      res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+        if (err) res.status(404).json({ success: false, message: 'Not found' });
+      });
+    });
+
+    // ✅ Store the server reference for graceful shutdown.
+    // Without calling server.close() on SIGTERM, the OS keeps the port bound
+    // during Railway's shutdown window and the next instance crashes with EADDRINUSE.
+    httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
 
@@ -283,14 +278,49 @@ const PORT = process.env.PORT || 5000;
 /* ── Process-level error guards ───────────────────────────────── */
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[unhandledRejection]', reason);
+  // Do NOT exit — unhandled rejections are logged but non-fatal.
+  // Exiting here triggers Railway restart which causes EADDRINUSE loop.
 });
 
 process.on('uncaughtException', (err) => {
   console.error('[uncaughtException]', err);
-  process.exit(1);
+
+  // EADDRINUSE means the port is still bound from a previous instance.
+  // Crashing immediately causes Railway to restart into the same error.
+  // Exit with 0 so Railway does NOT auto-restart on this specific error.
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[uncaughtException] Port ${PORT} already in use — exiting without restart`);
+    process.exit(0);  // exit 0 = Railway treats as clean stop, no restart
+  }
+
+  // For all other fatal errors, exit 1 so Railway restarts the process.
+  if (httpServer) {
+    httpServer.close(() => process.exit(1));
+    setTimeout(() => process.exit(1), 5000).unref(); // force-exit after 5s
+  } else {
+    process.exit(1);
+  }
 });
 
-process.on('SIGTERM', () => {
-  console.log('[SIGTERM] Shutting down...');
-  process.exit(0);
-});
+// ✅ Graceful shutdown: close the HTTP server before exiting so the OS
+// releases the port immediately. Without this, the next Railway instance
+// starts while the socket is still in TIME_WAIT and hits EADDRINUSE.
+function gracefulShutdown(signal) {
+  console.log(`[${signal}] Graceful shutdown — closing server...`);
+  if (httpServer) {
+    httpServer.close(() => {
+      console.log(`[${signal}] Server closed — exiting`);
+      process.exit(0);
+    });
+    // Force-exit after 10s if server hasn't closed cleanly
+    setTimeout(() => {
+      console.error(`[${signal}] Force-exit after timeout`);
+      process.exit(0);
+    }, 10000).unref();
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT',  () => gracefulShutdown('SIGINT'));
