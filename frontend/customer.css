@@ -2153,8 +2153,8 @@ tr:hover td {
 }
 
 select.filter-select {
-  padding: 8px 11px;
-  border: 0.50px solid var(--border);
+  padding: 5px 8px;
+  border: 1.5px solid var(--border);
   border-radius: var(--r-sm);
   font-size: .83rem;
   background: var(--surface-2);
