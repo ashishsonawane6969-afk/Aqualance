@@ -54,6 +54,7 @@ async function adminLogout() {
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort — always redirect */ }
   sessionStorage.removeItem('aq_admin_user');
+  localStorage.removeItem('aq_token');
   window.location.replace('/admin/login.html');
 }
 // Expose on window so network.js auth-guard (patchApiFetch) can call it
@@ -62,9 +63,11 @@ window.adminLogout = adminLogout;
 window.adminAuthRehydrate = adminAuthRehydrate;
 
 function authHeader() {
-  // Fix 2: No Authorization header — cookie is sent automatically by the browser.
-  // credentials:'include' in apiFetch ensures the cookie is included cross-origin.
-  return { 'Content-Type': 'application/json' };
+  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  const token = localStorage.getItem('aq_token');
+  return token
+    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    : { 'Content-Type': 'application/json' };
 }
 
 /* ── Fetch wrapper: auth + content-type ──────────────────── */
@@ -151,6 +154,7 @@ async function submitOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+    if (data.token) localStorage.setItem('aq_token', data.token);
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
@@ -223,6 +227,7 @@ async function submitSmsOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+    if (data.token) localStorage.setItem('aq_token', data.token);
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace('/admin/dashboard.html');
   } catch (err) {
@@ -301,6 +306,7 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+      if (data.token) localStorage.setItem('aq_token', data.token);
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
