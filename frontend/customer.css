@@ -2153,7 +2153,7 @@ tr:hover td {
 }
 
 select.filter-select {
-  padding: 5px 8px;
+  padding: 10px 13px;
   border: 1.5px solid var(--border);
   border-radius: var(--r-sm);
   font-size: .83rem;
