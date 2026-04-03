@@ -162,16 +162,28 @@ app.use(express.static(frontendPath));
 
 // SPA fallback: for any non-API route that doesn't match a file,
 // serve index.html so client-side routing works
-app.get('*', (req, res) => {
-  // Don't serve index.html for API routes
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ success: false, message: 'Not found' });
-  }
-  // Serve index.html for all other routes (SPA fallback)
-  res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
-    if (err) res.status(404).json({ success: false, message: 'Not found' });
+// ✅ ADD IT HERE — inside the async IIFE, after the routes:
+(async () => {
+  await connectDB();
+  // ...
+
+  app.use('/api/v1/auth',     require('./routes/auth'));
+  app.use('/api/v1/orders',   require('./routes/orders'));
+  // ... other routes ...
+
+  // ✅ NOW register the catch-all — API routes are already registered above
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ success: false, message: 'Not found' });
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'), err => {
+      if (err) res.status(404).json({ success: false, message: 'Not found' });
+    });
   });
-});
+
+  app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on ${PORT}`));
+})();
+
 
 /* ── TWA Digital Asset Links (Play Store) ───────────────────────────────── */
 app.get('/.well-known/assetlinks.json', (req, res) => {
