@@ -43,9 +43,43 @@ console.log("✅ NEW network.js LOADED");
     var portalMatches = path.match(/^\/(admin|salesman|delivery)/);
     var portalPrefix = portalMatches ? '/' + portalMatches[1] : '';
 
-    // If it is a public customer page (no portal) or a login/password page, skip auth gate
-    if (!portalPrefix || /login|change-password/.test(path)) {
+    // If it is a public customer page (no portal), skip auth gate
+    // ✅ FIX (Login Loop): For login/change-password pages, we still run /auth/me
+    // to check if the cookie is already valid. If it is, redirect to dashboard
+    // immediately — this replaces the removed sessionStorage-based redirect that
+    // caused the loop. If it is not valid, simply resolve and let the page render.
+    if (!portalPrefix) {
       _authGateResolve(null);
+      return;
+    }
+
+    var isLoginPage = /login|change-password/.test(path);
+    if (isLoginPage) {
+      fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+        .then(function(res) {
+          if (res.ok) {
+            return res.json().then(function(data) {
+              if (data && data.user) {
+                // Cookie is valid — go straight to dashboard, skip login form
+                window.location.replace(portalPrefix + '/dashboard.html');
+                return;
+              }
+              _authGateResolve(null);
+            });
+          } else {
+            // Session invalid/expired — clear any stale sessionStorage and show login
+            try {
+              sessionStorage.removeItem('aq_admin_user');
+              sessionStorage.removeItem('aq_sales_user');
+              sessionStorage.removeItem('aq_delivery_user');
+            } catch (_) {}
+            _authGateResolve(null);
+          }
+        })
+        .catch(function() {
+          // Offline or network error — just show the login form
+          _authGateResolve(null);
+        });
       return;
     }
 
