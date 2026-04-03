@@ -257,10 +257,11 @@ function cancelSmsOtp() {
    LOGIN PAGE
 ───────────────────────────────────────────────────────────── */
 if (document.getElementById('loginForm')) {
-  // Redirect if already logged in
-  // Fast redirect: if sessionStorage already has a user profile, likely logged in.
-  // The server will validate the cookie; if expired, next request returns 401.
-  if (getAdminUser()) window.location.replace('/admin/dashboard.html');
+  // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
+  // On mobile/PWA, sessionStorage can survive tab navigations, so getAdminUser()
+  // may return a stale object after session expiry → causes login ↔ dashboard loop.
+  // network.js _runAuthGate() validates the httpOnly cookie via /auth/me and
+  // handles the redirect to dashboard automatically if the session is still valid.
 
   document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
