@@ -67,11 +67,11 @@
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
 <!-- app.js MUST load first: provides getCart, saveCart, updateCartBadge, showToast -->
-<script nonce="CSP_NONCE" src="/js/app.js"></script>
-<script nonce="CSP_NONCE" src="/js/product.js"></script>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/product.js"></script>
+<script src="/js/network.js"></script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
