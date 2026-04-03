@@ -55,10 +55,10 @@
     </div>
   </div>
 </div>
-<script nonce="CSP_NONCE" src="/js/network.js"></script>
-<script nonce="CSP_NONCE" src="/salesman/js/salesman.js"></script>
+<script src="/js/network.js"></script>
+<script src="/salesman/js/salesman.js"></script>
 
-<script nonce="CSP_NONCE">
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
