@@ -77,7 +77,10 @@ function statusBadge(s) { return `<span class="status status-${s}">${s.replace('
 const page = window.location.pathname.split('/').pop().replace('.html', '');
 
 if (page === 'login') {
-  if (getDeliveryUser()) window.location.replace('/delivery/dashboard.html');
+  // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
+  // On mobile/PWA, sessionStorage can persist across navigations, so
+  // getDeliveryUser() may return a stale object even after the session expired.
+  // network.js _runAuthGate() will redirect to dashboard if the cookie is valid.
 
   document.getElementById('deliveryLoginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
