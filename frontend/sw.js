@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v1';
+const CACHE_NAME    = 'aqualence-v2';  // ✅ bumped from v1 — forces SW update & clears stale auth cache
 const OFFLINE_URL   = '/offline.html';
 
 // Static assets to pre-cache on install
@@ -66,6 +66,22 @@ self.addEventListener('fetch', (event) => {
   // Handle Railway API calls (cross-origin) — Network-First
   const RAILWAY_API = 'https://aqualance-production.up.railway.app';
   if (url.origin === RAILWAY_API) {
+    // ✅ FIX (Login Loop): Auth endpoints must NEVER be served from cache.
+    // On mobile/PWA, a stale cached 200 from /auth/me tricks network.js into
+    // thinking the session is still valid, causing the login ↔ dashboard loop.
+    const isAuthEndpoint = url.pathname.includes('/auth/');
+    if (isAuthEndpoint) {
+      // Pass through to network with no caching — if offline, return a clear error
+      event.respondWith(
+        fetch(request).catch(() =>
+          new Response(
+            JSON.stringify({ success: false, message: 'You are offline.' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+          )
+        )
+      );
+      return;
+    }
     event.respondWith(networkFirst(request));
     return;
   }
