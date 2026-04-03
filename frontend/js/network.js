@@ -66,7 +66,7 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
-    fetch(${API_BASE}/api/v1/auth/me, { credentials: 'include' })
+    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
@@ -563,4 +563,65 @@ console.log("✅ NEW network.js LOADED");
   function init() {
     NetQ.detect();
     NetBanner.init();
-    Prog
+    Progress.init();
+    optimiseImages();
+    patchApiFetch();
+    _runAuthGate();
+
+    NetQ.onChange(function (tier) {
+      document.body.classList.remove('net-2g', 'net-3g', 'net-4g', 'net-5g');
+      if (tier && tier !== 'unknown') {
+        document.body.classList.add('net-' + tier);
+      }
+    });
+    document.body.classList.remove('net-2g', 'net-3g', 'net-4g', 'net-5g');
+    if (NetQ.tier && NetQ.tier !== 'unknown') {
+      document.body.classList.add('net-' + NetQ.tier);
+    }
+
+    // Patch apiFetch after a tick in case page defines it late
+    setTimeout(patchApiFetch, 100);
+
+    // Re-validate cookie on tab focus — log out if expired
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) {
+        NetQ._probe && NetQ._probe();
+        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include' })
+          .then(function(res) {
+            if (!res.ok) {
+              _clearPortalSession();
+              if (typeof window.adminLogout === 'function') window.adminLogout();
+              else if (typeof window.salesLogout === 'function') window.salesLogout();
+              else if (typeof window.deliveryLogout === 'function') window.deliveryLogout();
+              return;
+            }
+            return res.json();
+          })
+          .then(function(data) {
+            if (!data) return;
+            var role = data.user && data.user.role;
+            if (role === 'admin')    sessionStorage.setItem('aq_admin_user',    JSON.stringify(data.user));
+            else if (role === 'salesman')  sessionStorage.setItem('aq_sales_user',    JSON.stringify(data.user));
+            else if (role === 'delivery')  sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
+          })
+          .catch(function() {});
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  /* ── Public API ─────────────────────────────────────────────── */
+  global.AqNet = {
+    fetch:     adaptiveFetch,
+    quality:   NetQ,
+    cache:     DataCache,
+    progress:  Progress,
+    banner:    NetBanner
+  };
+
+}(window));
