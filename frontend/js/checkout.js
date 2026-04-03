@@ -49,12 +49,18 @@ document.getElementById('getLocationBtn')?.addEventListener('click', () => {
       btn.disabled = false;
       showToast('Location captured!', 'success');
     },
-    () => {
+    err => {
       btn.textContent = '📍 Auto';
       btn.disabled = false;
-      showToast('Could not get location. Please enter manually.', 'error');
+      // Give a specific message based on the error code so users know what to do
+      const msgs = {
+        1: 'Location permission denied. Please allow location access in your browser settings.',
+        2: 'Location unavailable. Please enter coordinates manually.',
+        3: 'Location request timed out. Please try again or enter manually.',
+      };
+      showToast(msgs[err.code] || 'Could not get location. Please enter manually.', 'error');
     },
-    { timeout: 10000 }
+    { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
   );
 });
 
