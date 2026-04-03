@@ -29,8 +29,11 @@ async function salesAuthRehydrate() {
 }
 
 function authH() {
-  // No Authorization header — cookie sent automatically via credentials:'include'
-  return { 'Content-Type': 'application/json' };
+  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  const token = localStorage.getItem('aq_token');
+  return token
+    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    : { 'Content-Type': 'application/json' };
 }
 var _salesLoggingOut = false;
 async function salesLogout() {
@@ -40,6 +43,7 @@ async function salesLogout() {
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); // ✅
   } catch (_) {}
   sessionStorage.removeItem('aq_sales_user');
+  localStorage.removeItem('aq_token');
   window.location.replace('/salesman/login.html');
 }
 function salesmanLogout() { salesLogout(); }
@@ -158,8 +162,13 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
-        // Fix 2: Token is in httpOnly cookie — store only the user profile
+        // Store user profile in sessionStorage for fast UI checks
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
+        // Store token in localStorage as mobile fallback (cross-site cookies
+        // are blocked on Android Chrome / iOS Safari when frontend and backend
+        // are on different domains). The token is sent as Authorization: Bearer
+        // header by apiFetch so the backend accepts it even without the cookie.
+        if (data.token) localStorage.setItem('aq_token', data.token);
         // Fix 4: Force password change if required
         if (data.user.must_change_password) {
           window.location.replace('/salesman/change-password.html');
