@@ -85,16 +85,17 @@
 
     /* District chart */
     .district-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 0; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
     }
     .district-row:last-child { border-bottom: none; }
-    .dist-name { font-size: .78rem; font-weight: 600; color: var(--ink); flex: 0 0 auto; min-width: 0;
-      max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dist-bar  { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .dist-name { font-size: clamp(.7rem, 2.5vw, .78rem); font-weight: 600; color: var(--ink);
+      flex: 0 0 auto; max-width: clamp(60px, 22vw, 90px);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dist-bar  { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; min-width: 20px; }
     .dist-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-light)); border-radius: 4px; transition: width .5s; }
-    .dist-count { font-size:.75rem; font-weight:700; color:var(--ink); flex-shrink:0; min-width:18px; text-align:right; }
-    .dist-sales { font-size:.72rem; color:var(--success,#2e7d32); flex-shrink:0; white-space:nowrap; }
+    .dist-count { font-size: clamp(.68rem,2vw,.75rem); font-weight: 700; color: var(--ink); flex-shrink: 0; min-width: 16px; text-align: right; }
+    .dist-sales { font-size: clamp(.65rem,2vw,.72rem); color: var(--success,#2e7d32); flex-shrink: 0; white-space: nowrap; }
 
     /* ── Leads table card ── */
     .table-card {
