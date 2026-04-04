@@ -1417,18 +1417,18 @@ body {
 /* ── 1. SCROLL CONTAINER: only the viewport scrolls ─────────── */
 html {
   height: 100%;
-  overflow-x: hidden;             /* no horizontal bleed */
-  overflow-y: scroll;             /* always show scrollbar track (no layout shift) */
-  overscroll-behavior-y: auto;    /* allow iOS rubber-band at top/bottom */
-  scroll-behavior: smooth;
-  background: var(--bg, #f7f8f5); /* iOS overscroll colour */
+  min-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  min-height: 100%;
-  overflow: visible;              /* body does NOT scroll — html does */
-  /* Clear ALL previous padding-bottom rules with a single authoritative value */
-  padding-bottom: 0 !important;
+  min-height: 100dvh;
+  margin: 0 !important;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 /* ── 2. BOTTOM CLEARANCE: last content visible above bottom nav ─ */
