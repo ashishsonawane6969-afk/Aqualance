@@ -253,21 +253,22 @@
     #lbCards { padding: 14px 20px 0; }
     .lb-card {
       background: #fff; border-radius: 14px; border: 1px solid var(--bdr);
-      padding: 16px 18px; margin-bottom: 10px;
-      display: flex; align-items: center; gap: 14px;
+      padding: 12px 14px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px;
       box-shadow: var(--card-sh); transition: box-shadow .15s;
+      overflow: hidden;
     }
     .lb-card:hover { box-shadow: 0 4px 20px rgba(13,34,16,.1); }
-    .lb-rank { font-size: 1.6rem; flex-shrink:0; width:36px; text-align:center; }
-    .lb-info { flex:1; min-width:0; }
-    .lb-name { font-weight: 700; color: var(--ink); font-size: .9rem; }
-    .lb-sub  { font-size: .72rem; color: var(--ink3); margin-top: 2px; }
-    .lb-bar-track { height: 3px; border-radius: 2px; background: var(--bdr); overflow: hidden; margin-top: 8px; }
+    .lb-rank { font-size: 1.4rem; flex-shrink:0; width:32px; text-align:center; }
+    .lb-info { flex:1; min-width:0; overflow:hidden; }
+    .lb-name { font-weight: 700; color: var(--ink); font-size: .85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-sub  { font-size: .68rem; color: var(--ink3); margin-top: 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-bar-track { height: 3px; border-radius: 2px; background: var(--bdr); overflow: hidden; margin-top: 6px; }
     .lb-bar-fill  { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--f3), var(--f4)); }
-    .lb-nums { display: flex; gap: 14px; flex-shrink:0; }
+    .lb-nums { display: flex; gap: 10px; flex-shrink:0; }
     .lb-num  { text-align: center; }
-    .lb-num-val { font-weight: 800; font-size: .92rem; display: block; font-family: var(--mono); }
-    .lb-num-lbl { font-size: .57rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); }
+    .lb-num-val { font-weight: 800; font-size: .85rem; display: block; font-family: var(--mono); }
+    .lb-num-lbl { font-size: .55rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); }
     .podium-row { display: none; gap: 12px; padding: 16px 20px 0; }
     .podium-card {
       flex:1; background:#fff; border-radius:16px; border:1px solid var(--bdr);
@@ -287,10 +288,10 @@
 
     /* ─── CSV dropdown ──────────────────────────── */
     .csv-menu {
-      display:none; position:fixed; z-index:801;
+      display:none; position:fixed; z-index:9999;
       background:#fff; border:1px solid var(--bdr);
-      border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.14);
-      min-width:240px; overflow:hidden;
+      border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.18);
+      min-width:200px; overflow:hidden;
     }
     .csv-menu-hdr { padding:10px 14px 7px; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink3); }
     .csv-menu-item {
@@ -1624,18 +1625,21 @@ const MAHARASHTRA_TALUKAS = [
 
 /* ── Safe fetch — cookie-based auth (credentials:include) ── */
 async function areasFetch(url, opts = {}) {
-  // Auth is via httpOnly cookie (aq_auth) — no Bearer token needed.
-  // credentials:'include' sends the cookie automatically.
+  // Send Bearer token as fallback for mobile (cross-site cookies blocked on Android/iOS)
+  const token = localStorage.getItem('aq_token') || '';
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+    ...(opts.headers || {})
+  };
   const res = await fetch(url, {
     ...opts,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.headers || {})
-    }
+    headers
   });
   if (res.status === 401 || res.status === 403) {
-    window.location.href = '/admin/login.html'; // session expired
+    try { localStorage.removeItem('aq_token'); sessionStorage.removeItem('aq_admin_user'); } catch(_) {}
+    window.location.href = '/admin/login.html';
     throw new Error('Session expired');
   }
   const ct = res.headers.get('content-type') || '';
