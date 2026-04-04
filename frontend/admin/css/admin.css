@@ -1346,9 +1346,9 @@ body {
 .cat-bar-inner { touch-action: pan-x; }
 
 /* ── 13. Sidebar overlay z-index consistency ─────────────────── */
-#sidebarOverlay { z-index: 199; }
-.sidebar        { z-index: 200; }
-.modal-overlay  { z-index: 500; }
+#sidebarOverlay { z-index: 999; }
+.sidebar        { z-index: 1000; }
+.modal-overlay  { z-index: 1100; }
 #photoModal     { z-index: 9000; }
 
 /* ── 14. Admin layout: body padding-bottom on mobile ─────────── */
