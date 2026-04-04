@@ -336,10 +336,10 @@ input, select, textarea { font-family: var(--font-body); }
 .nav-item:active { background:rgba(255,255,255,.05); }
 .nav-item.active { color:#fff; background:rgba(46,142,207,.2); border-left-color:var(--brand-light); }
 .sidebar-footer { padding:14px 18px; border-top:1px solid rgba(255,255,255,.08); }
-.main-area { margin-left:240px; flex:1; min-height:100vh; background:var(--bg); }
-.topnav { background:var(--surface); border-bottom:1px solid var(--border); padding:0 18px; height:54px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--sh-xs); }
+.main-area { margin-left:240px; flex:1; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
+.topnav { background:var(--surface); border-bottom:1px solid var(--border); padding:0 18px; height:54px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--sh-xs); flex-shrink:0; }
 .topnav h2 { font-size:.93rem; font-weight:700; color:var(--ink); }
-.content-area { padding:16px; }
+.content-area { padding:16px; flex:1; }
 
 /* Admin hamburger button */
 .mob-menu-btn { display:none; background:none; border:none; font-size:1.4rem; color:var(--ink-mid); width:40px; height:40px; align-items:center; justify-content:center; border-radius:50%; }
@@ -3737,3 +3737,96 @@ body.net-2g .prod-card-img {
 }
 .topnav .aq-net-badge.hidden { display: none; }
 
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS — Mobile / Tablet / Desktop
+   Added to fix layout issues across all screen sizes
+═══════════════════════════════════════════════════ */
+
+/* ── Mobile (<768px) ───────────────────────────── */
+@media (max-width: 767px) {
+  /* Sidebar: hidden off-screen, slides in on toggle */
+  .sidebar { transform: translateX(-100%); z-index: 1000; }
+  .sidebar.open { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.35); }
+  #sidebarOverlay { z-index: 999; }
+  .mob-menu-btn { display: flex !important; }
+
+  /* Main area fills full width */
+  .main-area { margin-left: 0 !important; min-height: auto; }
+  .content-area { padding: 12px 10px; }
+
+  /* Cards & tables */
+  .card { border-radius: 12px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 480px; }
+
+  /* Topnav */
+  .topnav { padding: 0 12px; gap: 8px; }
+  .topnav h2 { font-size: .82rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Bottom nav items */
+  .bottom-nav-inner { gap: 0; }
+  .bnav-item span:last-child { font-size: .6rem; }
+
+  /* Stat grids */
+  .stat-grid, .db-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+
+  /* Modal full screen on mobile */
+  .modal { width: 100% !important; max-width: 100% !important; border-radius: 16px 16px 0 0 !important; margin: 0 !important; }
+  .modal-overlay { align-items: flex-end !important; padding: 0 !important; }
+}
+
+/* ── Tablet (768px–1024px) ─────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .main-area { margin-left: 200px; }
+  .content-area { padding: 14px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { min-width: 560px; }
+
+  .topnav h2 { font-size: .88rem; }
+
+  /* 2-col grids on tablet */
+  .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ── Desktop (>1024px) ─────────────────────────── */
+@media (min-width: 1025px) {
+  .mob-menu-btn { display: none !important; }
+  #sidebarOverlay { display: none !important; }
+  .sidebar { transform: translateX(0) !important; }
+  .main-area { margin-left: 240px; }
+  .content-area { padding: 20px 24px; max-width: 1400px; }
+}
+
+/* ── Leaderboard card — all sizes ─────────────── */
+.lb-card {
+  overflow: hidden;
+  min-width: 0;
+}
+.lb-name, .lb-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ── CSV dropdown — always above everything ───── */
+.csv-menu { z-index: 9999 !important; }
+
+/* ── Delivery boys: no phantom height ─────────── */
+.app-layout { align-items: flex-start; }
+.content-area > .card { align-self: flex-start; width: 100%; }
+
+/* ── Geo map sidebar always above Leaflet ──────── */
+.sidebar { z-index: 1000 !important; }
+
+/* ── Salesman tabs — scroll horizontally on mobile */
+.tab-bar, .tabs-bar, [role="tablist"] {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
