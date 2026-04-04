@@ -84,9 +84,11 @@ body {
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 a { text-decoration: none; color: inherit; }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }
 button { cursor: pointer; font-family: var(--font-body); border: none; background: none; }
 input, select, textarea { font-family: var(--font-body); }
 
@@ -3757,8 +3759,16 @@ body.net-2g .prod-card-img {
 
   /* Cards & tables */
   .card { border-radius: 12px; }
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  table { min-width: 480px; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  .table-wrap table { min-width: 0; }
+
+  /* selects: never overflow viewport */
+  select, .filter-select, .pill-select, .sort-select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .filter-bar, .controls-bar { flex-wrap: wrap; gap: 6px; }
+  .filter-bar select, .controls-bar select { flex: 1 1 auto; min-width: 0; max-width: calc(50% - 6px); }
 
   /* Topnav */
   .topnav { padding: 0 12px; gap: 8px; }
@@ -3783,7 +3793,7 @@ body.net-2g .prod-card-img {
   .content-area { padding: 14px; }
 
   .table-wrap { overflow-x: auto; }
-  table { min-width: 560px; }
+  .table-wrap table { min-width: 0; }
 
   .topnav h2 { font-size: .88rem; }
 
@@ -3830,3 +3840,96 @@ body.net-2g .prod-card-img {
   scrollbar-width: none;
 }
 .tab-bar::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL RESPONSIVE FIXES — All Admin Pages
+   Dropdowns, overflow, layout — all devices
+═══════════════════════════════════════════════════ */
+
+/* 1. Prevent ANY element from causing horizontal scroll */
+html { overflow-x: hidden; max-width: 100vw; }
+*, *::before, *::after { box-sizing: border-box; }
+
+/* 2. Selects / dropdowns — never overflow viewport */
+select { max-width: 100%; }
+
+/* 3. All fixed/absolute dropdowns — clamp to viewport */
+.csv-menu, .filter-dropdown, [class*="dropdown"], [class*="-menu"] {
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+}
+
+/* 4. Filter bars always wrap on small screens */
+.filter-bar, .controls-bar, .filter-row, .filter-section > div {
+  flex-wrap: wrap;
+}
+
+/* 5. Search pills shrink on mobile */
+.search-pill { min-width: 0; flex: 1 1 140px; }
+
+/* 6. Tables always inside scrollable wrapper */
+.table-wrap, .twrap, .tcard { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+/* 7. Modal always fits viewport */
+.modal { max-width: min(560px, calc(100vw - 16px)); box-sizing: border-box; }
+
+/* 8. Images/maps always fit container */
+img, iframe, video, canvas, svg { max-width: 100%; }
+
+/* ── Mobile (<768px) — targeted additions ── */
+@media (max-width: 767px) {
+  /* pill-select / filter-select sizing */
+  .pill-select, select.filter-select, .sort-select, select {
+    font-size: 16px; /* prevent iOS zoom */
+    max-width: 100%;
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* controls-bar — stack on very small screens */
+  .controls-bar { gap: 6px; }
+  .controls-bar .search-pill { flex: 1 1 100%; order: -1; }
+  .controls-bar select, .controls-bar .pill-select { flex: 1 1 calc(50% - 6px); max-width: calc(50% - 6px); }
+
+  /* CSV/export menu — always within viewport */
+  .csv-menu { max-width: calc(100vw - 20px) !important; right: 10px !important; left: auto !important; }
+
+  /* topnav title truncate */
+  .topnav h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100vw - 160px); }
+
+  /* Stat cards */
+  .stat-card { min-width: 0; }
+
+  /* Leaderboard card */
+  .lb-card { flex-wrap: nowrap; }
+  .lb-info { min-width: 0; overflow: hidden; }
+
+  /* Tables: wrap columns */
+  td, th { white-space: normal; word-break: break-word; }
+
+  /* Form selects full width */
+  .form-group select { width: 100%; }
+
+  /* hbar-label shrink on small screens */
+  .hbar-label { width: auto; max-width: 40%; }
+
+  /* delivery-boys no phantom height */
+  .app-layout { height: auto; }
+  .main-area { height: auto; }
+}
+
+/* ── Extra small (<400px) ── */
+@media (max-width: 400px) {
+  .controls-bar select, .controls-bar .pill-select { flex: 1 1 100%; max-width: 100%; }
+  .topnav h2 { font-size: .75rem; max-width: calc(100vw - 120px); }
+  .content-area { padding: 8px 8px; }
+  .lb-nums { gap: 6px; }
+  .lb-num-val { font-size: .72rem; }
+}
+
+/* ── Tablet (768–1024) — additions ── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .controls-bar select { max-width: 180px; }
+  .pill-select { max-width: 200px; }
+}
