@@ -231,7 +231,7 @@ input, select, textarea { font-family: var(--font-body); }
 .app-header {
   position:sticky; top:0; z-index:200;
   background:var(--surface); border-bottom:1px solid var(--border);
-  height:var(--top-bar-h); display:flex; align-items:center; padding:0 14px; gap:10px;
+  height:var(--top-bar-h); display:flex; align-items:center; padding:0 14px; gap:1px;
   box-shadow:var(--sh-xs);
 }
 .app-header .header-logo {
