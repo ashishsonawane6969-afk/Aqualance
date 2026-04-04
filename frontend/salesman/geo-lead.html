@@ -721,9 +721,63 @@ function setBar(cls, msg, detail) {
   document.getElementById('gpsDetail').textContent = detail;
 }
 
-/* ── Reverse geocode (Nominatim — free, no key needed) ── */
+/* ── Google Maps API key (fetched once, cached) ── */
+let _mapsApiKey = undefined; // undefined = not yet fetched; '' = fetched but no key; string = key
+async function getMapsApiKey() {
+  if (_mapsApiKey !== undefined) return _mapsApiKey;
+  try {
+    const res  = await apiFetch(GEO + '/maps-key');
+    const data = await res.json();
+    _mapsApiKey = (data.success && data.key) ? data.key : '';
+  } catch (e) {
+    _mapsApiKey = '';
+  }
+  return _mapsApiKey;
+}
+
+/* ── Reverse geocode — tries Google Maps first (if key configured),
+      falls back to Nominatim (free, no key needed) ── */
 async function reverseGeocode(lat, lng, attempt) {
   attempt = attempt || 1;
+
+  // Try Google Maps Geocoding API if a key is available
+  const apiKey = await getMapsApiKey();
+  if (apiKey) {
+    try {
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=en&result_type=sublocality|locality|administrative_area_level_3`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'OK' && data.results && data.results.length) {
+          const components = data.results[0].address_components || [];
+          const get = (type) => {
+            const c = components.find(c => c.types.includes(type));
+            return c ? c.long_name : '';
+          };
+          const village  = get('sublocality_level_1') || get('sublocality') || get('locality') || get('neighborhood') || '';
+          const taluka   = get('administrative_area_level_3') || get('sublocality') || '';
+          const district = get('administrative_area_level_2') || '';
+          const addr     = data.results[0].formatted_address || '';
+
+          if (village)  document.getElementById('fVillage').value  = village;
+          if (!_taluka) {
+            if (taluka)   document.getElementById('fTaluka').value   = taluka;
+            if (district) document.getElementById('fDistrict').value = district;
+          }
+          if (addr) document.getElementById('fAddress').value = addr.substring(0, 200);
+
+          const talukaFilled = document.getElementById('fTaluka').value.trim();
+          if (!talukaFilled && !_taluka) nearestTalukaFallback(lat, lng);
+          return; // Google Maps succeeded — skip Nominatim
+        }
+      }
+    } catch (e) {
+      console.warn('Google Maps geocode failed, falling back to Nominatim:', e.message);
+    }
+  }
+
+  // Nominatim fallback — free, no key needed
   try {
     // Nominatim free reverse geocoder — zoom=14 gives taluka-level detail in India
     const res = await fetch(
@@ -1061,6 +1115,17 @@ function showToast(msg, type) {
   setTimeout(() => t.remove(), 3000);
 }
 </script>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Leads</span></a>
+    <a href="/salesman/geo-lead.html"  class="bnav-item active"><span class="bnav-icon">📍</span><span>Geo Lead</span></a>
+    <a href="/salesman/reports.html"   class="bnav-item"><span class="bnav-icon">📈</span><span>Reports</span></a>
+    <button onclick="salesmanLogout()" class="bnav-item" style="background:none;border:none;cursor:pointer"><span class="bnav-icon">🚪</span><span>Logout</span></button>
+  </div>
+</nav>
 
 <script>
 if ('serviceWorker' in navigator) {

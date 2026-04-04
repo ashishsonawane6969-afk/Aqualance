@@ -141,4 +141,29 @@ router.get(
   ctrl.getLeadDetail
 );
 
+// GET /api/geo/maps-key — returns Google Maps API key for frontend geocoding
+router.get(
+  '/maps-key',
+  authenticatedLimiter,
+  auth(['salesman', 'admin']),
+  ctrl.getMapsKey
+);
+
+// GET /api/geo/verified-count — GPS verification stats for a salesman
+// Salesman: own stats only. Admin: pass ?salesman_id=N for specific salesman.
+router.get(
+  '/verified-count',
+  authenticatedLimiter,
+  auth(['salesman', 'admin']),
+  ctrl.getVerifiedCount
+);
+
+// GET /api/geo/verified-stats — GPS verification stats for ALL salesmen (admin)
+router.get(
+  '/verified-stats',
+  authenticatedLimiter,
+  auth(['admin']),
+  ctrl.getVerifiedStats
+);
+
 module.exports = router;
