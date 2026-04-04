@@ -1046,7 +1046,7 @@ function renderDistrictChart(districts) {
       + '<div class="dist-name">' + d.district + '</div>'
       + '<div class="dist-bar"><div class="dist-fill" style="width:' + pct + '%"></div></div>'
       + '<div class="dist-count">' + d.count + '</div>'
-      + '<div class="dist-sales">✅' + (d.sales || 0) + '</div>'
+      + '<div class="dist-sales">✅ ' + (d.sales || 0) + '</div>'
       + '</div>';
   }).join('');
 }
