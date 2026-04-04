@@ -199,10 +199,14 @@
     .toast.success{background:var(--em)} .toast.error{background:var(--red)}
     @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-    /* Mobile */
-    @media(max-width:750px){
+    /* Sidebar overlay for geo-map */
+    #sidebarOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+    #sidebarOverlay.show{opacity:1;visibility:visible}
+
+    /* Mobile (<768px) */
+    @media(max-width:767px){
       body{overflow:auto}
-      .main-area{height:auto;overflow:visible}
+      .main-area{height:auto;overflow:visible;margin-left:0!important}
       .app-shell{height:auto}
       .mob-menu-btn{display:flex;align-items:center;justify-content:center}
       .geo-layout{grid-template-columns:1fr;height:auto;overflow:visible}
@@ -210,6 +214,13 @@
       .map-col{height:55vh;min-height:320px;position:relative}
       .kpi-strip{grid-template-columns:repeat(2,1fr)}
       .kpi-item:nth-child(2){border-right:none}
+      .topnav{padding:0 10px}
+    }
+
+    /* Tablet (768px–1024px) */
+    @media(min-width:768px)and(max-width:1024px){
+      .geo-layout{grid-template-columns:280px 1fr}
+      .kpi-strip{grid-template-columns:repeat(4,1fr)}
     }
   </style>
 </head>
