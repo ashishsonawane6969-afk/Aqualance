@@ -320,8 +320,9 @@
     @media (max-width: 700px) {
       .kpi-strip { grid-template-columns: repeat(2, 1fr); gap:8px; padding:14px 14px 0; }
       .kt-val { font-size: 1.5rem; }
-      .icon-tabs { padding:12px 14px 0; gap:4px; }
-      .icon-tab { font-size:.7rem; padding:9px 6px; }
+      .icon-tabs { padding:12px 14px 0; gap:4px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+      .icon-tabs::-webkit-scrollbar { display:none; }
+      .icon-tab { flex:0 0 auto; font-size:.7rem; padding:9px 10px; }
       .icon-tab .t-icon { display:none; }
       .filter-section { padding:12px 14px 0; }
       .controls-bar { flex-wrap:wrap; }
@@ -330,6 +331,11 @@
       .smlist-hdr { padding:14px 14px 0; }
       #lbCards { padding:12px 14px 0; }
       .podium-row { padding:12px 14px 0; }
+      /* Fix lb-card name/phone wrapping on mobile */
+      .lb-card { gap:8px; padding:10px 12px; }
+      .lb-rank { width:26px; font-size:1.1rem; }
+      .lb-nums { gap:8px; }
+      .lb-num-val { font-size:.78rem; }
     }
     @media (min-width:700px) {
       .podium-row { display:flex; }
@@ -337,6 +343,9 @@
     @media (max-width:480px) {
       .kpi-tile-inner { flex-direction:column; gap:6px; }
       .kpi-icon-box { width:32px; height:32px; font-size:.9rem; }
+      /* Tabs scroll on very small screens */
+      .tabs-row { overflow-x:auto; -webkit-overflow-scrolling:touch; flex-wrap:nowrap; scrollbar-width:none; }
+      .tabs-row::-webkit-scrollbar { display:none; }
     }
 
     /* ─── Photo lightbox ────────────────────────── */
