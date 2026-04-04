@@ -149,7 +149,7 @@
       flex-wrap: wrap;
     }
     .search-pill {
-      flex: 1; min-width: 200px;
+      flex: 1; min-width: 0; max-width: 100%;
       display: flex; align-items: center; gap: 8px;
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
@@ -620,7 +620,7 @@
         <!-- Export dropdown -->
         <div style="position:relative">
           <button class="icon-btn" id="spExportBtn" onclick="toggleSPExportMenu(event)">⬇ Export <span style="font-size:.6rem">▾</span></button>
-          <div id="spExportMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--bdr);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:180px;z-index:900;overflow:hidden">
+          <div id="spExportMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--bdr);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:0;width:min(180px,calc(100vw - 28px));z-index:900;overflow:hidden">
             <div style="padding:8px 12px 5px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)">Export As</div>
             <button onclick="exportSalesProductsCSV();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📋 CSV</button>
             <button onclick="exportSalesProductsExcel();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📊 Excel (.xlsx)</button>
@@ -1184,11 +1184,15 @@ function openCSVMenu(e) {
   const btn=(e.currentTarget||e.target).closest('button');
   const rect=btn.getBoundingClientRect();
   const menu=document.getElementById('csvMenu');
-  const right=Math.max(8,window.innerWidth-rect.right);
+  const menuW=Math.min(240, window.innerWidth-20);
+  menu.style.width=menuW+'px';
   menu.style.display='block';
-  menu.style.right=right+'px'; menu.style.left='auto';
+  // Prefer aligning to right of button, clamp so it never goes off-screen
+  let rightEdge=window.innerWidth-rect.right;
+  rightEdge=Math.max(8, Math.min(rightEdge, window.innerWidth-menuW-8));
+  menu.style.right=rightEdge+'px'; menu.style.left='auto';
   const top=rect.bottom+6;
-  if(top+160>window.innerHeight-12) {
+  if(top+200>window.innerHeight-12) {
     menu.style.top='auto'; menu.style.bottom=(window.innerHeight-rect.top+6)+'px';
   } else {
     menu.style.top=top+'px'; menu.style.bottom='auto';
