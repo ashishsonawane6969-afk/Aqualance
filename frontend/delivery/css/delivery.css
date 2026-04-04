@@ -84,9 +84,11 @@ body {
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 a { text-decoration: none; color: inherit; }
-img { max-width: 100%; display: block; }
+img { max-width: 100%; height: auto; display: block; }
 button { cursor: pointer; font-family: var(--font-body); border: none; background: none; }
 input, select, textarea { font-family: var(--font-body); }
 
@@ -3732,3 +3734,25 @@ body.net-2g .prod-card-img {
 }
 .topnav .aq-net-badge.hidden { display: none; }
 
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL RESPONSIVE FIXES — Delivery Pages
+═══════════════════════════════════════════════════ */
+html { overflow-x: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+select { max-width: 100%; }
+img, iframe, canvas { max-width: 100%; height: auto; }
+
+.filter-bar, .filter-row { flex-wrap: wrap; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.modal { max-width: min(500px, calc(100vw - 16px)); box-sizing: border-box; }
+
+@media (max-width: 767px) {
+  select { font-size: 16px; }
+  .filter-bar select { flex: 1 1 calc(50% - 6px); max-width: calc(50% - 6px); }
+  .stat-row { grid-template-columns: repeat(2,1fr); gap: 8px; }
+}
+
+@media (max-width: 400px) {
+  .filter-bar select { flex: 1 1 100%; max-width: 100%; }
+}
