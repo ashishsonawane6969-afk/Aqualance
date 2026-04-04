@@ -1062,8 +1062,12 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeSide
 /* ── Google Maps loader ── */
 (async function(){
   try{
-    /* SECURITY: maps-key requires auth — cookie sent automatically via credentials:'include' */
-    var r=await fetch('/api/v1/config/maps-key', { credentials: 'include' }), cfg=await r.json();
+    /* SECURITY: maps-key requires auth — cookie + Bearer token for mobile */
+    var _mkt=localStorage.getItem('aq_token')||'';
+    var r=await fetch('/api/v1/config/maps-key', {
+      credentials: 'include',
+      headers: _mkt ? { 'Authorization': 'Bearer ' + _mkt } : {}
+    }), cfg=await r.json();
     var hasKey=cfg.key&&cfg.key!=='YOUR_GOOGLE_MAPS_API_KEY_HERE'&&cfg.key.length>10;
     if(!hasKey){ showMapFallback('Add GOOGLE_MAPS_API_KEY in your .env file'); return; }
     var s=document.createElement('script');
