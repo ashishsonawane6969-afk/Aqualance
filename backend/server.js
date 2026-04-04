@@ -120,8 +120,6 @@ app.use((req, res, next) => {
 });
 
 /* ── CORS ────────────────────────────────────────────────────────────────── */
-// OWASP A05: explicit allowlist — no wildcard origins.
-// In Railway set: ALLOWED_ORIGINS=https://your-app.vercel.app
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(o => o.trim())
@@ -133,13 +131,24 @@ if (allowedOrigins.length === 0) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // ✅ CRITICAL: allow no-origin (Railway, Postman, server-to-server)
+    // Allow no-origin requests (mobile PWA, server-to-server, curl, Postman)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    // Allow exact matches
+    if (allowedOrigins.includes(origin)) return callback(null, true);
 
+    // Allow any subdomain of allowed origins (e.g. preview deployments on Vercel)
+    const isAllowedSubdomain = allowedOrigins.some(allowed => {
+      try {
+        const base = new URL(allowed).hostname.replace(/^www\./, '');
+        const reqHost = new URL(origin).hostname.replace(/^www\./, '');
+        return reqHost === base || reqHost.endsWith('.' + base);
+      } catch { return false; }
+    });
+    if (isAllowedSubdomain) return callback(null, true);
+
+    // Log and reject unknown origins
+    console.warn(`[CORS] Blocked origin: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
