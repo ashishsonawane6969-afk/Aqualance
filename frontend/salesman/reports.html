@@ -160,7 +160,7 @@
 
 <!-- CSV EXPORT MENU -->
 <div id="csvMenuOverlay" style="display:none;position:fixed;inset:0;z-index:800;" onclick="closeCSVMenu()"></div>
-<div id="csvMenu" style="display:none;position:fixed;top:58px;right:14px;z-index:801;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);min-width:220px;overflow:hidden;">
+<div id="csvMenu" style="display:none;position:fixed;top:58px;right:14px;z-index:801;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);width:min(220px,calc(100vw - 28px));min-width:0;overflow:hidden;box-sizing:border-box;">
   <div style="padding:10px 14px 6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);">Export CSV</div>
   <button onclick="exportCSV();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
     <span>📋</span> All My Leads
