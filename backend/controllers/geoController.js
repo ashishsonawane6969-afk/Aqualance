@@ -773,6 +773,97 @@ exports.getLeadDetail = async (req, res) => {
   }
 };
 
+/* ══════════════════════════════════════════════════════════
+   GOOGLE MAPS API KEY  — GET /api/geo/maps-key
+   Returns the configured Google Maps API key for frontend use.
+   Key is read from GOOGLE_MAPS_API_KEY environment variable.
+══════════════════════════════════════════════════════════ */
+exports.getMapsKey = (req, res) => {
+  const key = process.env.GOOGLE_MAPS_API_KEY || '';
+  if (!key) {
+    return res.json({ success: true, key: null, message: 'Google Maps API key not configured' });
+  }
+  res.json({ success: true, key });
+};
+
+/* ══════════════════════════════════════════════════════════
+   GPS VERIFIED COUNT  — GET /api/geo/verified-count
+   Returns GPS verification stats for the authenticated salesman.
+   Admin can pass ?salesman_id=N to query a specific salesman.
+   Response:
+     { total, geo_verified, geo_suspicious, unverified }
+══════════════════════════════════════════════════════════ */
+exports.getVerifiedCount = async (req, res) => {
+  try {
+    // Admin can query any salesman; salesman can only query themselves
+    let targetId = req.user.id;
+    if (req.user.role === 'admin' && req.query.salesman_id) {
+      const parsed = parseInt(req.query.salesman_id, 10);
+      if (!parsed || parsed <= 0) {
+        return res.status(400).json({ success: false, message: 'Invalid salesman_id' });
+      }
+      targetId = parsed;
+    }
+
+    const [[stats]] = await db.query(
+      `SELECT
+         COUNT(*)                                    AS total,
+         SUM(geo_verified  = 1)                      AS geo_verified,
+         SUM(geo_suspicious = 1)                     AS geo_suspicious,
+         SUM(geo_verified  = 0 AND geo_suspicious = 0) AS unverified
+       FROM shop_leads
+       WHERE salesman_id = ?`,
+      [targetId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        total:          parseInt(stats.total)          || 0,
+        geo_verified:   parseInt(stats.geo_verified)   || 0,
+        geo_suspicious: parseInt(stats.geo_suspicious) || 0,
+        unverified:     parseInt(stats.unverified)     || 0,
+      }
+    });
+  } catch (err) {
+    serverError(res, err, '[geoController.getVerifiedCount]');
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   GPS VERIFICATION STATS PER SALESMAN (admin)
+   GET /api/geo/verified-stats
+   Returns geo_verified / geo_suspicious counts for all salesmen.
+   Used by admin dashboard to show GPS verification leaderboard.
+══════════════════════════════════════════════════════════ */
+exports.getVerifiedStats = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        u.id            AS salesman_id,
+        u.name          AS salesman_name,
+        u.phone,
+        COUNT(sl.id)                          AS total_leads,
+        SUM(sl.geo_verified  = 1)             AS geo_verified,
+        SUM(sl.geo_suspicious = 1)            AS geo_suspicious,
+        SUM(sl.geo_verified  = 0 AND sl.geo_suspicious = 0) AS unverified,
+        ROUND(
+          100.0 * SUM(sl.geo_verified = 1) / NULLIF(COUNT(sl.id), 0),
+          1
+        )                                     AS verified_pct
+      FROM users u
+      LEFT JOIN shop_leads sl ON sl.salesman_id = u.id
+      WHERE u.role = 'salesman'
+      GROUP BY u.id, u.name, u.phone
+      ORDER BY geo_verified DESC, total_leads DESC
+    `);
+
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    serverError(res, err, '[geoController.getVerifiedStats]');
+  }
+};
+
 exports.ensureGeoTables = ensureGeoTables;
 exports.haversine = haversine;
 
