@@ -324,7 +324,7 @@ input, select, textarea { font-family: var(--font-body); }
 .sidebar {
   width:240px; background:var(--ink); color:#fff; flex-shrink:0;
   display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0;
-  overflow-y:auto; z-index:200; transition:transform var(--t-base) var(--ease);
+  overflow-y:auto; z-index:1000; transition:transform var(--t-base) var(--ease);
 }
 .sidebar-logo { padding:20px 18px 14px; border-bottom:1px solid rgba(255,255,255,.08); font-family:var(--font-head); font-size:1.05rem; font-weight:600; color:var(--gold-light); display:flex; align-items:center; gap:10px; }
 .sidebar-user { padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.08); font-size:.82rem; }
@@ -1251,7 +1251,12 @@ body.admin-layout .bottom-nav {
 .photo-modal,
 #sidebarOverlay {
   top: 0; right: 0; bottom: 0; left: 0;   /* fallback for inset:0 */
+  position: fixed; z-index: 999;
+  background: rgba(0,0,0,.45);
+  opacity: 0; visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
 }
+#sidebarOverlay.show { opacity: 1; visibility: visible; }
 
 /* ── 2. Sidebar: force GPU layer, prevent flicker on iOS ──────── */
 .sidebar {
