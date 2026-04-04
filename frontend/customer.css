@@ -92,6 +92,8 @@ body {
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
   overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 a {
@@ -7579,4 +7581,39 @@ body.net-2g .prod-card-img {
 /* ── Product page body padding adjustment ───────────────────── */
 .product-page {
   padding-bottom: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   GLOBAL RESPONSIVE FIXES — Customer Pages
+═══════════════════════════════════════════════════ */
+html { overflow-x: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+img, iframe, video, canvas { max-width: 100%; height: auto; }
+select { max-width: 100%; }
+
+/* products-header: always on one line, no overflow */
+.products-header { overflow: hidden; flex-wrap: nowrap; box-sizing: border-box; }
+.products-header-left { min-width: 0; flex-shrink: 0; }
+.section-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sort-select { min-width: 0; flex-shrink: 1; max-width: 120px; font-size: 16px; }
+
+/* filter bar wraps */
+.filter-bar { flex-wrap: wrap; }
+
+/* tables scrollable */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* modals fit viewport */
+.modal { max-width: min(500px, calc(100vw - 16px)); }
+
+@media (max-width: 767px) {
+  .sort-select { max-width: 110px; font-size: 14px; padding: 5px 22px 5px 8px; }
+  .filter-bar select, select.filter-select { font-size: 16px; max-width: 100%; }
+  .topbar-inner { gap: 6px; padding: 0 10px; }
+}
+
+@media (max-width: 400px) {
+  .sort-select { max-width: 90px; font-size: 13px; }
+  .section-title { font-size: .85rem; }
+  .products-count { display: none; }
 }
