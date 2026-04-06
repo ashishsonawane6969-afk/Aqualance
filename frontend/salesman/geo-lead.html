@@ -52,7 +52,8 @@
       min-height: 100dvh;
       padding-bottom: 100px;
       overflow-x: hidden;
-      width: 100%
+      width: 100%;
+      position: relative; /* prevent any child from creating a new scroll container */
     }
 
     /* Top bar */
@@ -67,7 +68,8 @@
       top: 0;
       z-index: 100;
       box-shadow: 0 2px 12px rgba(0, 0, 0, .15);
-      max-width: 100vw
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .back-btn {
@@ -100,8 +102,10 @@
       font-size: .8rem;
       font-weight: 600;
       border: 1.5px solid;
-      max-width: calc(100vw - 28px);
-      word-wrap: break-word
+      box-sizing: border-box;
+      width: calc(100% - 28px);
+      word-wrap: break-word;
+      overflow: hidden;
     }
 
     .gps-bar.loading {
@@ -189,9 +193,9 @@
       border-radius: 14px;
       border: 1px solid var(--bdr);
       box-shadow: 0 1px 5px rgba(0, 0, 0, .04);
-      max-width: calc(100vw - 28px);
-      width: 100%;
-      overflow: hidden
+      width: calc(100% - 28px);
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .card-head {
@@ -575,14 +579,16 @@
     .prod-select-row {
       display: flex;
       gap: 8px;
-      align-items: center;
+      align-items: stretch;
       margin-bottom: 10px;
       width: 100%;
+      box-sizing: border-box;
       overflow: hidden;
     }
 
     .prod-select {
       flex: 1 1 0%;
+      min-width: 0;
       border: 1.5px solid var(--bdr);
       border-radius: 8px;
       padding: 9px 12px;
@@ -593,7 +599,8 @@
       -webkit-appearance: none;
       appearance: none;
       outline: none;
-      min-width: 0;
+      width: 0; /* force flex shrink to work */
+      box-sizing: border-box;
     }
 
     .prod-select:focus {
@@ -611,7 +618,10 @@
       font-family: inherit;
       cursor: pointer;
       white-space: nowrap;
-      flex-shrink: 0
+      flex-shrink: 0;
+      align-self: stretch;
+      display: flex;
+      align-items: center;
     }
 
     .prod-add-btn:active {
@@ -737,6 +747,15 @@
       border: 1.5px dashed var(--bdr);
       border-radius: 8px;
       background: #fff
+    }
+
+    /* ── Global overflow guard — prevents any element from creating
+       horizontal scroll / white gap on the right ── */
+    html { overflow-x: hidden; }
+    body { overflow-x: hidden; max-width: 100%; }
+    .card, .gps-bar, .topbar, .submit-btn, .card-body, .card-head {
+      box-sizing: border-box;
+      max-width: 100%;
     }
   </style>
 
@@ -973,7 +992,7 @@
   </div>
 
   <!-- Submit -->
-  <div style="padding:0 14px">
+  <div style="padding:0 14px;box-sizing:border-box;width:100%">
     <button class="submit-btn" id="submitBtn" onclick="submitLead()">
       <span id="submitBtnTxt">💾 Submit Lead</span>
     </button>
