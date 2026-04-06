@@ -11,7 +11,7 @@ function _esc(str) {
    Fixes: loadLeads targets correct element, robust apiFetch,
    proper error states, no silent null-returns
 ══════════════════════════════════════════════════════════════ */
-const API = 'https://aqualance-production.up.railway.app/api/v1';
+const API = '/api/v1';
 
 /* ── Auth helpers ─────────────────────────────────────────── */
 // Fix 2: Token is in httpOnly cookie — JS cannot read it.
@@ -29,22 +29,18 @@ async function salesAuthRehydrate() {
 }
 
 function authH() {
-  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
-  const token = localStorage.getItem('aq_token');
-  return token
-    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    : { 'Content-Type': 'application/json' };
+  // No Authorization header — cookie sent automatically via credentials:'include'
+  return { 'Content-Type': 'application/json' };
 }
 var _salesLoggingOut = false;
 async function salesLogout() {
   if (_salesLoggingOut) return;
   _salesLoggingOut = true;
   try {
-    await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); // ✅
-  } catch (_) {}
+    await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch (_) { /* best-effort */ }
   sessionStorage.removeItem('aq_sales_user');
-  localStorage.removeItem('aq_token');
-  window.location.replace('/salesman/login.html');
+  window.location.replace('login.html');
 }
 function salesmanLogout() { salesLogout(); }
 window.salesLogout = salesLogout;
@@ -123,13 +119,7 @@ function spinnerRow(cols, msg) {
    PAGE: LOGIN
 ══════════════════════════════════════════════════════════════ */
 if (page === 'login') {
-  // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
-  // On mobile/PWA, sessionStorage can persist across navigations, so
-  // getSalesUser() may return a stale object even after the session expired.
-  // Instead, wait for the auth gate (/auth/me) in network.js to confirm the
-  // cookie is still valid before redirecting — network.js handles it automatically
-  // by calling _runAuthGate(), which redirects to dashboard if the cookie is valid.
-  // We only need to make sure we do NOT interfere with that flow here.
+  if (getSalesUser()) window.location.replace('dashboard.html');  // fast UX redirect
 
   const loginForm = document.getElementById('salesmanLoginForm');
   if (loginForm) {
@@ -162,19 +152,14 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
-        // Store user profile in sessionStorage for fast UI checks
+        // Fix 2: Token is in httpOnly cookie — store only the user profile
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
-        // Store token in localStorage as mobile fallback (cross-site cookies
-        // are blocked on Android Chrome / iOS Safari when frontend and backend
-        // are on different domains). The token is sent as Authorization: Bearer
-        // header by apiFetch so the backend accepts it even without the cookie.
-        if (data.token) localStorage.setItem('aq_token', data.token);
         // Fix 4: Force password change if required
         if (data.user.must_change_password) {
-          window.location.replace('/salesman/change-password.html');
+          window.location.replace('change-password.html');
           return;
         }
-        window.location.replace('/salesman/dashboard.html');
+        window.location.replace('dashboard.html');
       } catch (ex) {
         if (err) { err.textContent = ex.message; err.classList.remove('hidden'); }
         btn.textContent = 'Login to Field App'; btn.disabled = false;
@@ -341,7 +326,6 @@ function _psClearError() {
   var el = document.getElementById('productSectionError');
   if (el) el.style.display = 'none';
 }
-var _clearProductError = _psClearError;   // alias used in submit handler
 function _showProductError(msg) {
   var el = document.getElementById('productSectionError');
   if (el) { el.textContent = msg; el.style.display = ''; }
@@ -1046,7 +1030,7 @@ function renderDistrictChart(districts) {
       + '<div class="dist-name">' + d.district + '</div>'
       + '<div class="dist-bar"><div class="dist-fill" style="width:' + pct + '%"></div></div>'
       + '<div class="dist-count">' + d.count + '</div>'
-      + '<div class="dist-sales">✅ ' + (d.sales || 0) + '</div>'
+      + '<div class="dist-sales">✅' + (d.sales || 0) + '</div>'
       + '</div>';
   }).join('');
 }
