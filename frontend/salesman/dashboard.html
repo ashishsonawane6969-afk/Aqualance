@@ -172,13 +172,6 @@
       -webkit-appearance: none; appearance: none; outline: none;
     }
     .ps-select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(21,101,168,.1); }
-    .ps-add-btn {
-      background: var(--brand); color: #fff; border: none;
-      border-radius: 8px; padding: 9px 16px; font-size: .84rem;
-      font-weight: 700; font-family: var(--font-body);
-      cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    }
-    .ps-add-btn:active { opacity: .85; }
     /* Selected products table */
     .ps-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .ps-table {
@@ -458,10 +451,9 @@
       <div class="product-section" style="margin-bottom:12px">
         <div style="font-weight:600;font-size:.85rem;margin-bottom:6px">📦 Products *</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <select id="psDropdown" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem">
-            <option value="">— Select product —</option>
+          <select id="psDropdown" onchange="psAddProduct()" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:.84rem">
+            <option value="">— Tap to select a product —</option>
           </select>
-          <button type="button" class="btn btn-outline btn-sm" onclick="psAddProduct()">+ Add</button>
         </div>
         <div id="psEmpty" style="font-size:.8rem;color:var(--ink-soft);margin-top:6px">No products added yet</div>
         <table id="psTableWrap" style="width:100%;margin-top:8px;font-size:.82rem;display:none;border-collapse:collapse">
