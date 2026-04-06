@@ -21,15 +21,43 @@
       --rad:12px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;padding-bottom:100px;overflow-x:hidden}
+
+    /* ── FIX: html and body must be exactly viewport width ── */
+    html{width:100%;overflow-x:hidden}
+    body{
+      width:100%;
+      max-width:100vw;
+      background:#f0f4ec;
+      font-family:'DM Sans',system-ui,sans-serif;
+      min-height:100dvh;
+      padding-bottom:100px;
+      overflow-x:hidden
+    }
 
     /* Top bar */
-    .topbar{background:var(--br);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+    .topbar{
+      background:var(--br);color:#fff;
+      padding:14px 16px 12px;
+      display:flex;align-items:center;gap:12px;
+      position:sticky;top:0;z-index:100;
+      box-shadow:0 2px 12px rgba(0,0,0,.15);
+      /* FIX: ensure topbar fills full width */
+      width:100%;
+    }
     .back-btn{font-size:1.2rem;background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px 4px 0}
     .topbar h2{font-size:.95rem;font-weight:700;flex:1}
 
     /* GPS status */
-    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:.8rem;font-weight:600;border:1.5px solid}
+    /* FIX: use margin: 14px 0 0, padding inside card handles horizontal spacing */
+    .gps-bar{
+      margin:14px 14px 0;
+      /* FIX: width calculation so it never overflows */
+      width:calc(100% - 28px);
+      border-radius:var(--rad);
+      padding:11px 14px;
+      display:flex;align-items:center;gap:10px;
+      font-size:.8rem;font-weight:600;border:1.5px solid
+    }
     .gps-bar.loading{background:#fff8e1;border-color:#ffc107;color:#856404}
     .gps-bar.ok{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
     .gps-bar.outside{background:#fee2e2;border-color:#ef5350;color:var(--err)}
@@ -44,58 +72,83 @@
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
     .gps-detail{font-size:.7rem;font-weight:400;margin-top:2px;opacity:.8}
 
-    /* Card */
-    .card{margin:14px 14px 0;background:#fff;border-radius:14px;border:1px solid var(--bdr);box-shadow:0 1px 5px rgba(0,0,0,.04)}
+    /* ── FIX: Card — consistent full-width with symmetric padding ── */
+    .card{
+      margin:12px 14px 0;
+      /* FIX: explicit width so it never bleeds right */
+      width:calc(100% - 28px);
+      background:#fff;
+      border-radius:14px;
+      border:1px solid var(--bdr);
+      box-shadow:0 1px 5px rgba(0,0,0,.04);
+      /* FIX: prevent any internal content from pushing width */
+      overflow:hidden;
+    }
     .card-head{padding:13px 16px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
     .step-num{width:24px;height:24px;border-radius:50%;background:var(--br);color:#fff;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .card-head h3{font-size:.88rem;font-weight:700}
     .card-body{padding:14px 16px}
 
     /* Camera */
-    /* cam-wrap is hidden until camera is actually started — no big black box on load */
-    .cam-wrap{position:relative;border-radius:10px;overflow:hidden;background:#111;aspect-ratio:4/3;display:none}
+    .cam-wrap{position:relative;border-radius:10px;overflow:hidden;background:#111;aspect-ratio:4/3;display:none;width:100%}
     .cam-wrap.active{display:block}
     #videoEl{width:100%;height:100%;object-fit:cover;display:block}
     #captureCanvas{display:none}
     .cam-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .cam-placeholder{border:2px dashed #ccc;border-radius:10px;padding:28px 16px;text-align:center;color:#888;background:#fafafa;margin-bottom:2px}
+    .cam-placeholder{border:2px dashed #ccc;border-radius:10px;padding:28px 16px;text-align:center;color:#888;background:#fafafa;margin-bottom:2px;width:100%}
     .cam-placeholder p{font-size:.8rem;margin:6px 0 0}
-    .photo-prev{width:100%;border-radius:10px;display:none}
+    /* FIX: preview image must not overflow card */
+    .photo-prev{width:100%;border-radius:10px;display:none;max-width:100%}
     .photo-prev.show{display:block}
     .photo-status{font-size:.75rem;color:var(--ink3);margin-top:6px;text-align:center}
 
     /* Form */
-    .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;min-width:0}
+    .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;min-width:0;width:100%}
     .fg label{font-size:.7rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
     .fg .req{color:var(--err)}
-    .fg input,.fg select,.fg textarea{padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:.85rem;font-family:inherit;color:var(--ink);background:#fff;outline:none;transition:border-color .15s;width:100%;min-width:0}
+    .fg input,.fg select,.fg textarea{
+      padding:10px 12px;
+      border:1.5px solid var(--bdr);
+      border-radius:10px;
+      font-size:.85rem;
+      font-family:inherit;
+      color:var(--ink);
+      background:#fff;
+      outline:none;
+      transition:border-color .15s;
+      /* FIX: inputs must stay within their column */
+      width:100%;
+      min-width:0;
+      max-width:100%;
+    }
     .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--br2)}
     .fg textarea{resize:vertical;min-height:65px}
-    .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    /* Auto-filled fields */
+    /* FIX: grid columns with minmax so they don't overflow on narrow screens */
+    .frow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
     .auto-field{background:var(--ultra)!important;color:var(--br)!important;font-weight:600!important;border-color:var(--bdr)!important}
 
     /* GPS proof grid */
-    .gps-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .gps-tile{background:var(--ultra);border-radius:10px;padding:10px;border:1px solid var(--bdr);min-width:0;word-break:break-word}
+    .gps-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+    .gps-tile{background:var(--ultra);border-radius:10px;padding:10px;border:1px solid var(--bdr);min-width:0;word-break:break-word;overflow:hidden}
     .gps-tile-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
-    .gps-tile-val{font-weight:700;font-size:.87rem;color:var(--br)}
+    .gps-tile-val{font-weight:700;font-size:.87rem;color:var(--br);word-break:break-all}
 
     /* Sale toggle */
-    .sale-toggle{display:flex;gap:10px;margin-top:4px}
+    .sale-toggle{display:flex;gap:10px;margin-top:4px;width:100%}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .sale-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--bdr);font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;background:#fff;color:var(--ink3);font-family:inherit;display:flex;align-items:center;justify-content:center}
     .sale-btn.yes.active{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
     .sale-btn.no.active{background:#fee2e2;border-color:#ef5350;color:var(--err)}
 
-    /* Submit */
+    /* Submit — FIX: same symmetric margin as cards */
+    .submit-wrap{padding:0 14px;width:100%}
     .submit-btn{width:100%;padding:15px;border-radius:14px;background:var(--br);color:#fff;font-size:.95rem;font-weight:700;border:none;cursor:pointer;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;font-family:inherit}
     .submit-btn:disabled{opacity:.6;cursor:not-allowed}
 
     /* Block overlay */
     .block-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(185,28,28,.92);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}
     .block-overlay.show{display:flex}
-    .block-card{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;max-width:340px}
+    .block-card{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;max-width:340px;width:100%}
     .block-card .bi{font-size:3rem;margin-bottom:10px}
     .block-card h3{font-size:1.1rem;font-weight:800;color:var(--err);margin-bottom:8px}
     .block-card p{font-size:.85rem;color:var(--ink3);line-height:1.5}
@@ -103,7 +156,7 @@
     .block-dist strong{color:var(--err);font-size:1.1rem}
 
     /* Toast */
-    .toast-container{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center}
+    .toast-container{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:calc(100vw - 32px)}
     .toast{background:#1c2116;color:#fff;padding:10px 18px;border-radius:999px;font-size:.82rem;font-weight:600;animation:slideUp .25s ease;white-space:nowrap}
     .toast.success{background:var(--ok)} .toast.error{background:var(--err)}
     @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -112,12 +165,28 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── Product section ── */
-    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-    .prod-select{flex:1;border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none;min-width:0}
+    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;width:100%}
+    .prod-select{
+      flex:1;
+      border:1.5px solid var(--bdr);
+      border-radius:8px;
+      padding:9px 12px;
+      font-size:.84rem;
+      font-family:inherit;
+      background:#fff;
+      color:var(--ink);
+      -webkit-appearance:none;
+      appearance:none;
+      outline:none;
+      /* FIX: min-width:0 prevents flex child from overflowing */
+      min-width:0;
+      max-width:100%;
+    }
     .prod-select:focus{border-color:var(--br2)}
     .prod-add-btn{background:var(--br2);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:.84rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
     .prod-add-btn:active{opacity:.85}
-    .prod-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    /* FIX: table wrapper must clip overflow */
+    .prod-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%;max-width:100%}
     .prod-table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:300px}
     .prod-table th{background:var(--ultra);color:var(--br2);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:7px 8px;border-bottom:1.5px solid var(--bdr);text-align:left}
     .prod-table th:not(:first-child){text-align:right}
@@ -132,7 +201,7 @@
     .prod-remove:active{background:#fce4ec}
     .prod-grand-row{display:flex;justify-content:space-between;align-items:center;padding:9px 6px 2px;border-top:2px solid var(--bdr);margin-top:4px;font-size:.85rem;font-weight:700}
     .prod-grand-row span:last-child{color:var(--br2);font-size:.95rem;font-weight:800}
-    .prod-empty{text-align:center;padding:14px 8px;color:var(--ink3);font-size:.8rem;border:1.5px dashed var(--bdr);border-radius:8px;background:#fff}
+    .prod-empty{text-align:center;padding:14px 8px;color:var(--ink3);font-size:.8rem;border:1.5px dashed var(--bdr);border-radius:8px;background:#fff;width:100%}
   </style>
 
 </head>
@@ -146,11 +215,11 @@
 <!-- GPS Status -->
 <div class="gps-bar loading" id="gpsBar">
   <div class="gps-dot"></div>
-  <div style="flex:1">
+  <div style="flex:1;min-width:0">
     <div id="gpsStatus">Acquiring GPS…</div>
     <div class="gps-detail" id="gpsDetail"></div>
   </div>
-  <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+  <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
     <button id="gpsRetryBtn" onclick="forceGpsRetry()"
       style="display:none;font-size:.7rem;padding:4px 10px;border-radius:999px;
              border:1.5px solid currentColor;background:transparent;color:inherit;
@@ -187,7 +256,6 @@
   <div class="card-head"><div class="step-num">1</div><h3>Capture Shop Photo</h3></div>
   <div class="card-body">
     <p style="font-size:.78rem;color:var(--ink3);margin-bottom:10px">GPS + timestamp will be stamped on the photo automatically.</p>
-    <!-- Placeholder shown before camera opens — replaces the big black box -->
     <div class="cam-placeholder" id="camPlaceholder">
       <div style="font-size:2.2rem">📷</div>
       <p>Tap <strong>Open Camera</strong> to take a shop photo<br>or use <strong>Gallery</strong> to choose one</p>
@@ -218,7 +286,7 @@
       </select>
       <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
     </div>
-    <div id="geoProdListWrap">
+    <div id="geoProdListWrap" style="width:100%">
       <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
       <div class="prod-table-wrap" id="geoProdTableWrap" style="display:none">
         <table class="prod-table">
@@ -268,8 +336,7 @@
       </div>
     </div>
 
-    <!-- Auto-filled from GPS + taluka assignment -->
-    <div style="background:var(--ultra);border-radius:10px;padding:10px 12px;border:1px solid var(--bdr);margin-bottom:10px">
+    <div style="background:var(--ultra);border-radius:10px;padding:10px 12px;border:1px solid var(--bdr);margin-bottom:10px;width:100%">
       <div style="font-size:.67rem;font-weight:700;color:var(--br2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">📍 Auto-detected from GPS</div>
       <div class="frow">
         <div class="fg" style="margin-bottom:0">
@@ -278,13 +345,13 @@
         </div>
         <div class="fg" style="margin-bottom:0">
           <label for="fTaluka">Taluka</label>
-          <input type="text" id="fTaluka"  class="auto-field" placeholder="Detecting… (or type manually)" />
+          <input type="text" id="fTaluka"  class="auto-field" placeholder="Detecting…" />
         </div>
       </div>
       <div class="frow" style="margin-top:8px">
         <div class="fg" style="margin-bottom:0">
           <label for="fDistrict">District</label>
-          <input type="text" id="fDistrict" class="auto-field" placeholder="Detecting… (or type manually)" />
+          <input type="text" id="fDistrict" class="auto-field" placeholder="Detecting…" />
         </div>
         <div class="fg" style="margin-bottom:0">
           <label for="fAddress">GPS Address</label>
@@ -327,8 +394,8 @@
   </div>
 </div>
 
-<!-- Submit -->
-<div style="padding:0 14px">
+<!-- Submit — FIX: wrapped in .submit-wrap with same 14px side margin as cards -->
+<div class="submit-wrap">
   <button class="submit-btn" id="submitBtn" onclick="submitLead()">
     <span id="submitBtnTxt">💾 Submit Lead</span>
   </button>
@@ -343,7 +410,6 @@
 ══════════════════════════════════════════════════════════ */
 const GEO = '/api/v1/geo';
 
-/* ── Fetch helper — uses httpOnly cookie auth (credentials:include) ── */
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, {
     ...opts,
@@ -358,18 +424,16 @@ async function apiFetch(url, opts = {}) {
   return res;
 }
 
-let _gps = null;       // { latitude, longitude, accuracy } — only set after accuracy gate
-let _rawPos = null;    // last position the browser reported (any accuracy) — for "Use anyway"
-let _taluka = null;    // assigned taluka from backend
-let _photoData = null; // base64 watermarked
+let _gps = null;
+let _rawPos = null;
+let _taluka = null;
+let _photoData = null;
 let _saleStatus = 'NO';
 let _gpsOk = false;
 let _stream = null;
 let _geocodeDone = false;
 
-// Auth check — rehydrate sessionStorage from cookie if tab was reopened
 async function _geoLeadAuth() {
-  // Auth gate in network.js handles rehydration — just wait for it
   if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   return !!sessionStorage.getItem('aq_sales_user');
 }
@@ -381,7 +445,6 @@ async function _geoLeadAuth() {
   startGPSWatch();
   startTrackingPing();
 
-  // ── Edit mode: prefill form if ?edit=ID in URL ─────────
   const editId = new URLSearchParams(window.location.search).get('edit');
   if (editId) {
     try {
@@ -398,7 +461,6 @@ async function _geoLeadAuth() {
         document.getElementById('fDistrict').value  = lead.district   || '';
         document.getElementById('fNotes').value     = lead.notes      || '';
         if (lead.sale_status) setSale(lead.sale_status);
-        // Pre-fill selected products
         if (Array.isArray(lead.products) && lead.products.length) {
           _geoSelProds = lead.products.map(p => ({
             id: p.product_id, name: p.name,
@@ -408,10 +470,8 @@ async function _geoLeadAuth() {
           _geoRenderTable();
           _geoRebuildDropdown();
         }
-        // Update submit button and title for edit mode
         const btnTxt = document.getElementById('submitBtnTxt');
         if (btnTxt) btnTxt.innerHTML = '✏️ Update Lead';
-        // Store edit id for submit
         window._geoEditId = parseInt(editId, 10);
         showToast('Editing lead — update fields and resubmit', 'default');
       }
@@ -421,9 +481,9 @@ async function _geoLeadAuth() {
   }
 })();
 
-/* ══════════ PRODUCTS — Dropdown + Table ══════════ */
-let _geoAllProds = [];   // full product list from API
-let _geoSelProds = [];   // [{ id, name, price, qty }]
+/* ══════════ PRODUCTS ══════════ */
+let _geoAllProds = [];
+let _geoSelProds = [];
 
 async function loadProducts() {
   const sel = document.getElementById('geoProductDropdown');
@@ -527,29 +587,19 @@ function _esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* ── Load assigned taluka ── */
 async function loadAssignedTaluka() {
   try {
     const res  = await apiFetch(GEO + '/my-taluka');
     const json = await res.json();
     if (json.success && json.taluka) {
       _taluka = json.taluka;
-      // Pre-fill taluka & district (locked from assignment)
       document.getElementById('fTaluka').value   = _taluka.name;
       document.getElementById('fDistrict').value = _taluka.district;
     }
   } catch (e) { console.warn('loadAssignedTaluka:', e.message); }
 }
 
-/* ── GPS Watch ── */
-// ACCURACY_THRESHOLD: reject positions worse than this for form use.
-// IP-geolocation (the "Korea" root cause): 5,000 – 50,000 m → BLOCKED
-// Cell tower (5G/4G): 300 – 1,500 m → accepted
-// WiFi: 50 – 300 m → accepted
-// GPS chip: 5 – 20 m → accepted
-var GPS_ACCURACY_THRESHOLD = 1500; // metres
-
-// GPS stuck timer — if no good fix arrives in 20s, show retry button
+var GPS_ACCURACY_THRESHOLD = 1500;
 var _gpsStuckTimer = null;
 var _watchId       = null;
 
@@ -561,14 +611,12 @@ function startGPSWatch() {
   _watchId = navigator.geolocation.watchPosition(onGpsOk, onGpsErr, {
     enableHighAccuracy: true,
     timeout:    30000,
-    maximumAge: 0  // never use a cached/stale position — was 15000, caused Korea bug
+    maximumAge: 0
   });
 
-  // If no accurate fix in 20 seconds, show Retry + "Use anyway" options
   _gpsStuckTimer = setTimeout(function () {
     if (!_gpsOk) {
       document.getElementById('gpsRetryBtn').style.display = '';
-      // Only offer "Use anyway" if we have ANY position at all (even coarse IP fix)
       if (_rawPos) {
         document.getElementById('gpsUseAnywayBtn').style.display = '';
         setBar('acquiring',
@@ -585,7 +633,6 @@ function startGPSWatch() {
   }, 20000);
 }
 
-// Force a fresh GPS attempt — clears watchPosition and restarts
 function forceGpsRetry() {
   if (_watchId !== null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
   if (_gpsStuckTimer)    { clearTimeout(_gpsStuckTimer); _gpsStuckTimer = null; }
@@ -596,23 +643,15 @@ function forceGpsRetry() {
   startGPSWatch();
 }
 
-// Accept the best available position even if accuracy is poor (indoors use case).
-// The server-side geofence still validates — this only unblocks the form locally.
 function useLocationAnyway() {
   if (!_rawPos) return;
   document.getElementById('gpsRetryBtn').style.display      = 'none';
   document.getElementById('gpsUseAnywayBtn').style.display  = 'none';
-
-  // Use the raw position as-is
   _gps = _rawPos;
-
-  // Reverse geocode with what we have
   if (!_geocodeDone) {
     _geocodeDone = true;
     reverseGeocode(_gps.latitude, _gps.longitude);
   }
-
-  // Validate against taluka if assigned (server will also check)
   if (_taluka) {
     const dist = haversine(_gps.latitude, _gps.longitude, _taluka.center_lat, _taluka.center_lng);
     document.getElementById('dispDist').textContent = dist.toFixed(2) + ' km';
@@ -640,17 +679,11 @@ function useLocationAnyway() {
 
 async function onGpsOk(pos) {
   const { latitude, longitude, accuracy } = pos.coords;
-
-  // Always store and display the raw reading — _rawPos feeds the "Use anyway" path
   _rawPos = { latitude, longitude, accuracy };
   document.getElementById('dispLat').textContent = latitude.toFixed(6);
   document.getElementById('dispLng').textContent = longitude.toFixed(6);
   document.getElementById('dispAcc').textContent = '±' + Math.round(accuracy) + 'm';
 
-  // ── ACCURACY GATE ────────────────────────────────────────────────────────
-  // IP-geolocation returns accuracy ≥ 5000m and caused the "Korea" bug.
-  // We show a live status and wait — watchPosition fires again as accuracy improves.
-  // Threshold 1500m: accepts WiFi (≤300m) + cell tower (≤1500m), blocks IP (≥5000m).
   if (accuracy > GPS_ACCURACY_THRESHOLD) {
     setBar('acquiring',
       '📡 Acquiring location… (±' + Math.round(accuracy) + 'm)',
@@ -658,25 +691,21 @@ async function onGpsOk(pos) {
         ? 'IP location only — waiting for GPS or WiFi signal'
         : 'Improving… stay still or move to open area'
     );
-    return; // _gps stays null / old value — geocode and submission blocked
+    return;
   }
-  // ── END ACCURACY GATE ────────────────────────────────────────────────────
 
-  // Good fix — cancel the stuck timer and hide retry button
   if (_gpsStuckTimer) { clearTimeout(_gpsStuckTimer); _gpsStuckTimer = null; }
   document.getElementById('gpsRetryBtn').style.display = 'none';
 
   const prev = _gps;
   _gps = { latitude, longitude, accuracy };
 
-  // Reverse geocode on first good fix, or if moved >150m since last geocode
   const movedFar = prev && haversine(prev.latitude, prev.longitude, latitude, longitude) > 0.15;
   if (!_geocodeDone || movedFar) {
     _geocodeDone = true;
     reverseGeocode(latitude, longitude);
   }
 
-  // Validate against assigned taluka
   if (_taluka) {
     const dist = haversine(latitude, longitude, _taluka.center_lat, _taluka.center_lng);
     document.getElementById('dispDist').textContent = dist.toFixed(2) + ' km';
@@ -721,8 +750,7 @@ function setBar(cls, msg, detail) {
   document.getElementById('gpsDetail').textContent = detail;
 }
 
-/* ── Google Maps API key (fetched once, cached) ── */
-let _mapsApiKey = undefined; // undefined = not yet fetched; '' = fetched but no key; string = key
+let _mapsApiKey = undefined;
 async function getMapsApiKey() {
   if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   if (_mapsApiKey !== undefined) return _mapsApiKey;
@@ -736,12 +764,8 @@ async function getMapsApiKey() {
   return _mapsApiKey;
 }
 
-/* ── Reverse geocode — tries Google Maps first (if key configured),
-      falls back to Nominatim (free, no key needed) ── */
 async function reverseGeocode(lat, lng, attempt) {
   attempt = attempt || 1;
-
-  // Try Google Maps Geocoding API if a key is available
   const apiKey = await getMapsApiKey();
   if (apiKey) {
     try {
@@ -760,17 +784,15 @@ async function reverseGeocode(lat, lng, attempt) {
           const taluka   = get('administrative_area_level_3') || get('sublocality') || '';
           const district = get('administrative_area_level_2') || '';
           const addr     = data.results[0].formatted_address || '';
-
           if (village)  document.getElementById('fVillage').value  = village;
           if (!_taluka) {
             if (taluka)   document.getElementById('fTaluka').value   = taluka;
             if (district) document.getElementById('fDistrict').value = district;
           }
           if (addr) document.getElementById('fAddress').value = addr.substring(0, 200);
-
           const talukaFilled = document.getElementById('fTaluka').value.trim();
           if (!talukaFilled && !_taluka) nearestTalukaFallback(lat, lng);
-          return; // Google Maps succeeded — skip Nominatim
+          return;
         }
       }
     } catch (e) {
@@ -778,9 +800,7 @@ async function reverseGeocode(lat, lng, attempt) {
     }
   }
 
-  // Nominatim fallback — free, no key needed
   try {
-    // Nominatim free reverse geocoder — zoom=14 gives taluka-level detail in India
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
       { headers: { 'Accept-Language': 'en', 'User-Agent': 'AqualenceVentures/1.0 (iKrish Distribution)' } }
@@ -788,57 +808,40 @@ async function reverseGeocode(lat, lng, attempt) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const a = data.address || {};
-
-    // Village / locality — try multiple Nominatim fields in priority order
     const village = a.village || a.hamlet || a.suburb || a.neighbourhood ||
                     a.town || a.city_district || a.city || '';
     if (village) document.getElementById('fVillage').value = village;
-
-    // India-specific: Nominatim returns taluka as 'state_district' or 'county'
-    // district is in 'state_district' (higher level) or 'county'
     if (!_taluka) {
-      // In Maharashtra: county = taluka, state_district = district
       const talukaVal  = a.county || a.suburb || a.state_district || '';
       const districtVal = a.state_district || a.county || '';
       if (talukaVal)  document.getElementById('fTaluka').value  = talukaVal;
       if (districtVal) document.getElementById('fDistrict').value = districtVal;
     }
-
     const addr = data.display_name || '';
     if (addr) document.getElementById('fAddress').value = addr.substring(0, 200);
-
-    // If taluka/district still empty, try nearest-taluka fallback from our DB
     const talukaFilled = document.getElementById('fTaluka').value.trim();
-    if (!talukaFilled && !_taluka) {
-      nearestTalukaFallback(lat, lng);
-    }
-
+    if (!talukaFilled && !_taluka) nearestTalukaFallback(lat, lng);
   } catch (e) {
     console.warn('reverseGeocode attempt', attempt, 'failed:', e.message);
     if (attempt < 3) {
-      // Retry up to 3 times with exponential back-off (2s, 4s)
       setTimeout(() => reverseGeocode(lat, lng, attempt + 1), attempt * 2000);
     } else {
-      // All retries failed — enable manual entry and show helper
       enableManualEntry();
     }
   }
 }
 
-/* Fallback: find closest taluka from our own DB using haversine */
 async function nearestTalukaFallback(lat, lng) {
   try {
     const res  = await apiFetch('/api/v1/geo/talukas');
     const data = await res.json();
     if (!data.success || !data.data.length) return;
-
     let nearest = null, minDist = Infinity;
     data.data.forEach(t => {
       const d = haversine(lat, lng, parseFloat(t.center_lat), parseFloat(t.center_lng));
       if (d < minDist) { minDist = d; nearest = t; }
     });
-
-    if (nearest && minDist < 60) { // only fill if within 60 km
+    if (nearest && minDist < 60) {
       const talukaEl  = document.getElementById('fTaluka');
       const districtEl = document.getElementById('fDistrict');
       if (!talukaEl.value)   talukaEl.value   = nearest.name;
@@ -849,11 +852,9 @@ async function nearestTalukaFallback(lat, lng) {
   } catch (e) { enableManualEntry(); }
 }
 
-/* Show manual entry notice if all geocoding fails */
 function enableManualEntry() {
   const hint = document.getElementById('geocodeHint');
   if (hint) hint.style.display = 'block';
-  // Fields are already editable (not readonly) — just draw attention
   const talukaEl = document.getElementById('fTaluka');
   if (!talukaEl.value) {
     talukaEl.style.borderColor = '#e65100';
@@ -861,7 +862,6 @@ function enableManualEntry() {
   }
 }
 
-/* ── Haversine ── */
 function haversine(lat1, lng1, lat2, lng2) {
   const R = 6371, dL = (lat2-lat1)*Math.PI/180, dN = (lng2-lng1)*Math.PI/180;
   const a = Math.sin(dL/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)**2;
@@ -875,7 +875,6 @@ async function startCamera() {
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
     document.getElementById('videoEl').srcObject = _stream;
-    // Show the camera view, hide the placeholder
     document.getElementById('camWrap').classList.add('active');
     document.getElementById('camPlaceholder').style.display = 'none';
     document.getElementById('startCamBtn').style.display = 'none';
@@ -919,7 +918,6 @@ function selectPhoto() {
   input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp,image/gif';
   input.onchange = e => {
     const file = e.target.files[0]; if (!file) return;
-    // Client-side MIME check (UX layer — server validates magic bytes)
     const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!ALLOWED.includes(file.type)) {
       showToast('Only JPEG, PNG, WebP, and GIF images are allowed.', 'error');
@@ -966,22 +964,18 @@ function drawWatermark(ctx, W, H) {
   lines.forEach((line, i) => ctx.fillText(line, padding + 10, boxY + padding + (i + 1) * (lineH + 4)));
 }
 
-/* ══════════ SALE TOGGLE ══════════ */
 function setSale(v) {
   _saleStatus = v;
-  // Update radio checked state
   const yes = document.getElementById('saleYes');
   const no  = document.getElementById('saleNo');
   if (yes) yes.checked = (v === 'YES');
   if (no)  no.checked  = (v === 'NO');
-  // Update label styling
   const yesBtn = document.getElementById('saleYesBtn');
   const noBtn  = document.getElementById('saleNoBtn');
   if (yesBtn) yesBtn.className = 'sale-btn yes' + (v === 'YES' ? ' active' : '');
   if (noBtn)  noBtn.className  = 'sale-btn no'  + (v === 'NO'  ? ' active' : '');
 }
 
-/* ══════════ SUBMIT ══════════ */
 async function submitLead() {
   const btn  = document.getElementById('submitBtn');
   const bTxt = document.getElementById('submitBtnTxt');
@@ -993,31 +987,15 @@ async function submitLead() {
   const taluka   = document.getElementById('fTaluka').value.trim();
   const district = document.getElementById('fDistrict').value.trim();
 
-  // Specific field validation
   if (!shopName)  { showToast('Shop name is required', 'error');   document.getElementById('fShopName').focus(); return; }
   if (!owner)     { showToast('Owner name is required', 'error');  document.getElementById('fOwner').focus();    return; }
   if (!mobile)    { showToast('Mobile number is required', 'error'); document.getElementById('fMobile').focus(); return; }
   if (!/^\d{10}$/.test(mobile)) { showToast('Mobile must be 10 digits', 'error'); document.getElementById('fMobile').focus(); return; }
-  if (!village) {
-    showToast('Village / area is required. Type it manually if GPS detection failed.', 'error');
-    document.getElementById('fVillage').focus();
-    return;
-  }
-  if (!taluka) {
-    showToast('Taluka is required. Type it manually in the field above.', 'error');
-    document.getElementById('fTaluka').focus();
-    document.getElementById('fTaluka').style.borderColor = '#e65100';
-    return;
-  }
-  if (!district) {
-    showToast('District is required. Type it manually in the field above.', 'error');
-    document.getElementById('fDistrict').focus();
-    document.getElementById('fDistrict').style.borderColor = '#e65100';
-    return;
-  }
+  if (!village) { showToast('Village / area is required.', 'error'); document.getElementById('fVillage').focus(); return; }
+  if (!taluka)  { showToast('Taluka is required.', 'error'); document.getElementById('fTaluka').focus(); document.getElementById('fTaluka').style.borderColor = '#e65100'; return; }
+  if (!district){ showToast('District is required.', 'error'); document.getElementById('fDistrict').focus(); document.getElementById('fDistrict').style.borderColor = '#e65100'; return; }
   if (!_photoData){ showToast('Please capture or select a photo first', 'error'); return; }
 
-  // Client-side geofence check
   if (_taluka && _gps) {
     const dist = haversine(_gps.latitude, _gps.longitude, _taluka.center_lat, _taluka.center_lng);
     if (dist > _taluka.radius_km) {
@@ -1025,8 +1003,7 @@ async function submitLead() {
       document.getElementById('blockRadius').textContent     = _taluka.radius_km;
       document.getElementById('blockTalukaName').textContent = _taluka.name;
       document.getElementById('blockMessage').textContent    =
-        `You are ${dist.toFixed(1)} km from the centre of "${_taluka.name}". ` +
-        `Allowed radius is ${_taluka.radius_km} km. Move into your assigned area to submit leads.`;
+        `You are ${dist.toFixed(1)} km from the centre of "${_taluka.name}". Allowed radius is ${_taluka.radius_km} km.`;
       document.getElementById('blockOverlay').classList.add('show');
       return;
     }
@@ -1047,7 +1024,13 @@ async function submitLead() {
       sale_status:  _saleStatus,
       notes:        document.getElementById('fNotes').value.trim(),
       photo_data:   _photoData,
-      products:     _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-'+i); const qtyEl = document.getElementById('geo-qty-'+i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price; const quantity = qtyEl ? Math.max(1, parseInt(qtyEl.value,10)||1) : (p.qty || p.quantity || 1); return { product_id: p.id, name: p.name, price, quantity, total: parseFloat((price * quantity).toFixed(2)) }; }),
+      products:     _geoSelProds.map((p, i) => {
+        const priceEl = document.getElementById('geo-price-'+i);
+        const qtyEl   = document.getElementById('geo-qty-'+i);
+        const price    = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price;
+        const quantity = qtyEl   ? Math.max(1, parseInt(qtyEl.value,10)||1)  : (p.qty || 1);
+        return { product_id: p.id, name: p.name, price, quantity, total: parseFloat((price * quantity).toFixed(2)) };
+      }),
       latitude:     _gps?.latitude  || null,
       longitude:    _gps?.longitude || null,
       gps_accuracy: _gps?.accuracy  || null,
@@ -1055,11 +1038,8 @@ async function submitLead() {
       visited_at:   new Date().toISOString().slice(0,19).replace('T',' ')
     };
 
-    // Edit mode: PUT to /salesman/leads/:id; new lead: POST to /geo/leads
-    const isEdit = !!window._geoEditId;
-    const fetchUrl = isEdit
-      ? '/api/v1/salesman/leads/' + window._geoEditId
-      : GEO + '/leads';
+    const isEdit     = !!window._geoEditId;
+    const fetchUrl   = isEdit ? '/api/v1/salesman/leads/' + window._geoEditId : GEO + '/leads';
     const fetchMethod = isEdit ? 'PUT' : 'POST';
     const res  = await apiFetch(fetchUrl, { method: fetchMethod, body: JSON.stringify(payload) });
     const data = await res.json();
@@ -1069,7 +1049,7 @@ async function submitLead() {
         document.getElementById('blockDist').textContent       = data.distance_km != null ? parseFloat(data.distance_km).toFixed(1) : '?';
         document.getElementById('blockRadius').textContent     = data.radius_km   != null ? data.radius_km : '?';
         document.getElementById('blockTalukaName').textContent = data.assigned_areas || data.taluka_name || _taluka?.name || 'your area';
-        document.getElementById('blockMessage').textContent    = data.message || 'You are outside your assigned area. Lead submission blocked.';
+        document.getElementById('blockMessage').textContent    = data.message || 'You are outside your assigned area.';
         document.getElementById('blockOverlay').classList.add('show');
       } else {
         showToast(data.message, 'error');
@@ -1090,12 +1070,8 @@ async function submitLead() {
   }
 }
 
-/* ══════════ TRACKING PING ══════════ */
 function startTrackingPing() {
   setInterval(async () => {
-    // Only ping if we have a position that passed the accuracy gate.
-    // _gps is only set after accuracy <= GPS_ACCURACY_THRESHOLD, so
-    // checking _gps is sufficient — no stale IP-based position will be sent.
     if (!_gps || !_gpsOk) return;
     try {
       await apiFetch(GEO + '/track', {
@@ -1106,7 +1082,6 @@ function startTrackingPing() {
   }, 2 * 60 * 1000);
 }
 
-/* ══════════ HELPERS ══════════ */
 function showToast(msg, type) {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
