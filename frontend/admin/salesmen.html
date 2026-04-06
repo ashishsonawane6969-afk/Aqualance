@@ -145,38 +145,50 @@
 
     /* ─── Controls row ──────────────────────────── */
     .controls-bar {
-      display: flex; gap: 8px; align-items: center;
-      flex-wrap: wrap;
-      width: 100%; box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
+
+    /* Row 1: search bar — always full width */
     .search-pill {
-      flex: 1 1 100%; min-width: 0; max-width: 100%;
       display: flex; align-items: center; gap: 8px;
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
       transition: border-color .15s;
-      box-sizing: border-box;
+      width: 100%; box-sizing: border-box;
     }
     .search-pill:focus-within { border-color: var(--f2); }
     .search-pill input {
       border: none; outline: none; background: transparent;
-      font-size: .84rem; color: var(--ink); width: 100%;
-      min-width: 0;
+      font-size: .84rem; color: var(--ink); width: 100%; min-width: 0;
       font-family: var(--font);
     }
     .search-pill input::placeholder { color: var(--ink4); }
+
+    /* Row 2: selects + CSV — CSV always pinned right via margin-left:auto */
+    .controls-row2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
     .pill-select {
       background: #fff; border: 1.5px solid var(--bdr);
-      border-radius: 8px; padding: 9px 34px 9px 12px;
+      border-radius: 8px; padding: 9px 32px 9px 12px;
       font-size: .8rem; font-weight: 600; color: var(--ink2);
       appearance: none; cursor: pointer; font-family: var(--font);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
+      background-repeat: no-repeat; background-position: right 10px center;
       transition: border-color .15s;
-      flex: 1 1 auto; min-width: 0; max-width: 100%;
+      flex: 1 1 0; min-width: 0;
       box-sizing: border-box;
     }
     .pill-select:focus { outline: none; border-color: var(--f2); }
+
     .icon-btn {
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
@@ -187,6 +199,9 @@
       flex-shrink: 0; position: relative;
     }
     .icon-btn:hover { border-color: var(--f2); color: var(--f2); }
+
+    /* CSV button always on far right of row 2 */
+    .csv-btn-right { margin-left: auto; }
 
     /* ─── Table card ────────────────────────────── */
     .tcard {
@@ -316,11 +331,9 @@
       .icon-tab { flex:0 0 auto; font-size:.7rem; padding:9px 10px; }
       .icon-tab .t-icon { display:none; }
       .filter-section { padding:12px 14px 0; }
-      /* On mobile: search takes full row, then selects + csv button share next row */
-      .controls-bar { flex-wrap:wrap; gap:6px; }
-      .search-pill { flex:1 1 100%; min-width:100%; }
-      .pill-select { flex:1 1 calc(50% - 3px); min-width:0; font-size:16px; /* prevent iOS zoom */ }
-      .icon-btn { flex-shrink:0; }
+      /* controls-bar is already column-direction; row2 flex handles selects */
+      .controls-bar { gap:6px; }
+      .pill-select { font-size:16px; /* prevent iOS zoom on tap */ }
       .tcard { margin:12px 14px; }
       .smlist-hdr { padding:14px 14px 0; }
       #lbCards { padding:12px 14px 0; }
@@ -524,19 +537,23 @@
         <button class="preset-btn" onclick="setAdminPreset('all',this)">All Time</button>
       </div>
       <div class="controls-bar">
-      <div class="search-pill">
-        <span style="color:var(--ink-faint)">🔍</span>
-        <input type="text" id="searchLeads" placeholder="Search shop, owner, village, salesman…" oninput="filterAdminLeads()" />
-      </div>
-      <select class="pill-select" id="statusFilter" onchange="filterAdminLeads()">
-        <option value="">All Status</option>
-        <option value="YES">✅ YES</option>
-        <option value="NO">❌ NO</option>
-      </select>
-      <select class="pill-select" id="salesmanFilter" onchange="filterAdminLeads()">
-        <option value="">All Salesmen</option>
-      </select>
-      <button class="icon-btn" onclick="openCSVMenu(event)">⬇ CSV <span style="font-size:.6rem">▾</span></button>
+        <!-- Row 1: Search (full width) -->
+        <div class="search-pill">
+          <span style="color:var(--ink-faint)">🔍</span>
+          <input type="text" id="searchLeads" placeholder="Search shop, owner, village, salesman…" oninput="filterAdminLeads()" />
+        </div>
+        <!-- Row 2: Filters + CSV pushed to far right via margin-left:auto -->
+        <div class="controls-row2">
+          <select class="pill-select" id="statusFilter" onchange="filterAdminLeads()">
+            <option value="">All Status</option>
+            <option value="YES">✅ YES</option>
+            <option value="NO">❌ NO</option>
+          </select>
+          <select class="pill-select" id="salesmanFilter" onchange="filterAdminLeads()">
+            <option value="">All Salesmen</option>
+          </select>
+          <button class="icon-btn csv-btn-right" onclick="openCSVMenu(event)">⬇ CSV <span style="font-size:.6rem">▾</span></button>
+        </div>
       </div>
     </div><!-- /.filter-section -->
 
