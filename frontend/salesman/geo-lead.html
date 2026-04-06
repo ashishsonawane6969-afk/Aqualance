@@ -1,1004 +1,780 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <link rel="manifest" href="/manifest.json" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1a4020" />
+  <meta name="theme-color" content="#0f2318" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Geo Lead — Aqualence</title>
   <link rel="stylesheet" href="/salesman/css/salesman.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
+    /* ═══════════════════════════════════════════════════
+       TOKENS
+    ═══════════════════════════════════════════════════ */
     :root {
-      --br: #1a4020;
-      --br2: #2a6535;
-      --br3: #3d8c4a;
-      --pale: #e3f0ff;
-      --ultra: #f0f7ff;
-      --bdr: #dde8d4;
-      --ink: #1c2116;
-      --ink2: #4a5e40;
-      --ink3: #8fa880;
-      --err: #b91c1c;
-      --ok: #166534;
-      --ok-lt: #dcfce7;
-      --warn: #b06800;
-      --warn-lt: #fff3cd;
-      --rad: 12px;
+      --g0: #0f2318;
+      --g1: #1a4020;
+      --g2: #2a6535;
+      --g3: #3d8c4a;
+      --g4: #5aab66;
+      --g5: #a8d5af;
+      --g6: #d6eeda;
+      --g7: #edf7ef;
+      --g8: #f5fbf6;
+
+      --ink:  #0e1a10;
+      --ink2: #2d4a32;
+      --ink3: #6b8f72;
+      --ink4: #a8c4ac;
+
+      --err:    #c0392b;
+      --err-lt: #fde8e6;
+      --ok:     #1a6b2a;
+      --ok-lt:  #d4edda;
+      --warn:   #a05c00;
+      --warn-lt:#fff3cd;
+
+      --white: #fff;
+      --bdr:   #cde0d0;
+      --rad:   14px;
+      --rad-sm: 10px;
+      --rad-xs: 7px;
+      --page-pad: 16px;
+      --font: 'DM Sans', system-ui, sans-serif;
+      --mono: 'DM Mono', monospace;
+      --sh-card: 0 2px 12px rgba(15,35,24,.07);
+      --sh-top:  0 2px 16px rgba(15,35,24,.18);
     }
 
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
-    html,
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { overflow-x: hidden; }
     body {
-      width: 100%;
-      max-width: 100%;
-      overflow-x: hidden; /* strict containment */
-    }
-
-    body {
-      background: #f0f4ec;
-      font-family: 'DM Sans', system-ui, sans-serif;
+      font-family: var(--font);
+      background: var(--g8);
+      color: var(--ink);
       min-height: 100dvh;
-      padding-bottom: 100px;
+      padding-bottom: 110px;
       overflow-x: hidden;
       width: 100%;
-      position: relative; /* prevent any child from creating a new scroll container */
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Top bar */
+    /* ── Topbar ── */
     .topbar {
-      background: var(--br);
+      background: var(--g0);
       color: #fff;
-      padding: 14px 16px 12px;
+      padding: 14px var(--page-pad) 12px;
       display: flex;
       align-items: center;
       gap: 12px;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, .15);
+      box-shadow: var(--sh-top);
       width: 100%;
-      box-sizing: border-box;
+    }
+    .topbar-back {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,.1);
+      border: none; border-radius: 50%;
+      color: #fff; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      transition: background .15s;
+    }
+    .topbar-back:active { background: rgba(255,255,255,.2); }
+    .topbar-title {
+      flex: 1; min-width: 0;
+      font-size: .95rem; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .topbar-badge {
+      font-size: .65rem; font-weight: 700;
+      background: var(--g3); color: #fff;
+      padding: 3px 8px; border-radius: 999px;
+      white-space: nowrap; flex-shrink: 0;
     }
 
-    .back-btn {
-      font-size: 1.2rem;
-      background: none;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      padding: 4px 8px 4px 0
+    /* ── Page wrapper ── */
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 14px var(--page-pad) 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .topbar h2 {
-      font-size: .95rem;
-      font-weight: 700;
-      flex: 1;
-      min-width: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis
-    }
-
-    /* GPS status */
+    /* ── GPS bar ── */
     .gps-bar {
-      margin: 14px 14px 0;
       border-radius: var(--rad);
-      padding: 11px 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .82rem;
+      font-weight: 600;
+      border: 1.5px solid;
+      width: 100%;
+    }
+    .gps-bar.loading   { background: #fff8e1; border-color: #f0c040; color: #7a5200; }
+    .gps-bar.acquiring { background: #e3f0ff; border-color: #3b82f6; color: #1d4ed8; }
+    .gps-bar.ok        { background: var(--ok-lt); border-color: #4caf50; color: var(--ok); }
+    .gps-bar.outside   { background: var(--err-lt); border-color: #ef5350; color: var(--err); }
+    .gps-bar.error     { background: var(--warn-lt); border-color: #f59e0b; color: var(--warn); }
+
+    .gps-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 3px;
+    }
+    .gps-bar.loading .gps-dot, .gps-bar.acquiring .gps-dot { animation: pulse 1.1s infinite; }
+    .gps-bar.loading .gps-dot   { background: #f0c040; }
+    .gps-bar.acquiring .gps-dot { background: #3b82f6; }
+    .gps-bar.ok .gps-dot        { background: #4caf50; }
+    .gps-bar.outside .gps-dot   { background: #ef5350; }
+    .gps-bar.error .gps-dot     { background: #f59e0b; }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:.25; }
+    }
+    .gps-text { flex: 1; min-width: 0; }
+    .gps-status { font-size: .82rem; font-weight: 700; line-height: 1.3; }
+    .gps-detail { font-size: .7rem; font-weight: 400; margin-top: 2px; opacity: .8; }
+    .gps-actions {
+      display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0;
+    }
+    .gps-action-btn {
+      font-size: .68rem; padding: 4px 10px;
+      border-radius: 999px; border: 1.5px solid currentColor;
+      background: transparent; color: inherit; font-weight: 700;
+      cursor: pointer; white-space: nowrap; font-family: var(--font);
+      display: none;
+    }
+    .gps-action-btn:active { opacity: .7; }
+
+    /* ── Step card ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--rad);
+      border: 1px solid var(--bdr);
+      box-shadow: var(--sh-card);
+      overflow: hidden;
+      width: 100%;
+    }
+    .card-head {
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid var(--g7);
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: .8rem;
-      font-weight: 600;
-      border: 1.5px solid;
-      box-sizing: border-box;
-      width: calc(100% - 28px);
-      word-wrap: break-word;
-      overflow: hidden;
+      background: linear-gradient(to right, var(--g8), var(--white));
     }
-
-    .gps-bar.loading {
-      background: #fff8e1;
-      border-color: #ffc107;
-      color: #856404
-    }
-
-    .gps-bar.ok {
-      background: var(--ok-lt);
-      border-color: #4caf50;
-      color: var(--ok)
-    }
-
-    .gps-bar.outside {
-      background: #fee2e2;
-      border-color: #ef5350;
-      color: var(--err)
-    }
-
-    .gps-bar.error {
-      background: var(--warn-lt);
-      border-color: #ff9800;
-      color: var(--warn)
-    }
-
-    .gps-bar.acquiring {
-      background: #e3f2fd;
-      border-color: #2196f3;
-      color: #0d47a1
-    }
-
-    .gps-dot {
-      width: 10px;
-      height: 10px;
+    .step-badge {
+      width: 26px; height: 26px;
       border-radius: 50%;
-      flex-shrink: 0
-    }
-
-    .gps-bar.loading .gps-dot {
-      background: #ffc107;
-      animation: pulse 1s infinite
-    }
-
-    .gps-bar.ok .gps-dot {
-      background: #4caf50
-    }
-
-    .gps-bar.outside .gps-dot {
-      background: #ef5350
-    }
-
-    .gps-bar.error .gps-dot {
-      background: #ff9800
-    }
-
-    .gps-bar.acquiring .gps-dot {
-      background: #2196f3;
-      animation: pulse 1s infinite
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .3
-      }
-    }
-
-    .gps-detail {
-      font-size: .7rem;
-      font-weight: 400;
-      margin-top: 2px;
-      opacity: .8
-    }
-
-    /* Card */
-    .card {
-      margin: 12px 14px 0;
-      background: #fff;
-      border-radius: 14px;
-      border: 1px solid var(--bdr);
-      box-shadow: 0 1px 5px rgba(0, 0, 0, .04);
-      width: calc(100% - 28px);
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
-    .card-head {
-      padding: 13px 16px 11px;
-      border-bottom: 1px solid var(--bdr);
-      display: flex;
-      align-items: center;
-      gap: 8px
-    }
-
-    .step-num {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--br);
+      background: var(--g1);
       color: #fff;
-      font-size: .7rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0
+      font-size: .68rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(26,64,32,.3);
+    }
+    .card-head h3 { font-size: .9rem; font-weight: 700; color: var(--ink); }
+    .card-body { padding: 16px; }
+
+    /* ── Info note ── */
+    .info-note {
+      font-size: .76rem; color: var(--g2); font-weight: 600;
+      background: var(--g7); padding: 9px 11px;
+      border-radius: var(--rad-xs); border: 1px solid var(--g6);
+      margin-bottom: 12px; line-height: 1.5;
     }
 
-    .card-head h3 {
-      font-size: .88rem;
-      font-weight: 700
-    }
-
-    .card-body {
-      padding: 14px 16px
-    }
-
-    /* Camera */
-    /* cam-wrap is hidden until camera is actually started — no big black box on load */
-    .cam-wrap {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #111;
-      aspect-ratio: 4/3;
-      display: none
-    }
-
-    .cam-wrap.active {
-      display: block
-    }
-
-    #videoEl {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block
-    }
-
-    #captureCanvas {
-      display: none
-    }
-
-    .cam-controls {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-      flex-wrap: wrap
-    }
-
+    /* ── Camera section ── */
     .cam-placeholder {
-      border: 2px dashed #ccc;
-      border-radius: 10px;
+      border: 2px dashed var(--bdr);
+      border-radius: var(--rad-sm);
       padding: 28px 16px;
       text-align: center;
-      color: #888;
-      background: #fafafa;
-      margin-bottom: 2px
+      background: var(--g8);
+      margin-bottom: 12px;
     }
-
-    .cam-placeholder p {
-      font-size: .8rem;
-      margin: 6px 0 0
+    .cam-icon { font-size: 2.4rem; display: block; margin-bottom: 6px; }
+    .cam-placeholder p { font-size: .78rem; color: var(--ink3); line-height: 1.5; }
+    .cam-wrap {
+      position: relative; border-radius: var(--rad-sm);
+      overflow: hidden; background: #111;
+      aspect-ratio: 4/3; display: none; margin-bottom: 12px;
     }
-
+    .cam-wrap.active { display: block; }
+    #videoEl { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #captureCanvas { display: none; }
     .photo-prev {
-      width: 100%;
-      border-radius: 10px;
-      display: none
+      width: 100%; border-radius: var(--rad-sm);
+      display: none; margin-bottom: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
     }
-
-    .photo-prev.show {
-      display: block
-    }
-
+    .photo-prev.show { display: block; }
     .photo-status {
-      font-size: .75rem;
-      color: var(--ink3);
-      margin-top: 6px;
-      text-align: center
+      font-size: .74rem; color: var(--ink3);
+      text-align: center; margin-top: 6px;
     }
 
-    /* Form */
+    /* Camera action buttons */
+    .cam-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .cam-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 11px 10px; border-radius: var(--rad-sm);
+      font-size: .82rem; font-weight: 700; font-family: var(--font);
+      cursor: pointer; border: 1.5px solid; transition: all .14s;
+      white-space: nowrap;
+    }
+    .cam-btn-primary {
+      background: var(--g1); border-color: var(--g1); color: #fff;
+    }
+    .cam-btn-primary:active { background: var(--g0); }
+    .cam-btn-outline {
+      background: transparent; border-color: var(--bdr); color: var(--ink2);
+    }
+    .cam-btn-outline:active { background: var(--g7); }
+
+    /* ── Form elements ── */
     .fg {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 10px;
-      min-width: 0
+      display: flex; flex-direction: column; gap: 5px;
+      margin-bottom: 12px; min-width: 0;
     }
-
+    .fg:last-child { margin-bottom: 0; }
     .fg label {
-      font-size: .7rem;
-      font-weight: 700;
-      color: var(--ink2);
-      text-transform: uppercase;
-      letter-spacing: .05em
+      font-size: .68rem; font-weight: 800;
+      color: var(--ink3); text-transform: uppercase; letter-spacing: .06em;
     }
-
-    .fg .req {
-      color: var(--err)
-    }
-
+    .req { color: var(--err); }
     .fg input,
     .fg select,
     .fg textarea {
-      padding: 10px 12px;
+      padding: 11px 13px;
       border: 1.5px solid var(--bdr);
-      border-radius: 10px;
-      font-size: .85rem;
-      font-family: inherit;
-      color: var(--ink);
-      background: #fff;
-      outline: none;
-      transition: border-color .15s;
-      width: 100%;
-      min-width: 0
+      border-radius: var(--rad-sm);
+      font-size: .88rem; font-family: var(--font);
+      color: var(--ink); background: var(--white);
+      outline: none; transition: border-color .15s, box-shadow .15s;
+      width: 100%; min-width: 0;
+      /* Prevent iOS zoom on focus */
+      font-size: max(16px, .88rem);
     }
-
     .fg input:focus,
     .fg select:focus,
     .fg textarea:focus {
-      border-color: var(--br2)
+      border-color: var(--g2);
+      box-shadow: 0 0 0 3px rgba(42,101,53,.12);
     }
+    .fg textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
 
-    .fg textarea {
-      resize: vertical;
-      min-height: 65px
-    }
-
+    /* Two-column grid for pairs of fields */
     .frow {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px
-    }
-
-    /* Auto-filled fields */
-    .auto-field {
-      background: var(--ultra) !important;
-      color: var(--br) !important;
-      font-weight: 600 !important;
-      border-color: var(--bdr) !important
-    }
-
-    /* GPS proof grid */
-    .gps-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px
-    }
-
-    .gps-tile {
-      background: var(--ultra);
-      border-radius: 10px;
-      padding: 10px;
-      border: 1px solid var(--bdr);
-      min-width: 0;
-      word-break: break-word
-    }
-
-    .gps-tile-lbl {
-      font-size: .62rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--ink3);
-      margin-bottom: 3px
-    }
-
-    .gps-tile-val {
-      font-weight: 700;
-      font-size: .87rem;
-      color: var(--br)
-    }
-
-    /* Sale toggle */
-    .sale-toggle {
-      display: flex;
       gap: 10px;
-      margin-top: 4px
+      margin-bottom: 12px;
+    }
+    .frow .fg { margin-bottom: 0; }
+
+    /* Auto-filled GPS fields */
+    .auto-field {
+      background: var(--g8) !important;
+      border-color: var(--g6) !important;
+      color: var(--g2) !important;
+      font-weight: 600 !important;
     }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0
+    /* GPS auto-detect section */
+    .gps-autofill {
+      background: var(--g8); border-radius: var(--rad-sm);
+      padding: 12px 13px; border: 1px solid var(--g6);
+      margin-bottom: 12px;
+    }
+    .gps-autofill-hdr {
+      font-size: .64rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--g3); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .gps-autofill .frow { margin-bottom: 10px; }
+    .gps-autofill .frow:last-child { margin-bottom: 0; }
+
+    /* Geocode hint */
+    .geocode-hint {
+      display: none; margin-top: 8px; padding: 9px 12px;
+      background: #fff8e1; border-radius: var(--rad-xs);
+      border: 1px solid #f0c040;
+      font-size: .76rem; color: var(--warn); line-height: 1.5;
     }
 
-    .sale-btn {
-      flex: 1;
-      min-width: 0;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1.5px solid var(--bdr);
-      font-size: .82rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all .15s;
-      background: #fff;
-      color: var(--ink3);
-      font-family: inherit;
-      display: flex;
-      align-items: center;
-      justify-content: center
-    }
-
-    .sale-btn.yes.active {
-      background: var(--ok-lt);
-      border-color: #4caf50;
-      color: var(--ok)
-    }
-
-    .sale-btn.no.active {
-      background: #fee2e2;
-      border-color: #ef5350;
-      color: var(--err)
-    }
-
-    /* Submit */
-    .submit-btn {
+    /* ── Products section ── */
+    .prod-selector {
+      display: flex; gap: 8px;
+      margin-bottom: 12px;
       width: 100%;
-      padding: 15px;
-      border-radius: 14px;
-      background: var(--br);
-      color: #fff;
-      font-size: .95rem;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      margin-top: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity .2s;
-      font-family: inherit
     }
-
-    .submit-btn:disabled {
-      opacity: .6;
-      cursor: not-allowed
-    }
-
-    /* Block overlay */
-    .block-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(185, 28, 28, .92);
-      backdrop-filter: blur(4px);
-      align-items: center;
-      justify-content: center;
-      padding: 24px
-    }
-
-    .block-overlay.show {
-      display: flex
-    }
-
-    .block-card {
-      background: #fff;
-      border-radius: 20px;
-      padding: 28px 24px;
-      text-align: center;
-      max-width: 340px
-    }
-
-    .block-card .bi {
-      font-size: 3rem;
-      margin-bottom: 10px
-    }
-
-    .block-card h3 {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--err);
-      margin-bottom: 8px
-    }
-
-    .block-card p {
-      font-size: .85rem;
-      color: var(--ink3);
-      line-height: 1.5
-    }
-
-    .block-dist {
-      margin: 12px 0;
-      padding: 12px;
-      background: #fff5f5;
-      border-radius: 10px;
-      border: 1px solid #fecaca
-    }
-
-    .block-dist strong {
-      color: var(--err);
-      font-size: 1.1rem
-    }
-
-    /* Toast */
-    .toast-container {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 999;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: center
-    }
-
-    .toast {
-      background: #1c2116;
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 999px;
-      font-size: .82rem;
-      font-weight: 600;
-      animation: slideUp .25s ease;
-      white-space: nowrap
-    }
-
-    .toast.success {
-      background: var(--ok)
-    }
-
-    .toast.error {
-      background: var(--err)
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2.5px solid rgba(255, 255, 255, .35);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .7s linear infinite
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg)
-      }
-    }
-
-    /* ── Product section ── */
-    .prod-select-row {
-      display: flex;
-      gap: 8px;
-      align-items: stretch;
-      margin-bottom: 10px;
-      width: 100%;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-
     .prod-select {
-      flex: 1 1 0%;
-      min-width: 0;
+      flex: 1 1 0; min-width: 0;
       border: 1.5px solid var(--bdr);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: .84rem;
-      font-family: inherit;
-      background: #fff;
-      color: var(--ink);
-      -webkit-appearance: none;
-      appearance: none;
+      border-radius: var(--rad-sm);
+      padding: 11px 13px;
+      font-size: max(16px, .86rem);
+      font-family: var(--font); color: var(--ink);
+      background: var(--white);
       outline: none;
-      width: 0; /* force flex shrink to work */
-      box-sizing: border-box;
+      -webkit-appearance: none; appearance: none;
+      width: 0; /* force flex-grow to take over */
+      transition: border-color .15s;
     }
-
-    .prod-select:focus {
-      border-color: var(--br2)
-    }
-
+    .prod-select:focus { border-color: var(--g2); }
     .prod-add-btn {
-      background: var(--br2);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 9px 14px;
-      font-size: .84rem;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      white-space: nowrap;
       flex-shrink: 0;
-      align-self: stretch;
-      display: flex;
-      align-items: center;
+      background: var(--g2); color: #fff;
+      border: none; border-radius: var(--rad-sm);
+      padding: 11px 16px;
+      font-size: .84rem; font-weight: 700; font-family: var(--font);
+      cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center;
+      transition: background .14s;
     }
-
-    .prod-add-btn:active {
-      opacity: .85
-    }
-
-    .prod-table-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      max-width: 100%
-    }
-
-    .prod-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .8rem;
-      min-width: 300px
-    }
-
-    .prod-table th {
-      background: var(--ultra);
-      color: var(--br2);
-      font-size: .62rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      padding: 7px 8px;
-      border-bottom: 1.5px solid var(--bdr);
-      text-align: left
-    }
-
-    .prod-table th:not(:first-child) {
-      text-align: right
-    }
-
-    .prod-table td {
-      padding: 7px 6px;
-      border-bottom: 1px solid var(--bdr);
-      vertical-align: middle;
-      color: var(--ink2)
-    }
-
-    .prod-table td:not(:first-child) {
-      text-align: right
-    }
-
-    .prod-table tr:last-child td {
-      border-bottom: none
-    }
-
-    .prod-row-name {
-      font-weight: 600;
-      color: var(--ink);
-      font-size: .82rem;
-      max-width: 110px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: block
-    }
-
-    .prod-num-input {
-      width: 64px;
-      border: 1.5px solid var(--bdr);
-      border-radius: 6px;
-      padding: 4px 6px;
-      font-size: .8rem;
-      text-align: right;
-      font-family: inherit;
-      background: #fff;
-      -webkit-appearance: none;
-      appearance: none
-    }
-
-    .prod-num-input:focus {
-      outline: none;
-      border-color: var(--br2)
-    }
-
-    .prod-row-total {
-      font-weight: 700;
-      color: var(--br2);
-      white-space: nowrap
-    }
-
-    .prod-remove {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: #c62828;
-      font-size: .95rem;
-      padding: 3px 5px;
-      border-radius: 6px;
-      line-height: 1
-    }
-
-    .prod-remove:active {
-      background: #fce4ec
-    }
-
-    .prod-grand-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 9px 6px 2px;
-      border-top: 2px solid var(--bdr);
-      margin-top: 4px;
-      font-size: .85rem;
-      font-weight: 700
-    }
-
-    .prod-grand-row span:last-child {
-      color: var(--br2);
-      font-size: .95rem;
-      font-weight: 800
-    }
+    .prod-add-btn:active { background: var(--g1); }
 
     .prod-empty {
-      text-align: center;
-      padding: 14px 8px;
-      color: var(--ink3);
-      font-size: .8rem;
+      text-align: center; padding: 16px 10px;
+      font-size: .78rem; color: var(--ink4);
       border: 1.5px dashed var(--bdr);
-      border-radius: 8px;
-      background: #fff
+      border-radius: var(--rad-sm); background: var(--g8);
     }
 
-    /* ── Global overflow guard — prevents any element from creating
-       horizontal scroll / white gap on the right ── */
-    html { overflow-x: hidden; }
-    body { overflow-x: hidden; max-width: 100%; }
-    .card, .gps-bar, .topbar, .submit-btn, .card-body, .card-head {
-      box-sizing: border-box;
-      max-width: 100%;
+    /* Product table — scrollable on small screens */
+    .prod-table-wrap {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      max-width: 100%; border-radius: var(--rad-xs);
+    }
+    .prod-table {
+      width: 100%; border-collapse: collapse;
+      font-size: .78rem; min-width: 300px;
+    }
+    .prod-table th {
+      background: var(--g7); color: var(--g2);
+      font-size: .6rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .06em;
+      padding: 7px 8px; border-bottom: 1.5px solid var(--g6);
+      text-align: left; white-space: nowrap;
+    }
+    .prod-table th:not(:first-child) { text-align: right; }
+    .prod-table td {
+      padding: 8px 7px; border-bottom: 1px solid var(--g7);
+      color: var(--ink2); vertical-align: middle;
+    }
+    .prod-table td:not(:first-child) { text-align: right; }
+    .prod-table tr:last-child td { border-bottom: none; }
+    .prod-row-name {
+      font-weight: 600; color: var(--ink); font-size: .8rem;
+      max-width: 110px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; display: block;
+    }
+    .prod-num-input {
+      width: 64px; border: 1.5px solid var(--bdr);
+      border-radius: var(--rad-xs); padding: 4px 6px;
+      font-size: .78rem; text-align: right;
+      font-family: var(--font); background: var(--white);
+      -webkit-appearance: none; appearance: none;
+    }
+    .prod-num-input:focus { outline: none; border-color: var(--g2); }
+    .prod-row-total { font-weight: 700; color: var(--g2); white-space: nowrap; }
+    .prod-remove {
+      background: none; border: none; cursor: pointer;
+      color: #c62828; font-size: .9rem;
+      padding: 3px 5px; border-radius: 5px; line-height: 1;
+    }
+    .prod-remove:active { background: #fce4ec; }
+    .prod-grand-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 7px 2px; border-top: 2px solid var(--g6);
+      margin-top: 4px; font-size: .85rem; font-weight: 700;
+    }
+    .prod-grand-row span:last-child {
+      color: var(--g2); font-size: .95rem; font-weight: 800;
+    }
+
+    /* ── Sale toggle ── */
+    .sale-toggle { display: flex; gap: 10px; margin-top: 4px; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    .sale-btn {
+      flex: 1; padding: 11px 10px;
+      border-radius: var(--rad-sm); border: 1.5px solid var(--bdr);
+      font-size: .84rem; font-weight: 700; cursor: pointer;
+      transition: all .15s; background: var(--white); color: var(--ink3);
+      font-family: var(--font);
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .sale-btn.yes.active { background: var(--ok-lt); border-color: #4caf50; color: var(--ok); }
+    .sale-btn.no.active  { background: var(--err-lt); border-color: #ef5350; color: var(--err); }
+
+    /* ── GPS proof tiles ── */
+    .gps-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .gps-tile {
+      background: var(--g8); border-radius: var(--rad-sm);
+      padding: 11px 12px; border: 1px solid var(--g6); min-width: 0;
+    }
+    .gps-tile-lbl {
+      font-size: .62rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--ink4); margin-bottom: 4px;
+    }
+    .gps-tile-val {
+      font-weight: 700; font-size: .9rem; color: var(--g1);
+      font-family: var(--mono); word-break: break-all;
+    }
+
+    /* ── Submit button ── */
+    .submit-wrap { padding: 4px 0 0; }
+    .submit-btn {
+      width: 100%; padding: 16px;
+      border-radius: var(--rad);
+      background: var(--g1); color: #fff;
+      font-size: .95rem; font-weight: 800;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: opacity .2s, transform .12s;
+      font-family: var(--font);
+      box-shadow: 0 4px 16px rgba(26,64,32,.3);
+    }
+    .submit-btn:active { transform: scale(.98); opacity: .9; }
+    .submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Block overlay ── */
+    .block-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(185,28,28,.92); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .block-overlay.show { display: flex; }
+    .block-card {
+      background: var(--white); border-radius: 20px;
+      padding: 28px 22px; text-align: center; max-width: 340px; width: 100%;
+    }
+    .block-card .bi { font-size: 3rem; margin-bottom: 10px; display: block; }
+    .block-card h3 { font-size: 1.1rem; font-weight: 800; color: var(--err); margin-bottom: 8px; }
+    .block-card p { font-size: .84rem; color: var(--ink3); line-height: 1.5; }
+    .block-dist { margin: 12px 0; padding: 12px; background: #fff5f5; border-radius: 10px; border: 1px solid #fecaca; }
+    .block-dist strong { color: var(--err); font-size: 1.1rem; }
+    .block-close-btn {
+      margin-top: 16px; padding: 11px 28px; border-radius: 999px;
+      background: var(--err); color: #fff; border: none;
+      font-weight: 700; font-size: .85rem; cursor: pointer; font-family: var(--font);
+    }
+
+    /* ── Toast ── */
+    .toast-container {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%); z-index: 999;
+      display: flex; flex-direction: column;
+      gap: 8px; align-items: center; pointer-events: none;
+    }
+    .toast {
+      background: var(--ink); color: #fff;
+      padding: 10px 20px; border-radius: 999px;
+      font-size: .82rem; font-weight: 600;
+      animation: slideUp .22s ease;
+      white-space: nowrap; max-width: calc(100vw - 32px);
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .toast.success { background: var(--ok); }
+    .toast.error   { background: var(--err); }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════════════════════════════════════════════════
+       RESPONSIVE — Tablet + Desktop
+    ════════════════════════════════════════════════ */
+    @media (min-width: 480px) {
+      :root { --page-pad: 20px; }
+      .cam-controls {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (min-width: 640px) {
+      :root { --page-pad: 28px; }
+      .page { padding-top: 20px; gap: 16px; }
+      .card-body { padding: 20px; }
+      .fg input, .fg select, .fg textarea { font-size: .9rem; }
+      .gps-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    @media (min-width: 900px) {
+      body { background: #e8f0ea; }
+      .page {
+        padding: 28px var(--page-pad) 0;
+      }
+      .topbar { padding-left: calc((100% - 640px) / 2 + var(--page-pad)); padding-right: calc((100% - 640px) / 2 + var(--page-pad)); }
     }
   </style>
-
 </head>
 
 <body>
 
+  <!-- Topbar -->
   <div class="topbar">
-    <button class="back-btn" onclick="history.back()">←</button>
-    <h2>📍 Geo Lead Capture</h2>
-  </div>
-
-  <!-- GPS Status -->
-  <div class="gps-bar loading" id="gpsBar">
-    <div class="gps-dot"></div>
-    <div style="flex:1;min-width:0">
-      <div id="gpsStatus">Acquiring GPS…</div>
-
-      <div class="gps-detail" id="gpsDetail"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-      <button id="gpsRetryBtn" onclick="forceGpsRetry()" style="display:none;font-size:.7rem;padding:4px 10px;border-radius:999px;
-             border:1.5px solid currentColor;background:transparent;color:inherit;
-             font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">
-        🔄 Retry
-      </button>
-      <button id="gpsUseAnywayBtn" onclick="useLocationAnyway()" style="display:none;font-size:.7rem;padding:4px 10px;border-radius:999px;
-             border:1.5px solid currentColor;background:transparent;color:inherit;
-             font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
-        📍 Use anyway
-      </button>
-    </div>
+    <button class="topbar-back" onclick="history.back()" aria-label="Go back">←</button>
+    <span class="topbar-title">📍 Geo Lead Capture</span>
+    <span class="topbar-badge" id="topbarBadge" style="display:none">✏️ Edit</span>
   </div>
 
   <!-- Block overlay -->
   <div class="block-overlay" id="blockOverlay">
     <div class="block-card">
-      <div class="bi">🚫</div>
+      <span class="bi">🚫</span>
       <h3>Outside Assigned Area</h3>
-      <p id="blockMessage">You are not in your assigned area. Lead submission is blocked from this location.</p>
+      <p id="blockMessage">You are not in your assigned area. Lead submission is blocked.</p>
       <div class="block-dist">
         <strong id="blockDist">—</strong> km from nearest area<br>
-        <span style="font-size:.78rem;color:#666">Allowed radius: <strong id="blockRadius">—</strong> km</span>
+        <span style="font-size:.78rem;color:#888">Allowed radius: <strong id="blockRadius">—</strong> km</span>
       </div>
-      <p style="font-size:.78rem;margin-top:8px">Your assigned area(s): <strong id="blockTalukaName">—</strong></p>
-      <button onclick="document.getElementById('blockOverlay').classList.remove('show')"
-        style="margin-top:16px;padding:10px 24px;border-radius:999px;background:var(--err);color:#fff;border:none;font-weight:700;font-size:.85rem;cursor:pointer;font-family:inherit">Close</button>
+      <p style="font-size:.78rem;margin-top:8px">Your area(s): <strong id="blockTalukaName">—</strong></p>
+      <button class="block-close-btn" onclick="document.getElementById('blockOverlay').classList.remove('show')">Close</button>
     </div>
   </div>
 
-  <!-- STEP 1: Photo -->
-  <div class="card">
-    <div class="card-head">
-      <div class="step-num">1</div>
-      <h3>Capture Shop Photo</h3>
-    </div>
-    <div class="card-body">
-      <p style="font-size:.78rem;color:var(--ink3);margin-bottom:10px">GPS + timestamp will be stamped on the photo
-        automatically.</p>
-      <!-- Placeholder shown before camera opens — replaces the big black box -->
-      <div class="cam-placeholder" id="camPlaceholder">
-        <div style="font-size:2.2rem">📷</div>
-        <p>Tap <strong>Open Camera</strong> to take a shop photo<br>or use <strong>Gallery</strong> to choose one</p>
-      </div>
-      <div class="cam-wrap" id="camWrap"><video id="videoEl" autoplay muted playsinline></video></div>
-      <canvas id="captureCanvas"></canvas>
-      <img id="photoPreview" class="photo-prev" alt="Captured" />
-      <div class="cam-controls">
-        <button class="btn btn-outline btn-sm" id="startCamBtn" onclick="startCamera()"
-          style="flex:1;min-width:0;border-radius:10px;padding:10px">📷 Open</button>
-        <button class="btn btn-primary btn-sm" id="captureBtn" onclick="capturePhoto()"
-          style="flex:1;min-width:0;border-radius:10px;padding:10px;display:none">📸 Capture</button>
-        <button class="btn btn-outline btn-sm" id="retakeBtn" onclick="retakePhoto()"
-          style="flex:1;min-width:0;border-radius:10px;padding:10px;display:none">🔄 Retake</button>
-        <button class="btn btn-outline btn-sm" onclick="selectPhoto()"
-          style="flex:1;min-width:0;border-radius:10px;padding:10px">🖼️ Gallery</button>
-      </div>
-      <div class="photo-status" id="photoStatus"></div>
-    </div>
-  </div>
+  <div class="page">
 
-  <!-- STEP 2: Products to Add -->
-  <div class="card" id="productCard">
-    <div class="card-head">
-      <div class="step-num">2</div>
-      <h3>Products to Add</h3>
-    </div>
-    <div class="card-body">
-      <p
-        style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:8px;line-height:1.5;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
-        📦 Select products this shop wants to order or is interested in.
-      </p>
-      <div class="prod-select-row">
-        <select id="geoProductDropdown" class="prod-select">
-          <option value="">— Select a product —</option>
-        </select>
-        <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
+    <!-- GPS Status bar -->
+    <div class="gps-bar loading" id="gpsBar">
+      <div class="gps-dot"></div>
+      <div class="gps-text">
+        <div class="gps-status" id="gpsStatus">Acquiring GPS…</div>
+        <div class="gps-detail" id="gpsDetail"></div>
       </div>
-      <div id="geoProdListWrap">
-        <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
-        <div class="prod-table-wrap" id="geoProdTableWrap" style="display:none">
-          <table class="prod-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Price (₹)</th>
-                <th>Qty</th>
-                <th>Total (₹)</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="geoProdTableBody"></tbody>
-          </table>
-          <div class="prod-grand-row">
-            <span>Grand Total</span>
-            <span id="geoProdGrandTotal">₹0.00</span>
-          </div>
+      <div class="gps-actions">
+        <button id="gpsRetryBtn" class="gps-action-btn" onclick="forceGpsRetry()">🔄 Retry</button>
+        <button id="gpsUseAnywayBtn" class="gps-action-btn" onclick="useLocationAnyway()">📍 Use anyway</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Photo ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="step-badge">1</div>
+        <h3>Capture Shop Photo</h3>
+      </div>
+      <div class="card-body">
+        <p class="info-note" style="margin-bottom:12px">📸 GPS coordinates + timestamp are stamped on every photo automatically.</p>
+
+        <div class="cam-placeholder" id="camPlaceholder">
+          <span class="cam-icon">📷</span>
+          <p>Tap <strong>Open Camera</strong> to shoot a shop photo,<br>or tap <strong>Gallery</strong> to pick one.</p>
         </div>
+        <div class="cam-wrap" id="camWrap">
+          <video id="videoEl" autoplay muted playsinline></video>
+        </div>
+        <canvas id="captureCanvas"></canvas>
+        <img id="photoPreview" class="photo-prev" alt="Captured photo" />
+
+        <div class="cam-controls">
+          <button class="cam-btn cam-btn-outline" id="startCamBtn" onclick="startCamera()">📷 Open</button>
+          <button class="cam-btn cam-btn-outline" onclick="selectPhoto()">🖼️ Gallery</button>
+          <button class="cam-btn cam-btn-primary" id="captureBtn" onclick="capturePhoto()" style="display:none;grid-column:1/-1">📸 Capture Photo</button>
+          <button class="cam-btn cam-btn-outline" id="retakeBtn" onclick="retakePhoto()" style="display:none;grid-column:1/-1">🔄 Retake</button>
+        </div>
+        <div class="photo-status" id="photoStatus"></div>
       </div>
     </div>
-  </div>
 
-  <!-- STEP 3: Shop details -->
-  <div class="card">
-    <div class="card-head">
-      <div class="step-num">3</div>
-      <h3>Shop &amp; Owner Details</h3>
-    </div>
-    <div class="card-body">
-      <div class="frow">
-        <div class="fg">
-          <label for="fShopName">Shop Name <span class="req">*</span></label>
-          <input type="text" id="fShopName" placeholder="e.g. Sharma Kirana" />
-        </div>
-        <div class="fg">
-          <label for="fShopType">Shop Type</label>
-          <select id="fShopType">
-            <option value="">— Select —</option>
-            <option value="Distributer">Distributer</option>
-            <option value="Rental">Rental</option>
-            <option value="Wholesale">Wholesale</option>
+    <!-- ── STEP 2: Products ── -->
+    <div class="card" id="productCard">
+      <div class="card-head">
+        <div class="step-badge">2</div>
+        <h3>Products to Add</h3>
+      </div>
+      <div class="card-body">
+        <p class="info-note">📦 Select products this shop wants to order or is interested in.</p>
+        <div class="prod-selector">
+          <select id="geoProductDropdown" class="prod-select">
+            <option value="">— Select a product —</option>
           </select>
+          <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
         </div>
-      </div>
-      <div class="frow">
-        <div class="fg">
-          <label for="fOwner">Owner Name <span class="req">*</span></label>
-          <input type="text" id="fOwner" placeholder="Ramesh Sharma" />
-        </div>
-        <div class="fg">
-          <label for="fMobile">Mobile <span class="req">*</span></label>
-          <input type="tel" id="fMobile" placeholder="9876543210" maxlength="10" inputmode="numeric" />
-        </div>
-      </div>
-
-      <!-- Auto-filled from GPS + taluka assignment -->
-      <div
-        style="background:var(--ultra);border-radius:10px;padding:10px 12px;border:1px solid var(--bdr);margin-bottom:10px">
-        <div
-          style="font-size:.67rem;font-weight:700;color:var(--br2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">
-          📍 Auto-detected from GPS</div>
-        <div class="frow">
-          <div class="fg" style="margin-bottom:0">
-            <label for="fVillage">Village / Area</label>
-            <input type="text" id="fVillage" class="auto-field" placeholder="Detecting…" />
-          </div>
-          <div class="fg" style="margin-bottom:0">
-            <label for="fTaluka">Taluka</label>
-            <input type="text" id="fTaluka" class="auto-field" placeholder="Detecting… (or type manually)" />
-          </div>
-        </div>
-        <div class="frow" style="margin-top:8px">
-          <div class="fg" style="margin-bottom:0">
-            <label for="fDistrict">District</label>
-            <input type="text" id="fDistrict" class="auto-field" placeholder="Detecting… (or type manually)" />
-          </div>
-          <div class="fg" style="margin-bottom:0">
-            <label for="fAddress">GPS Address</label>
-            <input type="text" id="fAddress" class="auto-field" placeholder="GPS address (auto-filled)" />
-            <div id="geocodeHint"
-              style="display:none;margin-top:6px;padding:8px 12px;background:#fff3e0;border-radius:8px;border:1px solid #ffcc02;font-size:.78rem;color:#b06800">
-              ⚠️ Auto-detection unavailable — please type your <strong>taluka</strong> and <strong>district</strong>
-              manually above.
+        <div id="geoProdListWrap">
+          <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
+          <div class="prod-table-wrap" id="geoProdTableWrap" style="display:none">
+            <table class="prod-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price (₹)</th>
+                  <th>Qty</th>
+                  <th>Total (₹)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="geoProdTableBody"></tbody>
+            </table>
+            <div class="prod-grand-row">
+              <span>Grand Total</span>
+              <span id="geoProdGrandTotal">₹0.00</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="fg">
-        <label for="fNotes">Notes</label>
-        <textarea id="fNotes" placeholder="Any observations about the shop…"></textarea>
+    <!-- ── STEP 3: Shop & Owner details ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="step-badge">3</div>
+        <h3>Shop &amp; Owner Details</h3>
       </div>
-      <div class="fg" style="margin-bottom:0">
-        <fieldset style="border:none;padding:0;margin:0">
-          <legend style="font-size:.8rem;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Sale Made?</legend>
-          <div class="sale-toggle" role="group" aria-label="Sale status">
-            <input type="radio" name="saleStatus" id="saleYes" value="YES" class="sr-only" onchange="setSale('YES')">
-            <label for="saleYes" class="sale-btn yes" id="saleYesBtn">✅ YES</label>
-            <input type="radio" name="saleStatus" id="saleNo" value="NO" class="sr-only" checked
-              onchange="setSale('NO')">
-            <label for="saleNo" class="sale-btn no active" id="saleNoBtn">❌ NO</label>
+      <div class="card-body">
+
+        <div class="frow">
+          <div class="fg">
+            <label for="fShopName">Shop Name <span class="req">*</span></label>
+            <input type="text" id="fShopName" placeholder="e.g. Sharma Kirana" autocomplete="organization" />
           </div>
-        </fieldset>
+          <div class="fg">
+            <label for="fShopType">Shop Type</label>
+            <select id="fShopType">
+              <option value="">— Select —</option>
+              <option value="Distributer">Distributer</option>
+              <option value="Rental">Rental</option>
+              <option value="Wholesale">Wholesale</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fg">
+            <label for="fOwner">Owner Name <span class="req">*</span></label>
+            <input type="text" id="fOwner" placeholder="Ramesh Sharma" autocomplete="name" />
+          </div>
+          <div class="fg">
+            <label for="fMobile">Mobile <span class="req">*</span></label>
+            <input type="tel" id="fMobile" placeholder="9876543210" maxlength="10" inputmode="numeric" autocomplete="tel" />
+          </div>
+        </div>
+
+        <!-- GPS auto-detect -->
+        <div class="gps-autofill">
+          <div class="gps-autofill-hdr">📍 Auto-detected from GPS</div>
+          <div class="frow">
+            <div class="fg">
+              <label for="fVillage">Village / Area</label>
+              <input type="text" id="fVillage" class="auto-field" placeholder="Detecting…" />
+            </div>
+            <div class="fg">
+              <label for="fTaluka">Taluka</label>
+              <input type="text" id="fTaluka" class="auto-field" placeholder="Detecting…" />
+            </div>
+          </div>
+          <div class="frow" style="margin-bottom:0">
+            <div class="fg" style="margin-bottom:0">
+              <label for="fDistrict">District</label>
+              <input type="text" id="fDistrict" class="auto-field" placeholder="Detecting…" />
+            </div>
+            <div class="fg" style="margin-bottom:0">
+              <label for="fAddress">GPS Address</label>
+              <input type="text" id="fAddress" class="auto-field" placeholder="Auto-filled" />
+            </div>
+          </div>
+          <div class="geocode-hint" id="geocodeHint">
+            ⚠️ Auto-detection unavailable — please type <strong>taluka</strong> and <strong>district</strong> manually above.
+          </div>
+        </div>
+
+        <div class="fg">
+          <label for="fNotes">Notes</label>
+          <textarea id="fNotes" placeholder="Any observations about the shop…"></textarea>
+        </div>
+
+        <div class="fg" style="margin-bottom:0">
+          <fieldset style="border:none;padding:0;margin:0">
+            <legend style="font-size:.68rem;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Sale Made?</legend>
+            <div class="sale-toggle" role="group" aria-label="Sale status">
+              <input type="radio" name="saleStatus" id="saleYes" value="YES" class="sr-only" onchange="setSale('YES')">
+              <label for="saleYes" class="sale-btn yes" id="saleYesBtn">✅ YES</label>
+              <input type="radio" name="saleStatus" id="saleNo" value="NO" class="sr-only" checked onchange="setSale('NO')">
+              <label for="saleNo" class="sale-btn no active" id="saleNoBtn">❌ NO</label>
+            </div>
+          </fieldset>
+        </div>
+
       </div>
     </div>
-  </div>
 
-  <!-- STEP 4: GPS proof -->
-  <div class="card">
-    <div class="card-head">
-      <div class="step-num">4</div>
-      <h3>GPS Proof</h3>
-    </div>
-    <div class="card-body">
-      <div class="gps-grid">
-        <div class="gps-tile">
-          <div class="gps-tile-lbl">Latitude</div>
-          <div class="gps-tile-val" id="dispLat">—</div>
-        </div>
-        <div class="gps-tile">
-          <div class="gps-tile-lbl">Longitude</div>
-          <div class="gps-tile-val" id="dispLng">—</div>
-        </div>
-        <div class="gps-tile">
-          <div class="gps-tile-lbl">Accuracy</div>
-          <div class="gps-tile-val" id="dispAcc">—</div>
-        </div>
-        <div class="gps-tile">
-          <div class="gps-tile-lbl">Distance to Centre</div>
-          <div class="gps-tile-val" id="dispDist">—</div>
+    <!-- ── STEP 4: GPS Proof ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="step-badge">4</div>
+        <h3>GPS Proof</h3>
+      </div>
+      <div class="card-body">
+        <div class="gps-grid">
+          <div class="gps-tile">
+            <div class="gps-tile-lbl">Latitude</div>
+            <div class="gps-tile-val" id="dispLat">—</div>
+          </div>
+          <div class="gps-tile">
+            <div class="gps-tile-lbl">Longitude</div>
+            <div class="gps-tile-val" id="dispLng">—</div>
+          </div>
+          <div class="gps-tile">
+            <div class="gps-tile-lbl">Accuracy</div>
+            <div class="gps-tile-val" id="dispAcc">—</div>
+          </div>
+          <div class="gps-tile">
+            <div class="gps-tile-lbl">Distance to Centre</div>
+            <div class="gps-tile-val" id="dispDist">—</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Submit -->
-  <div style="padding:0 14px;box-sizing:border-box;width:100%">
-    <button class="submit-btn" id="submitBtn" onclick="submitLead()">
-      <span id="submitBtnTxt">💾 Submit Lead</span>
-    </button>
-  </div>
+    <!-- Submit -->
+    <div class="submit-wrap">
+      <button class="submit-btn" id="submitBtn" onclick="submitLead()">
+        <span id="submitBtnTxt">💾 Submit Lead</span>
+      </button>
+    </div>
+
+  </div><!-- /.page -->
 
   <div class="toast-container" id="toastContainer"></div>
+
   <script src="/js/network.js"></script>
   <script src="/salesman/js/salesman.js"></script>
   <script>
@@ -1007,7 +783,6 @@
     ══════════════════════════════════════════════════════════ */
     const GEO = '/api/v1/geo';
 
-    /* ── Fetch helper — uses httpOnly cookie auth (credentials:include) ── */
     async function apiFetch(url, opts = {}) {
       const res = await fetch(url, {
         ...opts,
@@ -1022,18 +797,11 @@
       return res;
     }
 
-    let _gps = null;       // { latitude, longitude, accuracy } — only set after accuracy gate
-    let _rawPos = null;    // last position the browser reported (any accuracy) — for "Use anyway"
-    let _taluka = null;    // assigned taluka from backend
-    let _photoData = null; // base64 watermarked
-    let _saleStatus = 'NO';
-    let _gpsOk = false;
-    let _stream = null;
-    let _geocodeDone = false;
+    let _gps = null, _rawPos = null, _taluka = null,
+        _photoData = null, _saleStatus = 'NO',
+        _gpsOk = false, _stream = null, _geocodeDone = false;
 
-    // Auth check — rehydrate sessionStorage from cookie if tab was reopened
     async function _geoLeadAuth() {
-      // Auth gate in network.js handles rehydration — just wait for it
       if (window._aqAuthReady) await window._aqAuthReady.catch(function () { });
       return !!sessionStorage.getItem('aq_sales_user');
     }
@@ -1045,7 +813,6 @@
       startGPSWatch();
       startTrackingPing();
 
-      // ── Edit mode: prefill form if ?edit=ID in URL ─────────
       const editId = new URLSearchParams(window.location.search).get('edit');
       if (editId) {
         try {
@@ -1055,75 +822,53 @@
           if (lead && lead.shop_name) {
             document.getElementById('fShopName').value = lead.shop_name || '';
             document.getElementById('fShopType').value = lead.shop_type || '';
-            document.getElementById('fOwner').value = lead.owner_name || '';
-            document.getElementById('fMobile').value = lead.mobile || '';
-            document.getElementById('fVillage').value = lead.village || '';
-            document.getElementById('fTaluka').value = lead.taluka || '';
+            document.getElementById('fOwner').value    = lead.owner_name || '';
+            document.getElementById('fMobile').value   = lead.mobile || '';
+            document.getElementById('fVillage').value  = lead.village || '';
+            document.getElementById('fTaluka').value   = lead.taluka || '';
             document.getElementById('fDistrict').value = lead.district || '';
-            document.getElementById('fNotes').value = lead.notes || '';
+            document.getElementById('fNotes').value    = lead.notes || '';
             if (lead.sale_status) setSale(lead.sale_status);
-            // Pre-fill selected products
             if (Array.isArray(lead.products) && lead.products.length) {
               _geoSelProds = lead.products.map(p => ({
                 id: p.product_id, name: p.name,
                 price: parseFloat(p.price) || 0,
                 qty: parseInt(p.quantity, 10) || 1,
               }));
-              _geoRenderTable();
-              _geoRebuildDropdown();
+              _geoRenderTable(); _geoRebuildDropdown();
             }
-            // Update submit button and title for edit mode
             const btnTxt = document.getElementById('submitBtnTxt');
             if (btnTxt) btnTxt.innerHTML = '✏️ Update Lead';
-            // Store edit id for submit
+            const badge = document.getElementById('topbarBadge');
+            if (badge) badge.style.display = '';
             window._geoEditId = parseInt(editId, 10);
-            showToast('Editing lead — update fields and resubmit', 'default');
+            showToast('Editing lead — update and resubmit', 'default');
           }
-        } catch (e) {
-          showToast('Could not load lead for editing', 'error');
-        }
+        } catch (e) { showToast('Could not load lead for editing', 'error'); }
       }
     })();
 
-    /* ══════════ PRODUCTS — Dropdown + Table ══════════ */
-    let _geoAllProds = [];   // full product list from API
-    let _geoSelProds = [];   // [{ id, name, price, qty }]
+    /* ══════════ PRODUCTS ══════════ */
+    let _geoAllProds = [], _geoSelProds = [];
 
     async function loadProducts() {
       const sel = document.getElementById('geoProductDropdown');
       if (!sel) return;
       if (_geoAllProds.length) { _geoRebuildDropdown(); return; }
-
       sel.innerHTML = '<option value="">Loading products…</option>';
-
       try {
-        // 1. Fetch the data right at the beginning
-        const res = await apiFetch('/api/v1/products');
+        const res  = await apiFetch('/api/v1/products');
         const data = await res.json();
-
-        // 2. Normalise the shape
-        const raw = data.data ?? data.products ?? [];
-
-        // 3. Throw a proper error with a string (NO literal "...")
-        if (!Array.isArray(raw)) throw new Error('Invalid product data received from API');
-
+        const raw  = data.data ?? data.products ?? [];
+        if (!Array.isArray(raw)) throw new Error('Invalid product data');
         _geoAllProds = raw.filter(p => p.is_active !== 0);
-
-        // 4. Handle empty state
-        if (_geoAllProds.length === 0) {
-          sel.innerHTML = '<option>⚠ No active products found</option>';
-          return;
-        }
-
+        if (!_geoAllProds.length) { sel.innerHTML = '<option>⚠ No active products</option>'; return; }
       } catch (e) {
         sel.innerHTML = '<option value="">⚠ Could not load products</option>';
-        console.warn('loadProducts:', e.message);
-        return;
+        console.warn('loadProducts:', e.message); return;
       }
-
       _geoRebuildDropdown();
     }
-
 
     function _geoRebuildDropdown() {
       const sel = document.getElementById('geoProductDropdown');
@@ -1142,30 +887,27 @@
     function geoAddProduct() {
       const sel = document.getElementById('geoProductDropdown');
       if (!sel || !sel.value) { showToast('Please select a product first.', 'error'); return; }
-      const pid = parseInt(sel.value, 10);
+      const pid  = parseInt(sel.value, 10);
       const prod = _geoAllProds.find(p => p.id === pid);
       if (!prod) return;
       if (_geoSelProds.some(p => p.id === pid)) { showToast('Already added.', 'error'); return; }
-      const price = parseFloat(prod.price) || 0;
-      _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
+      _geoSelProds.push({ id: pid, name: prod.name, price: parseFloat(prod.price) || 0, qty: 1 });
       sel.value = '';
-      _geoRenderTable();
-      _geoRebuildDropdown();
+      _geoRenderTable(); _geoRebuildDropdown();
     }
 
     function _geoRenderTable() {
       const tbody = document.getElementById('geoProdTableBody');
       const empty = document.getElementById('geoProdEmpty');
-      const wrap = document.getElementById('geoProdTableWrap');
+      const wrap  = document.getElementById('geoProdTableWrap');
       if (!tbody) return;
-      if (_geoSelProds.length === 0) {
+      if (!_geoSelProds.length) {
         if (empty) empty.style.display = '';
-        if (wrap) wrap.style.display = 'none';
-        _geoUpdateGrandTotal();
-        return;
+        if (wrap)  wrap.style.display  = 'none';
+        _geoUpdateGrandTotal(); return;
       }
       if (empty) empty.style.display = 'none';
-      if (wrap) wrap.style.display = '';
+      if (wrap)  wrap.style.display  = '';
       tbody.innerHTML = _geoSelProds.map((p, i) =>
         '<tr>'
         + '<td><span class="prod-row-name" title="' + _esc(p.name) + '">' + _esc(p.name) + '</span></td>'
@@ -1183,10 +925,9 @@
     }
 
     function geoUpdateField(idx, field, val) {
-      const p = _geoSelProds[idx];
-      if (!p) return;
+      const p = _geoSelProds[idx]; if (!p) return;
       if (field === 'price') p.price = Math.max(0, parseFloat(val) || 0);
-      if (field === 'qty') p.qty = Math.max(1, parseInt(val, 10) || 1);
+      if (field === 'qty')   p.qty   = Math.max(1, parseInt(val, 10) || 1);
       const el = document.getElementById('geo-total-' + idx);
       if (el) el.textContent = '₹' + (p.price * p.qty).toFixed(2);
       _geoUpdateGrandTotal();
@@ -1194,8 +935,7 @@
 
     function geoRemoveRow(idx) {
       _geoSelProds.splice(idx, 1);
-      _geoRenderTable();
-      _geoRebuildDropdown();
+      _geoRenderTable(); _geoRebuildDropdown();
     }
 
     function _geoUpdateGrandTotal() {
@@ -1205,181 +945,106 @@
     }
 
     function _esc(s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
-    /* ── Load assigned taluka ── */
+    /* ══════════ TALUKA ══════════ */
     async function loadAssignedTaluka() {
       try {
-        const res = await apiFetch(GEO + '/my-taluka');
+        const res  = await apiFetch(GEO + '/my-taluka');
         const json = await res.json();
         if (json.success && json.taluka) {
           _taluka = json.taluka;
-          // Pre-fill taluka & district (locked from assignment)
-          document.getElementById('fTaluka').value = _taluka.name;
+          document.getElementById('fTaluka').value   = _taluka.name;
           document.getElementById('fDistrict').value = _taluka.district;
         }
       } catch (e) { console.warn('loadAssignedTaluka:', e.message); }
     }
 
-    /* ── GPS Watch ── */
-    // ACCURACY_THRESHOLD: reject positions worse than this for form use.
-    // IP-geolocation (the "Korea" root cause): 5,000 – 50,000 m → BLOCKED
-    // Cell tower (5G/4G): 300 – 1,500 m → accepted
-    // WiFi: 50 – 300 m → accepted
-    // GPS chip: 5 – 20 m → accepted
-    var GPS_ACCURACY_THRESHOLD = 1500; // metres
-
-    // GPS stuck timer — if no good fix arrives in 20s, show retry button
-    var _gpsStuckTimer = null;
-    var _watchId = null;
+    /* ══════════ GPS ══════════ */
+    var GPS_ACCURACY_THRESHOLD = 1500;
+    var _gpsStuckTimer = null, _watchId = null;
 
     function startGPSWatch() {
-      if (!navigator.geolocation) {
-        setBar('error', '⚠️ GPS not supported on this device', '');
-        return;
-      }
+      if (!navigator.geolocation) { setBar('error','⚠️ GPS not supported on this device',''); return; }
       _watchId = navigator.geolocation.watchPosition(onGpsOk, onGpsErr, {
-        enableHighAccuracy: true,
-        timeout: 30000,
-        maximumAge: 0  // never use a cached/stale position — was 15000, caused Korea bug
+        enableHighAccuracy: true, timeout: 30000, maximumAge: 0
       });
-
-      // If no accurate fix in 20 seconds, show Retry + "Use anyway" options
       _gpsStuckTimer = setTimeout(function () {
         if (!_gpsOk) {
           document.getElementById('gpsRetryBtn').style.display = '';
-          // Only offer "Use anyway" if we have ANY position at all (even coarse IP fix)
           if (_rawPos) {
             document.getElementById('gpsUseAnywayBtn').style.display = '';
-            setBar('acquiring',
-              '📡 Indoors? GPS signal is weak (±' + Math.round(_rawPos.accuracy) + 'm)',
-              'Tap Retry outdoors for better accuracy, or Use anyway to proceed indoors'
-            );
+            setBar('acquiring','📡 Indoors? GPS signal is weak (±' + Math.round(_rawPos.accuracy) + 'm)','Tap Retry outdoors, or Use anyway to proceed indoors');
           } else {
-            setBar('acquiring',
-              '📡 GPS taking longer than usual…',
-              'Enable Location in device Settings, then tap Retry'
-            );
+            setBar('acquiring','📡 GPS taking longer than usual…','Enable Location in device Settings, then tap Retry');
           }
         }
       }, 20000);
     }
 
-    // Force a fresh GPS attempt — clears watchPosition and restarts
     function forceGpsRetry() {
       if (_watchId !== null) { navigator.geolocation.clearWatch(_watchId); _watchId = null; }
       if (_gpsStuckTimer) { clearTimeout(_gpsStuckTimer); _gpsStuckTimer = null; }
-      document.getElementById('gpsRetryBtn').style.display = 'none';
+      document.getElementById('gpsRetryBtn').style.display    = 'none';
       document.getElementById('gpsUseAnywayBtn').style.display = 'none';
       _gps = null; _rawPos = null; _gpsOk = false; _geocodeDone = false;
-      setBar('loading', 'Retrying GPS…', 'Move to open area or near a window for best signal');
+      setBar('loading','Retrying GPS…','Move to open area or near a window for best signal');
       startGPSWatch();
     }
 
-    // Accept the best available position even if accuracy is poor (indoors use case).
-    // The server-side geofence still validates — this only unblocks the form locally.
     function useLocationAnyway() {
       if (!_rawPos) return;
-      document.getElementById('gpsRetryBtn').style.display = 'none';
+      document.getElementById('gpsRetryBtn').style.display    = 'none';
       document.getElementById('gpsUseAnywayBtn').style.display = 'none';
-
-      // Use the raw position as-is
       _gps = _rawPos;
-
-      // Reverse geocode with what we have
-      if (!_geocodeDone) {
-        _geocodeDone = true;
-        reverseGeocode(_gps.latitude, _gps.longitude);
-      }
-
-      // Validate against taluka if assigned (server will also check)
+      if (!_geocodeDone) { _geocodeDone = true; reverseGeocode(_gps.latitude, _gps.longitude); }
       if (_taluka) {
         const dist = haversine(_gps.latitude, _gps.longitude, _taluka.center_lat, _taluka.center_lng);
         document.getElementById('dispDist').textContent = dist.toFixed(2) + ' km';
         if (dist > _taluka.radius_km) {
           _gpsOk = false;
-          setBar('outside',
-            '🚫 Outside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km',
-            'Accuracy ±' + Math.round(_gps.accuracy) + 'm (indoors) · Move to assigned area'
-          );
+          setBar('outside','🚫 Outside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km','Accuracy ±' + Math.round(_gps.accuracy) + 'm (indoors) · Move to assigned area');
         } else {
           _gpsOk = true;
-          setBar('ok',
-            '✅ Location accepted (±' + Math.round(_gps.accuracy) + 'm)',
-            'Indoors accuracy — GPS will improve when outdoors'
-          );
+          setBar('ok','✅ Location accepted (±' + Math.round(_gps.accuracy) + 'm)','Indoors accuracy — GPS will improve outdoors');
         }
       } else {
         _gpsOk = true;
-        setBar('ok',
-          '✅ Location accepted (±' + Math.round(_gps.accuracy) + 'm)',
-          'Indoors accuracy — GPS will improve when outdoors'
-        );
+        setBar('ok','✅ Location accepted (±' + Math.round(_gps.accuracy) + 'm)','Indoors accuracy — GPS will improve outdoors');
       }
     }
 
     async function onGpsOk(pos) {
       const { latitude, longitude, accuracy } = pos.coords;
-
-      // Always store and display the raw reading — _rawPos feeds the "Use anyway" path
       _rawPos = { latitude, longitude, accuracy };
       document.getElementById('dispLat').textContent = latitude.toFixed(6);
       document.getElementById('dispLng').textContent = longitude.toFixed(6);
       document.getElementById('dispAcc').textContent = '±' + Math.round(accuracy) + 'm';
-
-      // ── ACCURACY GATE ────────────────────────────────────────────────────────
-      // IP-geolocation returns accuracy ≥ 5000m and caused the "Korea" bug.
-      // We show a live status and wait — watchPosition fires again as accuracy improves.
-      // Threshold 1500m: accepts WiFi (≤300m) + cell tower (≤1500m), blocks IP (≥5000m).
       if (accuracy > GPS_ACCURACY_THRESHOLD) {
-        setBar('acquiring',
-          '📡 Acquiring location… (±' + Math.round(accuracy) + 'm)',
-          accuracy > 5000
-            ? 'IP location only — waiting for GPS or WiFi signal'
-            : 'Improving… stay still or move to open area'
-        );
-        return; // _gps stays null / old value — geocode and submission blocked
+        setBar('acquiring','📡 Acquiring location… (±' + Math.round(accuracy) + 'm)',
+          accuracy > 5000 ? 'IP location only — waiting for GPS or WiFi signal' : 'Improving… stay still or move outside');
+        return;
       }
-      // ── END ACCURACY GATE ────────────────────────────────────────────────────
-
-      // Good fix — cancel the stuck timer and hide retry button
       if (_gpsStuckTimer) { clearTimeout(_gpsStuckTimer); _gpsStuckTimer = null; }
       document.getElementById('gpsRetryBtn').style.display = 'none';
-
       const prev = _gps;
       _gps = { latitude, longitude, accuracy };
-
-      // Reverse geocode on first good fix, or if moved >150m since last geocode
       const movedFar = prev && haversine(prev.latitude, prev.longitude, latitude, longitude) > 0.15;
-      if (!_geocodeDone || movedFar) {
-        _geocodeDone = true;
-        reverseGeocode(latitude, longitude);
-      }
-
-      // Validate against assigned taluka
+      if (!_geocodeDone || movedFar) { _geocodeDone = true; reverseGeocode(latitude, longitude); }
       if (_taluka) {
         const dist = haversine(latitude, longitude, _taluka.center_lat, _taluka.center_lng);
         document.getElementById('dispDist').textContent = dist.toFixed(2) + ' km';
         if (dist > _taluka.radius_km) {
           _gpsOk = false;
-          setBar('outside',
-            '🚫 Outside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km',
-            'Allowed: ' + _taluka.radius_km + ' km · Accuracy: ±' + Math.round(accuracy) + 'm'
-          );
+          setBar('outside','🚫 Outside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km','Allowed: ' + _taluka.radius_km + ' km · Accuracy: ±' + Math.round(accuracy) + 'm');
         } else {
           _gpsOk = true;
-          setBar('ok',
-            '✅ Inside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km from centre',
-            'Accuracy: ±' + Math.round(accuracy) + 'm'
-          );
+          setBar('ok','✅ Inside ' + _taluka.name + ' — ' + dist.toFixed(1) + ' km from centre','Accuracy: ±' + Math.round(accuracy) + 'm');
         }
       } else {
         _gpsOk = true;
-        setBar('ok',
-          '✅ Location ready — ' + latitude.toFixed(5) + ', ' + longitude.toFixed(5),
-          'Accuracy: ±' + Math.round(accuracy) + 'm'
-        );
+        setBar('ok','✅ Location ready — ' + latitude.toFixed(5) + ', ' + longitude.toFixed(5),'Accuracy: ±' + Math.round(accuracy) + 'm');
       }
     }
 
@@ -1387,12 +1052,8 @@
       _gpsOk = false;
       if (_gpsStuckTimer) { clearTimeout(_gpsStuckTimer); _gpsStuckTimer = null; }
       document.getElementById('gpsRetryBtn').style.display = '';
-      const msgs = {
-        1: 'Location permission denied — enable in browser/device settings',
-        2: 'Location unavailable — check device GPS is turned on',
-        3: 'GPS timed out — move to open area and tap Retry'
-      };
-      setBar('error', '⚠️ ' + (msgs[err.code] || 'GPS error'), 'Tap Retry after enabling location');
+      const msgs = { 1:'Location permission denied — enable in browser/device settings', 2:'Location unavailable — check device GPS', 3:'GPS timed out — move outside and tap Retry' };
+      setBar('error','⚠️ ' + (msgs[err.code] || 'GPS error'),'Tap Retry after enabling location');
     }
 
     function setBar(cls, msg, detail) {
@@ -1402,151 +1063,102 @@
       document.getElementById('gpsDetail').textContent = detail;
     }
 
-    /* ── Google Maps API key (fetched once, cached) ── */
-    let _mapsApiKey = undefined; // undefined = not yet fetched; '' = fetched but no key; string = key
+    /* ══════════ GEOCODE ══════════ */
+    let _mapsApiKey = undefined;
     async function getMapsApiKey() {
       if (window._aqAuthReady) await window._aqAuthReady.catch(function () { });
       if (_mapsApiKey !== undefined) return _mapsApiKey;
       try {
-        const res = await apiFetch(GEO + '/maps-key');
+        const res  = await apiFetch(GEO + '/maps-key');
         const data = await res.json();
         _mapsApiKey = (data.success && data.key) ? data.key : '';
-      } catch (e) {
-        _mapsApiKey = '';
-      }
+      } catch (e) { _mapsApiKey = ''; }
       return _mapsApiKey;
     }
 
-    /* ── Reverse geocode — tries Google Maps first (if key configured),
-          falls back to Nominatim (free, no key needed) ── */
     async function reverseGeocode(lat, lng, attempt) {
       attempt = attempt || 1;
-
-      // Try Google Maps Geocoding API if a key is available
       const apiKey = await getMapsApiKey();
       if (apiKey) {
         try {
-          const res = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=en&result_type=sublocality|locality|administrative_area_level_3`
-          );
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=en&result_type=sublocality|locality|administrative_area_level_3`);
           if (res.ok) {
             const data = await res.json();
             if (data.status === 'OK' && data.results && data.results.length) {
               const components = data.results[0].address_components || [];
-              const get = (type) => {
-                const c = components.find(c => c.types.includes(type));
-                return c ? c.long_name : '';
-              };
-              const village = get('sublocality_level_1') || get('sublocality') || get('locality') || get('neighborhood') || '';
-              const taluka = get('administrative_area_level_3') || get('sublocality') || '';
+              const get = (type) => { const c = components.find(c => c.types.includes(type)); return c ? c.long_name : ''; };
+              const village  = get('sublocality_level_1') || get('sublocality') || get('locality') || get('neighborhood') || '';
+              const taluka   = get('administrative_area_level_3') || get('sublocality') || '';
               const district = get('administrative_area_level_2') || '';
-              const addr = data.results[0].formatted_address || '';
-
+              const addr     = data.results[0].formatted_address || '';
               if (village) document.getElementById('fVillage').value = village;
               if (!_taluka) {
-                if (taluka) document.getElementById('fTaluka').value = taluka;
+                if (taluka)   document.getElementById('fTaluka').value   = taluka;
                 if (district) document.getElementById('fDistrict').value = district;
               }
               if (addr) document.getElementById('fAddress').value = addr.substring(0, 200);
-
               const talukaFilled = document.getElementById('fTaluka').value.trim();
               if (!talukaFilled && !_taluka) nearestTalukaFallback(lat, lng);
-              return; // Google Maps succeeded — skip Nominatim
+              return;
             }
           }
-        } catch (e) {
-          console.warn('Google Maps geocode failed, falling back to Nominatim:', e.message);
-        }
+        } catch (e) { console.warn('Google Maps geocode failed, falling back:', e.message); }
       }
-
-      // Nominatim fallback — free, no key needed
       try {
-        // Nominatim free reverse geocoder — zoom=14 gives taluka-level detail in India
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en', 'User-Agent': 'AqualenceVentures/1.0 (iKrish Distribution)' } }
-        );
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'AqualenceVentures/1.0' } });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const a = data.address || {};
-
-        // Village / locality — try multiple Nominatim fields in priority order
-        const village = a.village || a.hamlet || a.suburb || a.neighbourhood ||
-          a.town || a.city_district || a.city || '';
+        const village = a.village || a.hamlet || a.suburb || a.neighbourhood || a.town || a.city || '';
         if (village) document.getElementById('fVillage').value = village;
-
-        // India-specific: Nominatim returns taluka as 'state_district' or 'county'
-        // district is in 'state_district' (higher level) or 'county'
         if (!_taluka) {
-          // In Maharashtra: county = taluka, state_district = district
-          const talukaVal = a.county || a.suburb || a.state_district || '';
+          const talukaVal  = a.county || a.suburb || a.state_district || '';
           const districtVal = a.state_district || a.county || '';
-          if (talukaVal) document.getElementById('fTaluka').value = talukaVal;
+          if (talukaVal)   document.getElementById('fTaluka').value   = talukaVal;
           if (districtVal) document.getElementById('fDistrict').value = districtVal;
         }
-
         const addr = data.display_name || '';
         if (addr) document.getElementById('fAddress').value = addr.substring(0, 200);
-
-        // If taluka/district still empty, try nearest-taluka fallback from our DB
         const talukaFilled = document.getElementById('fTaluka').value.trim();
-        if (!talukaFilled && !_taluka) {
-          nearestTalukaFallback(lat, lng);
-        }
-
+        if (!talukaFilled && !_taluka) nearestTalukaFallback(lat, lng);
       } catch (e) {
         console.warn('reverseGeocode attempt', attempt, 'failed:', e.message);
-        if (attempt < 3) {
-          // Retry up to 3 times with exponential back-off (2s, 4s)
-          setTimeout(() => reverseGeocode(lat, lng, attempt + 1), attempt * 2000);
-        } else {
-          // All retries failed — enable manual entry and show helper
-          enableManualEntry();
-        }
+        if (attempt < 3) setTimeout(() => reverseGeocode(lat, lng, attempt + 1), attempt * 2000);
+        else enableManualEntry();
       }
     }
 
-    /* Fallback: find closest taluka from our own DB using haversine */
     async function nearestTalukaFallback(lat, lng) {
       try {
-        const res = await apiFetch('/api/v1/geo/talukas');
+        const res  = await apiFetch('/api/v1/geo/talukas');
         const data = await res.json();
         if (!data.success || !data.data.length) return;
-
         let nearest = null, minDist = Infinity;
         data.data.forEach(t => {
           const d = haversine(lat, lng, parseFloat(t.center_lat), parseFloat(t.center_lng));
           if (d < minDist) { minDist = d; nearest = t; }
         });
-
-        if (nearest && minDist < 60) { // only fill if within 60 km
-          const talukaEl = document.getElementById('fTaluka');
+        if (nearest && minDist < 60) {
+          const talukaEl   = document.getElementById('fTaluka');
           const districtEl = document.getElementById('fDistrict');
-          if (!talukaEl.value) talukaEl.value = nearest.name;
+          if (!talukaEl.value)   talukaEl.value   = nearest.name;
           if (!districtEl.value) districtEl.value = nearest.district;
-        } else {
-          enableManualEntry();
-        }
+        } else { enableManualEntry(); }
       } catch (e) { enableManualEntry(); }
     }
 
-    /* Show manual entry notice if all geocoding fails */
     function enableManualEntry() {
       const hint = document.getElementById('geocodeHint');
       if (hint) hint.style.display = 'block';
-      // Fields are already editable (not readonly) — just draw attention
       const talukaEl = document.getElementById('fTaluka');
-      if (!talukaEl.value) {
-        talukaEl.style.borderColor = '#e65100';
-        talukaEl.placeholder = 'Type taluka manually';
-      }
+      if (!talukaEl.value) { talukaEl.style.borderColor = '#e65100'; talukaEl.placeholder = 'Type taluka manually'; }
     }
 
-    /* ── Haversine ── */
     function haversine(lat1, lng1, lat2, lng2) {
-      const R = 6371, dL = (lat2 - lat1) * Math.PI / 180, dN = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dL / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dN / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const R = 6371, dL = (lat2-lat1)*Math.PI/180, dN = (lng2-lng1)*Math.PI/180;
+      const a = Math.sin(dL/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dN/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     /* ══════════ CAMERA ══════════ */
@@ -1556,14 +1168,13 @@
           video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
         });
         document.getElementById('videoEl').srcObject = _stream;
-        // Show the camera view, hide the placeholder
         document.getElementById('camWrap').classList.add('active');
         document.getElementById('camPlaceholder').style.display = 'none';
-        document.getElementById('startCamBtn').style.display = 'none';
-        document.getElementById('captureBtn').style.display = '';
+        document.getElementById('startCamBtn').style.display    = 'none';
+        document.getElementById('captureBtn').style.display     = '';
       } catch (e) {
         const msg = e.name === 'NotAllowedError'
-          ? 'Camera permission denied — allow camera access in browser settings, or use Gallery'
+          ? 'Camera permission denied — allow camera access, or use Gallery'
           : 'Camera unavailable — use Gallery to choose a photo';
         showToast(msg, 'error');
       }
@@ -1579,9 +1190,9 @@
       _photoData = canvas.toDataURL('image/jpeg', 0.85);
       document.getElementById('photoPreview').src = _photoData;
       document.getElementById('photoPreview').classList.add('show');
-      document.getElementById('camWrap').style.display = 'none';
+      document.getElementById('camWrap').style.display   = 'none';
       document.getElementById('captureBtn').style.display = 'none';
-      document.getElementById('retakeBtn').style.display = '';
+      document.getElementById('retakeBtn').style.display  = '';
       document.getElementById('photoStatus').textContent = '✅ Photo captured with GPS watermark';
       if (_stream) { _stream.getTracks().forEach(t => t.stop()); _stream = null; }
     }
@@ -1589,10 +1200,10 @@
     function retakePhoto() {
       _photoData = null;
       document.getElementById('photoPreview').classList.remove('show');
-      document.getElementById('camWrap').style.display = '';
-      document.getElementById('retakeBtn').style.display = 'none';
+      document.getElementById('camWrap').style.display    = '';
+      document.getElementById('retakeBtn').style.display  = 'none';
       document.getElementById('startCamBtn').style.display = '';
-      document.getElementById('photoStatus').textContent = '';
+      document.getElementById('photoStatus').textContent  = '';
     }
 
     function selectPhoto() {
@@ -1600,13 +1211,9 @@
       input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp,image/gif';
       input.onchange = e => {
         const file = e.target.files[0]; if (!file) return;
-        // Client-side MIME check (UX layer — server validates magic bytes)
-        const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!ALLOWED.includes(file.type)) {
-          showToast('Only JPEG, PNG, WebP, and GIF images are allowed.', 'error');
-          return;
-        }
-        if (file.size > 3 * 1024 * 1024) { showToast('Photo too large. Max 3MB.', 'error'); return; }
+        const ALLOWED = ['image/jpeg','image/png','image/webp','image/gif'];
+        if (!ALLOWED.includes(file.type)) { showToast('Only JPEG, PNG, WebP, GIF images are allowed.','error'); return; }
+        if (file.size > 3*1024*1024) { showToast('Photo too large. Max 3MB.','error'); return; }
         const reader = new FileReader();
         reader.onload = ev => {
           const img = new Image();
@@ -1629,165 +1236,119 @@
     }
 
     function drawWatermark(ctx, W, H) {
-      const gps = _gps ? _gps.latitude.toFixed(5) + ', ' + _gps.longitude.toFixed(5) : 'No GPS';
-      const ts = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const gps    = _gps ? _gps.latitude.toFixed(5) + ', ' + _gps.longitude.toFixed(5) : 'No GPS';
+      const ts     = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
       const taluka = document.getElementById('fTaluka').value || '—';
-      const lines = [gps, ts, 'Taluka: ' + taluka, 'Aqualence Ventures'];
+      const lines  = [gps, ts, 'Taluka: ' + taluka, 'Aqualence Ventures'];
       const fontSize = Math.max(12, Math.round(W / 42));
-      const lineH = fontSize * 1.4;
-      const padding = Math.round(W * 0.025);
-      const boxH = lines.length * (lineH + 4) + padding * 2;
-      const boxY = H - boxH - 10;
-      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      const lineH    = fontSize * 1.4;
+      const padding  = Math.round(W * 0.025);
+      const boxH     = lines.length * (lineH + 4) + padding * 2;
+      const boxY     = H - boxH - 10;
+      ctx.fillStyle  = 'rgba(0,0,0,0.65)';
       ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(8, boxY, W - 16, boxH, 8) : ctx.rect(8, boxY, W - 16, boxH);
+      ctx.roundRect ? ctx.roundRect(8, boxY, W-16, boxH, 8) : ctx.rect(8, boxY, W-16, boxH);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
-      lines.forEach((line, i) => ctx.fillText(line, padding + 10, boxY + padding + (i + 1) * (lineH + 4)));
+      lines.forEach((line, i) => ctx.fillText(line, padding + 10, boxY + padding + (i+1) * (lineH+4)));
     }
 
     /* ══════════ SALE TOGGLE ══════════ */
     function setSale(v) {
       _saleStatus = v;
-      // Update radio checked state
-      const yes = document.getElementById('saleYes');
-      const no = document.getElementById('saleNo');
-      if (yes) yes.checked = (v === 'YES');
-      if (no) no.checked = (v === 'NO');
-      // Update label styling
-      const yesBtn = document.getElementById('saleYesBtn');
-      const noBtn = document.getElementById('saleNoBtn');
+      const yes = document.getElementById('saleYes'), no = document.getElementById('saleNo');
+      if (yes) yes.checked = (v === 'YES'); if (no) no.checked = (v === 'NO');
+      const yesBtn = document.getElementById('saleYesBtn'), noBtn = document.getElementById('saleNoBtn');
       if (yesBtn) yesBtn.className = 'sale-btn yes' + (v === 'YES' ? ' active' : '');
-      if (noBtn) noBtn.className = 'sale-btn no' + (v === 'NO' ? ' active' : '');
+      if (noBtn)  noBtn.className  = 'sale-btn no'  + (v === 'NO'  ? ' active' : '');
     }
 
     /* ══════════ SUBMIT ══════════ */
     async function submitLead() {
-      const btn = document.getElementById('submitBtn');
+      const btn  = document.getElementById('submitBtn');
       const bTxt = document.getElementById('submitBtnTxt');
-
       const shopName = document.getElementById('fShopName').value.trim();
-      const owner = document.getElementById('fOwner').value.trim();
-      const mobile = document.getElementById('fMobile').value.trim();
-      const village = document.getElementById('fVillage').value.trim();
-      const taluka = document.getElementById('fTaluka').value.trim();
+      const owner    = document.getElementById('fOwner').value.trim();
+      const mobile   = document.getElementById('fMobile').value.trim();
+      const village  = document.getElementById('fVillage').value.trim();
+      const taluka   = document.getElementById('fTaluka').value.trim();
       const district = document.getElementById('fDistrict').value.trim();
-
-      // Specific field validation
-      if (!shopName) { showToast('Shop name is required', 'error'); document.getElementById('fShopName').focus(); return; }
-      if (!owner) { showToast('Owner name is required', 'error'); document.getElementById('fOwner').focus(); return; }
-      if (!mobile) { showToast('Mobile number is required', 'error'); document.getElementById('fMobile').focus(); return; }
-      if (!/^\d{10}$/.test(mobile)) { showToast('Mobile must be 10 digits', 'error'); document.getElementById('fMobile').focus(); return; }
-      if (!village) {
-        showToast('Village / area is required. Type it manually if GPS detection failed.', 'error');
-        document.getElementById('fVillage').focus();
-        return;
-      }
-      if (!taluka) {
-        showToast('Taluka is required. Type it manually in the field above.', 'error');
-        document.getElementById('fTaluka').focus();
-        document.getElementById('fTaluka').style.borderColor = '#e65100';
-        return;
-      }
-      if (!district) {
-        showToast('District is required. Type it manually in the field above.', 'error');
-        document.getElementById('fDistrict').focus();
-        document.getElementById('fDistrict').style.borderColor = '#e65100';
-        return;
-      }
-      if (!_photoData) { showToast('Please capture or select a photo first', 'error'); return; }
-
-      // Client-side geofence check
+      if (!shopName) { showToast('Shop name is required','error'); document.getElementById('fShopName').focus(); return; }
+      if (!owner)    { showToast('Owner name is required','error'); document.getElementById('fOwner').focus(); return; }
+      if (!mobile)   { showToast('Mobile number is required','error'); document.getElementById('fMobile').focus(); return; }
+      if (!/^\d{10}$/.test(mobile)) { showToast('Mobile must be 10 digits','error'); document.getElementById('fMobile').focus(); return; }
+      if (!village)  { showToast('Village / area is required. Type it manually if GPS failed.','error'); document.getElementById('fVillage').focus(); return; }
+      if (!taluka)   { showToast('Taluka is required. Type it manually.','error'); document.getElementById('fTaluka').focus(); document.getElementById('fTaluka').style.borderColor='#e65100'; return; }
+      if (!district) { showToast('District is required. Type it manually.','error'); document.getElementById('fDistrict').focus(); document.getElementById('fDistrict').style.borderColor='#e65100'; return; }
+      if (!_photoData) { showToast('Please capture or select a photo first','error'); return; }
       if (_taluka && _gps) {
         const dist = haversine(_gps.latitude, _gps.longitude, _taluka.center_lat, _taluka.center_lng);
         if (dist > _taluka.radius_km) {
-          document.getElementById('blockDist').textContent = dist.toFixed(1);
-          document.getElementById('blockRadius').textContent = _taluka.radius_km;
+          document.getElementById('blockDist').textContent      = dist.toFixed(1);
+          document.getElementById('blockRadius').textContent    = _taluka.radius_km;
           document.getElementById('blockTalukaName').textContent = _taluka.name;
-          document.getElementById('blockMessage').textContent =
-            `You are ${dist.toFixed(1)} km from the centre of "${_taluka.name}". ` +
-            `Allowed radius is ${_taluka.radius_km} km. Move into your assigned area to submit leads.`;
-          document.getElementById('blockOverlay').classList.add('show');
-          return;
+          document.getElementById('blockMessage').textContent   = `You are ${dist.toFixed(1)} km from "${_taluka.name}". Allowed radius is ${_taluka.radius_km} km.`;
+          document.getElementById('blockOverlay').classList.add('show'); return;
         }
       }
-
       btn.disabled = true;
       bTxt.innerHTML = '<div class="spinner"></div> Submitting…';
-
       try {
         const payload = {
-          shop_name: shopName,
-          shop_type: document.getElementById('fShopType').value,
-          owner_name: owner,
-          mobile,
-          village,
-          taluka,
-          district,
-          sale_status: _saleStatus,
-          notes: document.getElementById('fNotes').value.trim(),
-          photo_data: _photoData,
-          products: _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-' + i); const qtyEl = document.getElementById('geo-qty-' + i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value) || 0) : p.price; const quantity = qtyEl ? Math.max(1, parseInt(qtyEl.value, 10) || 1) : (p.qty || p.quantity || 1); return { product_id: p.id, name: p.name, price, quantity, total: parseFloat((price * quantity).toFixed(2)) }; }),
-          latitude: _gps?.latitude || null,
-          longitude: _gps?.longitude || null,
+          shop_name:    shopName, shop_type: document.getElementById('fShopType').value,
+          owner_name:   owner, mobile, village, taluka, district,
+          sale_status:  _saleStatus,
+          notes:        document.getElementById('fNotes').value.trim(),
+          photo_data:   _photoData,
+          products:     _geoSelProds.map((p, i) => {
+            const priceEl = document.getElementById('geo-price-' + i);
+            const qtyEl   = document.getElementById('geo-qty-' + i);
+            const price   = priceEl ? Math.max(0, parseFloat(priceEl.value) || 0) : p.price;
+            const quantity = qtyEl ? Math.max(1, parseInt(qtyEl.value, 10) || 1) : (p.qty || p.quantity || 1);
+            return { product_id: p.id, name: p.name, price, quantity, total: parseFloat((price*quantity).toFixed(2)) };
+          }),
+          latitude:     _gps?.latitude || null,
+          longitude:    _gps?.longitude || null,
           gps_accuracy: _gps?.accuracy || null,
-          address_geo: document.getElementById('fAddress').value || null,
-          visited_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+          address_geo:  document.getElementById('fAddress').value || null,
+          visited_at:   new Date().toISOString().slice(0,19).replace('T',' ')
         };
-
-        // Edit mode: PUT to /salesman/leads/:id; new lead: POST to /geo/leads
-        const isEdit = !!window._geoEditId;
-        const fetchUrl = isEdit
-          ? '/api/v1/salesman/leads/' + window._geoEditId
-          : GEO + '/leads';
+        const isEdit     = !!window._geoEditId;
+        const fetchUrl   = isEdit ? '/api/v1/salesman/leads/' + window._geoEditId : GEO + '/leads';
         const fetchMethod = isEdit ? 'PUT' : 'POST';
-        const res = await apiFetch(fetchUrl, { method: fetchMethod, body: JSON.stringify(payload) });
+        const res  = await apiFetch(fetchUrl, { method: fetchMethod, body: JSON.stringify(payload) });
         const data = await res.json();
-
         if (!data.success) {
           if (res.status === 403) {
-            document.getElementById('blockDist').textContent = data.distance_km != null ? parseFloat(data.distance_km).toFixed(1) : '?';
-            document.getElementById('blockRadius').textContent = data.radius_km != null ? data.radius_km : '?';
+            document.getElementById('blockDist').textContent      = data.distance_km != null ? parseFloat(data.distance_km).toFixed(1) : '?';
+            document.getElementById('blockRadius').textContent    = data.radius_km != null ? data.radius_km : '?';
             document.getElementById('blockTalukaName').textContent = data.assigned_areas || data.taluka_name || _taluka?.name || 'your area';
-            document.getElementById('blockMessage').textContent = data.message || 'You are outside your assigned area. Lead submission blocked.';
+            document.getElementById('blockMessage').textContent   = data.message || 'You are outside your assigned area.';
             document.getElementById('blockOverlay').classList.add('show');
-          } else {
-            showToast(data.message, 'error');
-          }
-          btn.disabled = false;
-          bTxt.textContent = '💾 Submit Lead';
-          return;
+          } else { showToast(data.message,'error'); }
+          btn.disabled = false; bTxt.textContent = '💾 Submit Lead'; return;
         }
-
-        showToast('Lead submitted! ✓', 'success');
+        showToast('Lead submitted! ✓','success');
         bTxt.textContent = '✅ Submitted!';
         setTimeout(() => window.location.replace('/salesman/dashboard.html'), 1800);
-
       } catch (e) {
-        showToast(e.message, 'error');
-        btn.disabled = false;
-        bTxt.textContent = '💾 Submit Lead';
+        showToast(e.message,'error');
+        btn.disabled = false; bTxt.textContent = '💾 Submit Lead';
       }
     }
 
     /* ══════════ TRACKING PING ══════════ */
     function startTrackingPing() {
       setInterval(async () => {
-        // Only ping if we have a position that passed the accuracy gate.
-        // _gps is only set after accuracy <= GPS_ACCURACY_THRESHOLD, so
-        // checking _gps is sufficient — no stale IP-based position will be sent.
         if (!_gps || !_gpsOk) return;
         try {
-          await apiFetch(GEO + '/track', {
-            method: 'POST',
-            body: JSON.stringify({ latitude: _gps.latitude, longitude: _gps.longitude, accuracy: _gps.accuracy })
-          });
+          await apiFetch(GEO + '/track', { method:'POST', body: JSON.stringify({ latitude:_gps.latitude, longitude:_gps.longitude, accuracy:_gps.accuracy }) });
         } catch (e) { }
       }, 2 * 60 * 1000);
     }
 
-    /* ══════════ HELPERS ══════════ */
+    /* ══════════ TOAST ══════════ */
     function showToast(msg, type) {
       const c = document.getElementById('toastContainer');
       const t = document.createElement('div');
@@ -1803,22 +1364,18 @@
     <div class="bottom-nav-inner">
       <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
       <a href="/salesman/dashboard.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Leads</span></a>
-      <a href="/salesman/geo-lead.html" class="bnav-item active"><span class="bnav-icon">📍</span><span>Geo
-          Lead</span></a>
-      <a href="/salesman/reports.html" class="bnav-item"><span class="bnav-icon">📈</span><span>Reports</span></a>
-      <button onclick="salesmanLogout()" class="bnav-item" style="background:none;border:none;cursor:pointer"><span
-          class="bnav-icon">🚪</span><span>Logout</span></button>
+      <a href="/salesman/geo-lead.html"  class="bnav-item active"><span class="bnav-icon">📍</span><span>Geo Lead</span></a>
+      <a href="/salesman/reports.html"   class="bnav-item"><span class="bnav-icon">📈</span><span>Reports</span></a>
+      <button onclick="salesmanLogout()" class="bnav-item" style="background:none;border:none;cursor:pointer"><span class="bnav-icon">🚪</span><span>Logout</span></button>
     </div>
   </nav>
 
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .catch(err => console.warn('SW registration failed:', err));
+        navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW registration failed:', err));
       });
     }
   </script>
 </body>
-
 </html>
