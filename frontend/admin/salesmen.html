@@ -88,20 +88,15 @@
 
     /* ─── Tabs ──────────────────────────────────── */
     .icon-tabs {
-      display: flex; padding: 18px 14px 0; gap: 6px;
+      display: flex; padding: 18px 20px 0; gap: 2px;
       background: transparent;
-      overflow-x: auto; overflow-y: hidden;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      flex-wrap: nowrap;
     }
-    .icon-tabs::-webkit-scrollbar { display: none; }
     .icon-tab {
-      flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
-      gap: 6px; padding: 9px 14px;
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      gap: 7px; padding: 10px 12px;
       background: #fff; border: 1px solid var(--bdr);
       font-size: .78rem; font-weight: 600; color: var(--ink3);
-      cursor: pointer; border-radius: 10px; white-space: nowrap;
+      cursor: pointer; border-radius: 10px;
       transition: all .15s; font-family: var(--font);
       white-space: nowrap;
     }
@@ -123,21 +118,19 @@
     .date-row {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
-    .date-lbl { font-size: .73rem; font-weight: 600; color: var(--ink3); white-space: nowrap; }
+    .date-lbl { font-size: .73rem; font-weight: 600; color: var(--ink3); }
     .date-input {
       padding: 8px 12px; border: 1.5px solid var(--bdr);
-      border-radius: 8px; font-size: 16px; font-family: var(--font);
+      border-radius: 8px; font-size: .8rem; font-family: var(--font);
       background: #fff; color: var(--ink); outline: none;
       transition: border-color .15s;
-      /* FIX: flex so inputs share space evenly on mobile */
-      flex: 1; min-width: 120px; max-width: 100%;
     }
     .date-input:focus { border-color: var(--f2); }
     .btn-apply {
       padding: 8px 18px; border-radius: 8px;
       background: var(--f1); color: #fff; border: none;
       font-size: .8rem; font-weight: 600; font-family: var(--font); cursor: pointer;
-      transition: background .15s; white-space: nowrap; flex-shrink: 0;
+      transition: background .15s;
     }
     .btn-apply:hover { background: var(--f0); }
     .preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -146,7 +139,6 @@
       border: 1.5px solid var(--bdr); background: #fff;
       font-size: .73rem; font-weight: 600; color: var(--ink3);
       cursor: pointer; transition: all .15s; font-family: var(--font);
-      white-space: nowrap;
     }
     .preset-btn:hover { border-color: var(--f2); color: var(--f2); }
     .preset-btn.active { background: var(--f1); border-color: var(--f1); color: #fff; }
@@ -157,9 +149,7 @@
       flex-wrap: wrap;
     }
     .search-pill {
-      flex: 1; min-width: 0;
-      /* FIX: on mobile, force full width */
-      width: 100%;
+      flex: 1; min-width: 0; max-width: 100%;
       display: flex; align-items: center; gap: 8px;
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
@@ -168,20 +158,18 @@
     .search-pill:focus-within { border-color: var(--f2); }
     .search-pill input {
       border: none; outline: none; background: transparent;
-      font-size: 16px; color: var(--ink); width: 100%; min-width: 0;
+      font-size: .84rem; color: var(--ink); width: 100%;
       font-family: var(--font);
     }
     .search-pill input::placeholder { color: var(--ink4); }
     .pill-select {
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 34px 9px 12px;
-      font-size: 16px; font-weight: 600; color: var(--ink2);
+      font-size: .8rem; font-weight: 600; color: var(--ink2);
       appearance: none; cursor: pointer; font-family: var(--font);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center;
       transition: border-color .15s;
-      /* FIX: flex so selects share space on mobile */
-      flex: 1; min-width: 0; max-width: 100%;
     }
     .pill-select:focus { outline: none; border-color: var(--f2); }
     .icon-btn {
@@ -191,7 +179,6 @@
       cursor: pointer; white-space: nowrap;
       display: flex; align-items: center; gap: 5px;
       font-family: var(--font); transition: all .15s;
-      flex-shrink: 0; /* FIX: CSV button never shrinks */
     }
     .icon-btn:hover { border-color: var(--f2); color: var(--f2); }
 
@@ -299,23 +286,7 @@
     .smlist-hdr { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 0; }
     .smlist-hdr h3 { font-size:.9rem; font-weight:700; color:var(--ink); }
 
-    /* ─── CSV dropdown ──────────────────────────── */
-    .csv-menu {
-      display:none; position:fixed; z-index:9999;
-      background:#fff; border:1px solid var(--bdr);
-      border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.18);
-      min-width:200px; max-width:calc(100vw - 28px); overflow:hidden;
-    }
-    .csv-menu-hdr { padding:10px 14px 7px; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink3); }
-    .csv-menu-item {
-      display:flex; align-items:center; gap:10px;
-      width:100%; padding:11px 14px;
-      background:none; border:none; border-top:1px solid #f3f4f0;
-      font-size:.82rem; font-weight:600; color:var(--ink2);
-      cursor:pointer; text-align:left; font-family:var(--font);
-      word-wrap:break-word; white-space:normal;
-    }
-    .csv-menu-item:hover { background:var(--f7); }
+
 
     /* ─── Lead detail modal ─────────────────────── */
     .ld-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; font-size:.85rem; }
@@ -632,15 +603,12 @@
           <input type="text" id="spSearch" placeholder="Search shop, owner, product, village…" oninput="filterSalesProducts()" />
         </div>
         <!-- Export dropdown -->
-        <div style="position:relative">
-          <button class="icon-btn" id="spExportBtn" onclick="toggleSPExportMenu(event)">⬇ Export <span style="font-size:.6rem">▾</span></button>
-          <div id="spExportMenu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--bdr);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:0;width:min(180px,calc(100vw - 28px));z-index:900;overflow:hidden">
-            <div style="padding:8px 12px 5px;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)">Export As</div>
-            <button onclick="exportSalesProductsCSV();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📋 CSV</button>
-            <button onclick="exportSalesProductsExcel();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📊 Excel (.xlsx)</button>
-            <button onclick="exportSalesProductsPDF();closeSPExportMenu()" style="display:flex;align-items:center;gap:9px;width:100%;padding:10px 14px;border:none;border-top:1px solid #f0f4ec;background:none;font-size:.82rem;font-weight:600;color:var(--ink2);cursor:pointer;font-family:var(--font);text-align:left" onmouseover="this.style.background='var(--f7)'" onmouseout="this.style.background='none'">📄 PDF</button>
-          </div>
-        </div>
+        <select class="pill-select" id="spExportSelect" onchange="handleSPExportSelect(this)" style="font-weight:700">
+          <option value="">⬇ Export As</option>
+          <option value="csv">📋 CSV</option>
+          <option value="excel">📊 Excel (.xlsx)</option>
+          <option value="pdf">📄 PDF</option>
+        </select>
       </div>
     </div>
 
@@ -1193,28 +1161,14 @@ function exportCSVSummary() {
   showToast('Summary exported ✓','success');
 }
 
-/* ── CSV dropdown ───────────────────────────────────── */
-function openCSVMenu(e) {
-  const btn=(e.currentTarget||e.target).closest('button');
-  const rect=btn.getBoundingClientRect();
-  const menu=document.getElementById('csvMenu');
-  menu.style.display='block';
-  const menuW=menu.offsetWidth || 240;
-  // Prefer aligning to right of button, clamp so it never goes off-screen
-  let rightEdge=window.innerWidth-rect.right;
-  rightEdge=Math.max(8, Math.min(rightEdge, window.innerWidth-menuW-8));
-  menu.style.right=rightEdge+'px'; menu.style.left='auto';
-  const top=rect.bottom+6;
-  if(top+200>window.innerHeight-12) {
-    menu.style.top='auto'; menu.style.bottom=(window.innerHeight-rect.top+6)+'px';
-  } else {
-    menu.style.top=top+'px'; menu.style.bottom='auto';
-  }
-  document.getElementById('csvOverlay').style.display='block';
-}
-function closeCSVMenu() {
-  document.getElementById('csvMenu').style.display='none';
-  document.getElementById('csvOverlay').style.display='none';
+/* ── CSV export handler ─────────────────────────────── */
+function handleCSVSelect(sel) {
+  const val = sel.value;
+  sel.value = "";
+  if (val === 'all') exportCSV();
+  else if (val === 'salesman') exportCSVBySalesman();
+  else if (val === 'summary') exportCSVSummary();
+  else if (val === 'products') switchTab('SalesProducts', document.querySelector('[onclick*=SalesProducts]'));
 }
 </script>
 
@@ -1541,19 +1495,13 @@ function exportSalesProductsPDF() {
   loadJsPDF(doPDF);
 }
 
-/* ── Export dropdown toggle ────────────────────────── */
-function toggleSPExportMenu(e) {
-  e.stopPropagation();
-  const menu = document.getElementById('spExportMenu');
-  const isOpen = menu.style.display === 'block';
-  menu.style.display = isOpen ? 'none' : 'block';
-  if (!isOpen) {
-    const close = () => { menu.style.display='none'; document.removeEventListener('click', close); };
-    setTimeout(() => document.addEventListener('click', close), 0);
-  }
-}
-function closeSPExportMenu() {
-  document.getElementById('spExportMenu').style.display = 'none';
+/* ── SP Export handler ─────────────────────────────── */
+function handleSPExportSelect(sel) {
+  const val = sel.value;
+  sel.value = "";
+  if (val === 'csv') exportSalesProductsCSV();
+  else if (val === 'excel') exportSalesProductsExcel();
+  else if (val === 'pdf') exportSalesProductsPDF();
 }
 </script>
 <div class="modal-overlay" id="areasModal">
