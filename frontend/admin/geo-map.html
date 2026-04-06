@@ -1084,6 +1084,7 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeSide
 /* ── Google Maps loader ── */
 (async function(){
   try{
+    if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
     /* SECURITY: maps-key requires auth — cookie + Bearer token for mobile */
     var _mkt=localStorage.getItem('aq_token')||'';
     var r=await fetch('/api/v1/config/maps-key', {
