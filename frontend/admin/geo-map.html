@@ -200,13 +200,14 @@
     @keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
     /* Sidebar overlay for geo-map */
-    #sidebarOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
-    #sidebarOverlay.show{opacity:1;visibility:visible}
+    #sidebarOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:399;opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s;pointer-events:none}
+    #sidebarOverlay.show{opacity:1;visibility:visible;pointer-events:auto}
 
     /* Mobile (<768px) */
     @media(max-width:767px){
       html,body{overflow-x:hidden;max-width:100%}
       body{overflow-y:auto}
+      .sidebar{z-index:400!important}
       .main-area{height:auto;overflow:visible;margin-left:0!important;min-width:0}
       .app-shell{height:auto;overflow-x:hidden}
       .mob-menu-btn{display:flex;align-items:center;justify-content:center}
