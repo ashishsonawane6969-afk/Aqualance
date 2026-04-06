@@ -1,0 +1,71 @@
+/* ── geo-lead-fix.css — surgical regression fixes ── */
+
+/* Issue 1: Viewport containment */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix .card */
+.card {
+  margin: 12px 14px 0;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--bdr);
+  box-shadow: 0 1px 5px rgba(0,0,0,.04);
+  width: calc(100% - 28px);
+  box-sizing: border-box;
+}
+
+/* Fix .gps-bar */
+.gps-bar {
+  margin: 14px 14px 0;
+  border-radius: var(--rad);
+  padding: 11px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: .8rem;
+  font-weight: 600;
+  border: 1.5px solid;
+  width: calc(100% - 28px);
+  box-sizing: border-box;
+}
+
+/* Issue 2: Keep "+ Add" button always visible */
+.prod-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: nowrap;
+}
+
+.prod-select {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1.5px solid var(--bdr);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: .84rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--ink);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+.prod-add-btn {
+  background: var(--br2);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: .84rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
