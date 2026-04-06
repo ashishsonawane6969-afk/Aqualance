@@ -276,7 +276,7 @@
     }
     .podium-card.top1 { border-color: var(--gold); box-shadow: 0 4px 20px rgba(196,130,10,.18); }
     .podium-medal { font-size:2rem; display:block; margin-bottom:6px; }
-    .podium-name  { font-weight:800; font-size:.95rem; color:var(--ink); }
+    .podium-name  { font-weight:800; font-size:.95rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .podium-phone { font-size:.72rem; color:var(--ink3); margin-top:2px; }
     .podium-stats { display:flex; justify-content:center; gap:16px; margin-top:12px; }
     .pstat-val { display:block; font-weight:800; font-size:1.2rem; font-family:var(--mono); }
@@ -300,6 +300,7 @@
       background:none; border:none; border-top:1px solid #f3f4f0;
       font-size:.82rem; font-weight:600; color:var(--ink2);
       cursor:pointer; text-align:left; font-family:var(--font);
+      word-wrap:break-word; white-space:normal;
     }
     .csv-menu-item:hover { background:var(--f7); }
 
@@ -1184,9 +1185,8 @@ function openCSVMenu(e) {
   const btn=(e.currentTarget||e.target).closest('button');
   const rect=btn.getBoundingClientRect();
   const menu=document.getElementById('csvMenu');
-  const menuW=Math.min(240, window.innerWidth-20);
-  menu.style.width=menuW+'px';
   menu.style.display='block';
+  const menuW=menu.offsetWidth || 240;
   // Prefer aligning to right of button, clamp so it never goes off-screen
   let rightEdge=window.innerWidth-rect.right;
   rightEdge=Math.max(8, Math.min(rightEdge, window.innerWidth-menuW-8));
@@ -1963,6 +1963,7 @@ window.onGMapsLoaded = function() {
   }
 };
 (async function loadGMaps() {
+  if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   if (document.getElementById('gmaps-script')) return;
   try {
     /* SECURITY: Maps key fetched from server — never hardcoded client-side.
