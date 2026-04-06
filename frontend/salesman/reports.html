@@ -155,20 +155,20 @@
 <header class="app-header">
   <a href="/salesman/dashboard.html" class="header-back">←</a>
   <span class="header-title">📊 Sales Report</span>
-  <button onclick="openCSVMenu()" class="header-action" title="Export CSV" style="font-size:.7rem;font-weight:700;width:auto;padding:0 10px;border-radius:999px;border:1.5px solid var(--border);background:#fff;position:relative;">⬇ CSV</button>
+  <button onclick="toggleDropdown('csvMenu')" class="header-action" title="Export CSV" style="font-size:.7rem;font-weight:700;width:auto;padding:0 10px;border-radius:999px;border:1.5px solid var(--border);background:#fff;position:relative;">⬇ CSV</button>
 </header>
 
 <!-- CSV EXPORT MENU -->
-<div id="csvMenuOverlay" style="display:none;position:fixed;inset:0;z-index:800;" onclick="closeCSVMenu()"></div>
+<div id="csvMenuOverlay" style="display:none;position:fixed;inset:0;z-index:800;" onclick="toggleDropdown('csvMenu')"></div>
 <div id="csvMenu" style="display:none;position:fixed;top:58px;right:14px;z-index:801;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);width:min(220px,calc(100vw - 28px));min-width:0;overflow:hidden;box-sizing:border-box;">
   <div style="padding:10px 14px 6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);">Export CSV</div>
-  <button onclick="exportCSV();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+  <button onclick="exportCSV()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
     <span>📋</span> All My Leads
   </button>
-  <button onclick="exportCSVByDate();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+  <button onclick="exportCSVByDate()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
     <span>📅</span> By Date (With Summary)
   </button>
-  <button onclick="exportCSVBySalesman();closeCSVMenu()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
+  <button onclick="exportCSVBySalesman()" style="display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:none;border:none;font-size:.84rem;font-weight:600;color:var(--ink);cursor:pointer;border-top:1px solid var(--border);text-align:left;">
     <span>📊</span> Summary Report
   </button>
 </div>
@@ -280,13 +280,22 @@
 <script src="/js/network.js"></script>
 <script src="/salesman/js/salesman.js"></script>
 <script>
-function openCSVMenu() {
-  document.getElementById('csvMenu').style.display = 'block';
-  document.getElementById('csvMenuOverlay').style.display = 'block';
+function toggleDropdown(id) {
+  var menu    = document.getElementById(id);
+  var overlay = document.getElementById(id + 'Overlay');
+  var isOpen  = menu && menu.style.display === 'block';
+  if (menu)    menu.style.display    = isOpen ? 'none' : 'block';
+  if (overlay) overlay.style.display = isOpen ? 'none' : 'block';
 }
-function closeCSVMenu() {
-  document.getElementById('csvMenu').style.display = 'none';
-  document.getElementById('csvMenuOverlay').style.display = 'none';
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') toggleDropdown('csvMenu');
+});
+
+/* Override shared exportCSV to close the menu after export */
+var _exportCSVShared = typeof exportCSV === 'function' ? exportCSV : null;
+async function exportCSV() {
+  if (_exportCSVShared) await _exportCSVShared();
+  toggleDropdown('csvMenu');
 }
 
 /* Export with a daily summary section prepended */
@@ -357,6 +366,7 @@ async function exportCSVByDate() {
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = 'my-report-by-date-' + (from||'all') + '-to-' + (to||'all') + '.csv';
     a.click();
+    toggleDropdown('csvMenu');
     showToast('CSV exported ✓', 'success');
   } catch(e) {
     showToast('Export failed: ' + e.message, 'error');
@@ -414,6 +424,7 @@ async function exportCSVBySalesman() {
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
     a.download = 'my-summary-' + (from||'all') + '-to-' + (to||'all') + '.csv';
     a.click();
+    toggleDropdown('csvMenu');
     showToast('Summary CSV exported ✓', 'success');
   } catch(e) {
     showToast('Export failed: ' + e.message, 'error');
