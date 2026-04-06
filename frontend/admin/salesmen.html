@@ -88,15 +88,20 @@
 
     /* ─── Tabs ──────────────────────────────────── */
     .icon-tabs {
-      display: flex; padding: 18px 20px 0; gap: 2px;
+      display: flex; padding: 18px 14px 0; gap: 6px;
       background: transparent;
+      overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-wrap: nowrap;
     }
+    .icon-tabs::-webkit-scrollbar { display: none; }
     .icon-tab {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      gap: 7px; padding: 10px 12px;
+      flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 9px 14px;
       background: #fff; border: 1px solid var(--bdr);
       font-size: .78rem; font-weight: 600; color: var(--ink3);
-      cursor: pointer; border-radius: 10px;
+      cursor: pointer; border-radius: 10px; white-space: nowrap;
       transition: all .15s; font-family: var(--font);
       white-space: nowrap;
     }
@@ -118,19 +123,21 @@
     .date-row {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
     }
-    .date-lbl { font-size: .73rem; font-weight: 600; color: var(--ink3); }
+    .date-lbl { font-size: .73rem; font-weight: 600; color: var(--ink3); white-space: nowrap; }
     .date-input {
       padding: 8px 12px; border: 1.5px solid var(--bdr);
-      border-radius: 8px; font-size: .8rem; font-family: var(--font);
+      border-radius: 8px; font-size: 16px; font-family: var(--font);
       background: #fff; color: var(--ink); outline: none;
       transition: border-color .15s;
+      /* FIX: flex so inputs share space evenly on mobile */
+      flex: 1; min-width: 120px; max-width: 100%;
     }
     .date-input:focus { border-color: var(--f2); }
     .btn-apply {
       padding: 8px 18px; border-radius: 8px;
       background: var(--f1); color: #fff; border: none;
       font-size: .8rem; font-weight: 600; font-family: var(--font); cursor: pointer;
-      transition: background .15s;
+      transition: background .15s; white-space: nowrap; flex-shrink: 0;
     }
     .btn-apply:hover { background: var(--f0); }
     .preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -139,6 +146,7 @@
       border: 1.5px solid var(--bdr); background: #fff;
       font-size: .73rem; font-weight: 600; color: var(--ink3);
       cursor: pointer; transition: all .15s; font-family: var(--font);
+      white-space: nowrap;
     }
     .preset-btn:hover { border-color: var(--f2); color: var(--f2); }
     .preset-btn.active { background: var(--f1); border-color: var(--f1); color: #fff; }
@@ -149,7 +157,9 @@
       flex-wrap: wrap;
     }
     .search-pill {
-      flex: 1; min-width: 0; max-width: 100%;
+      flex: 1; min-width: 0;
+      /* FIX: on mobile, force full width */
+      width: 100%;
       display: flex; align-items: center; gap: 8px;
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
@@ -158,18 +168,20 @@
     .search-pill:focus-within { border-color: var(--f2); }
     .search-pill input {
       border: none; outline: none; background: transparent;
-      font-size: .84rem; color: var(--ink); width: 100%;
+      font-size: 16px; color: var(--ink); width: 100%; min-width: 0;
       font-family: var(--font);
     }
     .search-pill input::placeholder { color: var(--ink4); }
     .pill-select {
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 34px 9px 12px;
-      font-size: .8rem; font-weight: 600; color: var(--ink2);
+      font-size: 16px; font-weight: 600; color: var(--ink2);
       appearance: none; cursor: pointer; font-family: var(--font);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center;
       transition: border-color .15s;
+      /* FIX: flex so selects share space on mobile */
+      flex: 1; min-width: 0; max-width: 100%;
     }
     .pill-select:focus { outline: none; border-color: var(--f2); }
     .icon-btn {
@@ -179,6 +191,7 @@
       cursor: pointer; white-space: nowrap;
       display: flex; align-items: center; gap: 5px;
       font-family: var(--font); transition: all .15s;
+      flex-shrink: 0; /* FIX: CSV button never shrinks */
     }
     .icon-btn:hover { border-color: var(--f2); color: var(--f2); }
 
@@ -291,7 +304,7 @@
       display:none; position:fixed; z-index:9999;
       background:#fff; border:1px solid var(--bdr);
       border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,.18);
-      min-width:200px; overflow:hidden;
+      min-width:200px; max-width:calc(100vw - 28px); overflow:hidden;
     }
     .csv-menu-hdr { padding:10px 14px 7px; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ink3); }
     .csv-menu-item {
