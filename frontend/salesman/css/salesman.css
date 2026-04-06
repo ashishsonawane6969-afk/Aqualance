@@ -77,7 +77,27 @@ html {
   height: 100%;
   overflow-y: auto;
 }
+body /* ===== GLOBAL FIX (ADD AT TOP) ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: auto;
+  min-height: 100dvh;
+}
+
 body {
+  background: #f0f4ec;
+  font-family: 'DM Sans', system-ui, sans-serif;
+
+  /* FIXES */
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  /* Bottom spacing for mobile UI */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+{
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--ink);
@@ -1617,13 +1637,7 @@ a, button, [role="button"],
 ══════════════════════════════════════ */
 
 /* Mobile: account for fixed bottom nav */
-body {
-  padding-bottom: calc(var(--bottom-nav-h, 68px) + var(--safe-bottom));
-  min-height: 100vh;
-  min-height: 100dvh; /* dynamic viewport height — iOS Safari fix */
-  overflow-x: hidden;
-  max-width: 100vw;
-}
+
 
 /* Desktop: no bottom nav, no bottom padding */
 @media (min-width: 900px) {
