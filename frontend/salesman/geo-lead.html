@@ -41,8 +41,9 @@
 
     html,
     body {
+      width: 100vw;
       max-width: 100vw;
-      overflow-x: hidden
+      overflow-x: clip; /* strict containment */
     }
 
     body {
@@ -189,6 +190,7 @@
       border: 1px solid var(--bdr);
       box-shadow: 0 1px 5px rgba(0, 0, 0, .04);
       max-width: calc(100vw - 28px);
+      width: 100%;
       overflow: hidden
     }
 
@@ -576,10 +578,11 @@
       align-items: center;
       margin-bottom: 10px;
       flex-wrap: wrap;
+      max-width: 100%;
     }
 
     .prod-select {
-      flex: 1;
+      flex: 1 1 0%;
       border: 1.5px solid var(--bdr);
       border-radius: 8px;
       padding: 9px 12px;
@@ -590,7 +593,8 @@
       -webkit-appearance: none;
       appearance: none;
       outline: none;
-      min-width: 0
+      min-width: 0;
+      max-width: 100%;
     }
 
     .prod-select:focus {
