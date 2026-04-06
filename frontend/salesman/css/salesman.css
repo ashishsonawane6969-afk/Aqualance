@@ -77,12 +77,10 @@ html {
   height: 100%;
   overflow-y: auto;
 }
-/* ===== GLOBAL FIX ===== */
+body /* ===== GLOBAL FIX (ADD AT TOP) ===== */
 html, body {
   margin: 0;
   padding: 0;
-  max-width: 100%;
-  overflow-x: hidden;
   height: auto;
   min-height: 100dvh;
 }
@@ -90,14 +88,22 @@ html, body {
 body {
   background: #f0f4ec;
   font-family: 'DM Sans', system-ui, sans-serif;
+
+  /* FIXES */
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  /* Bottom spacing for mobile UI */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+{
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--ink);
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
   overflow-y: auto;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 a { text-decoration: none; color: inherit; }
 img { max-width: 100%; display: block; }
@@ -176,7 +182,7 @@ input, select, textarea { font-family: var(--font-body); }
 /* ══════════════════════════════════════
    CARDS
 ══════════════════════════════════════ */
-.card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; box-sizing: border-box; }
+.card { background: var(--surface); border-radius: var(--r); border: 1px solid var(--border); overflow: hidden; }
 .card-header {
   padding: 14px 16px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -3742,40 +3748,27 @@ body.net-2g .prod-card-img {
 
 
 /* ═══════════════════════════════════════════════════════════
-   GEO-LEAD LAYOUT FIX — paste at end of salesman.css
-   Fixes: horizontal overflow, gps-bar overflow, + Add button
+   GEO-LEAD — prod-select-row overflow fix
+   Root cause: .prod-select had flex:1 (no min-width:0), so it
+   expanded to full row width and pushed .prod-add-btn off-screen.
+   DevTools AI suggestion (flex-wrap+flex-shrink:1) is WRONG —
+   it drops the button to a new line instead of fixing the cause.
    ═══════════════════════════════════════════════════════════ */
 
-/* 1. Viewport containment — kills the right-side white gap */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* 2. .card — constrain to viewport, don't bleed past margins */
-.card {
-  box-sizing: border-box;
-}
-
-/* 3. .gps-bar — margin:14px each side = 28px total; subtract it from 100% */
-.gps-bar {
-  width: calc(100% - 28px);
-  box-sizing: border-box;
-}
-
-/* 4. .prod-select-row — prevent wrap so button is never pushed off-screen */
 .prod-select-row {
-  flex-wrap: nowrap;
+  display: flex;
+  flex-wrap: nowrap;        /* keep dropdown + button on ONE line always */
+  align-items: center;
+  gap: 8px;
 }
 
-/* 5. .prod-select — allow shrink below intrinsic width (default min-width:auto blocks this) */
 .prod-select {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1 1 0;              /* grow to fill space but allow shrink */
+  min-width: 0;             /* CRITICAL: overrides flex default min-width:auto
+                               which prevented the select from shrinking */
 }
 
-/* 6. .prod-add-btn — lock button width, never compress */
 .prod-add-btn {
-  flex-shrink: 0;
-  white-space: nowrap;
+  flex-shrink: 0;           /* button never compresses */
+  white-space: nowrap;      /* button text never wraps */
 }
