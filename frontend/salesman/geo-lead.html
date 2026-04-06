@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../css/scroll-fix.css" />
   <link rel="stylesheet" href="../css/app-responsive.css" />
   <link rel="stylesheet" href="../css/ui-fixes.css" />
-  <link rel="stylesheet" href="../css/responsive-fix.csz`s" />
+  <link rel="stylesheet" href="../css/responsive-fix.css" />
   <link rel="stylesheet" href="../css/network.css" />
   <style>
     :root {
@@ -25,8 +25,7 @@
       --rad:12px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body{max-width:100%;overflow-x:hidden}
-    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;}
+    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;padding-bottom:100px}
 
     /* Top bar */
     .topbar{background:var(--br);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
@@ -34,7 +33,7 @@
     .topbar h2{font-size:.95rem;font-weight:700;flex:1}
 
     /* GPS status */
-    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:12px;font-size:.8rem;font-weight:600;border:1.5px solid;width:calc(100% - 28px);box-sizing:border-box}
+    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:.8rem;font-weight:600;border:1.5px solid}
     .gps-bar.loading{background:#fff8e1;border-color:#ffc107;color:#856404}
     .gps-bar.ok{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
     .gps-bar.outside{background:#fee2e2;border-color:#ef5350;color:var(--err)}
@@ -50,7 +49,7 @@
     .gps-detail{font-size:.7rem;font-weight:400;margin-top:2px;opacity:.8}
 
     /* Card */
-    .card{margin:12px 14px 0;background:#fff;border-radius:14px;border:1px solid var(--bdr);box-shadow:0 1px 5px rgba(0,0,0,.04);width:calc(100% - 28px);box-sizing:border-box}
+    .card{margin:12px 14px 0;background:#fff;border-radius:14px;border:1px solid var(--bdr);box-shadow:0 1px 5px rgba(0,0,0,.04)}
     .card-head{padding:13px 16px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
     .step-num{width:24px;height:24px;border-radius:50%;background:var(--br);color:#fff;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .card-head h3{font-size:.88rem;font-weight:700}
@@ -117,8 +116,8 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── Product section ── */
-    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:nowrap}
-    .prod-select{flex:1 1 0;min-width:0;border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none}
+    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    .prod-select{flex:1;border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none}
     .prod-select:focus{border-color:var(--br2)}
     .prod-add-btn{background:var(--br2);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:.84rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
     .prod-add-btn:active{opacity:.85}
@@ -214,7 +213,7 @@
 <div class="card" id="productCard">
   <div class="card-head"><div class="step-num">2</div><h3>Products to Add</h3></div>
   <div class="card-body">
-    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:5px;line-height:2;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
+    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:8px;line-height:1.5;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
       📦 Select products this shop wants to order or is interested in.
     </p>
     <div class="prod-select-row">
