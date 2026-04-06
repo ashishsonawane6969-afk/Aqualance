@@ -112,7 +112,7 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── Product section ── */
-    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
     .prod-select{flex:1;border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none}
     .prod-select:focus{border-color:var(--br2)}
     .prod-add-btn{background:var(--br2);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:.84rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
@@ -724,6 +724,7 @@ function setBar(cls, msg, detail) {
 /* ── Google Maps API key (fetched once, cached) ── */
 let _mapsApiKey = undefined; // undefined = not yet fetched; '' = fetched but no key; string = key
 async function getMapsApiKey() {
+  if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   if (_mapsApiKey !== undefined) return _mapsApiKey;
   try {
     const res  = await apiFetch(GEO + '/maps-key');
