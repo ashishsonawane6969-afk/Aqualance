@@ -337,7 +337,7 @@ input, select, textarea { font-family: var(--font-body); }
 .nav-item svg { width:18px; height:18px; flex-shrink:0; }
 .nav-item:active { background:rgba(255,255,255,.05); }
 .nav-item.active { color:#fff; background:rgba(46,142,207,.2); border-left-color:var(--brand-light); }
-.sidebar-footer { padding:14px 18px; border-top:1px solid rgba(255,255,255,.08); }
+.sidebar-footer { padding:14px 18px max(14px, env(safe-area-inset-bottom, 14px)); border-top:1px solid rgba(255,255,255,.08); }
 .main-area { margin-left:240px; flex:1; min-height:100vh; background:var(--bg); display:flex; flex-direction:column; }
 .topnav { background:var(--surface); border-bottom:1px solid var(--border); padding:0 18px; height:54px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:var(--sh-xs); flex-shrink:0; }
 .topnav h2 { font-size:.93rem; font-weight:700; color:var(--ink); }
@@ -3391,7 +3391,7 @@ td.db-actions .btn {
 }
 
 /* KPI strip: 2 cols on small mobile */
-@media (max-width: 420px) {
+@media (max-width: 600px) {
   .kpi-strip { grid-template-columns: repeat(2,1fr) !important; }
 }
 
