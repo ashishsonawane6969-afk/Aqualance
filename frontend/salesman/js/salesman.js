@@ -223,7 +223,7 @@ function _psRebuildDropdown() {
   var sel = document.getElementById('psDropdown');
   if (!sel) return;
   var addedIds = new Set(_psSelected.map(function(p){ return p.product_id; }));
-  sel.innerHTML = '<option value="">— Select a product —</option>';
+  sel.innerHTML = '<option value="">— Tap to select a product —</option>';
   _psAllProducts.forEach(function(p) {
     var opt = document.createElement('option');
     opt.value = p.id;
@@ -236,15 +236,13 @@ function _psRebuildDropdown() {
 /* ── Add the selected product from dropdown to the table ─────── */
 function psAddProduct() {
   var sel = document.getElementById('psDropdown');
-  if (!sel || !sel.value) {
-    showToast('Please select a product first.', 'error');
-    return;
-  }
+  if (!sel || !sel.value) return;
   var pid     = parseInt(sel.value, 10);
   var product = _psAllProducts.find(function(p){ return p.id === pid; });
-  if (!product) return;
+  if (!product) { sel.value = ''; return; }
   if (_psSelected.some(function(p){ return p.product_id === pid; })) {
-    showToast('Product already added.', 'error');
+    showToast(product.name + ' already added.', 'error');
+    sel.value = '';
     return;
   }
   var price = parseFloat(product.price) || 0;
@@ -253,6 +251,7 @@ function psAddProduct() {
   _psRenderTable();
   _psRebuildDropdown();
   _psClearError();
+  showToast(product.name + ' added ✓', 'success');
 }
 
 /* ── Render the selected-products table ─────────────────────── */
