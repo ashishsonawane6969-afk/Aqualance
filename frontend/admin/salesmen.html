@@ -147,18 +147,21 @@
     .controls-bar {
       display: flex; gap: 8px; align-items: center;
       flex-wrap: wrap;
+      width: 100%; box-sizing: border-box;
     }
     .search-pill {
-      flex: 1; min-width: 0; max-width: 100%;
+      flex: 1 1 100%; min-width: 0; max-width: 100%;
       display: flex; align-items: center; gap: 8px;
       background: #fff; border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
       transition: border-color .15s;
+      box-sizing: border-box;
     }
     .search-pill:focus-within { border-color: var(--f2); }
     .search-pill input {
       border: none; outline: none; background: transparent;
       font-size: .84rem; color: var(--ink); width: 100%;
+      min-width: 0;
       font-family: var(--font);
     }
     .search-pill input::placeholder { color: var(--ink4); }
@@ -170,6 +173,8 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 12px center;
       transition: border-color .15s;
+      flex: 1 1 auto; min-width: 0; max-width: 100%;
+      box-sizing: border-box;
     }
     .pill-select:focus { outline: none; border-color: var(--f2); }
     .icon-btn {
@@ -179,6 +184,7 @@
       cursor: pointer; white-space: nowrap;
       display: flex; align-items: center; gap: 5px;
       font-family: var(--font); transition: all .15s;
+      flex-shrink: 0; position: relative;
     }
     .icon-btn:hover { border-color: var(--f2); color: var(--f2); }
 
@@ -310,8 +316,11 @@
       .icon-tab { flex:0 0 auto; font-size:.7rem; padding:9px 10px; }
       .icon-tab .t-icon { display:none; }
       .filter-section { padding:12px 14px 0; }
-      .controls-bar { flex-wrap:wrap; }
-      .search-pill { min-width:100%; flex:1 1 100%; }
+      /* On mobile: search takes full row, then selects + csv button share next row */
+      .controls-bar { flex-wrap:wrap; gap:6px; }
+      .search-pill { flex:1 1 100%; min-width:100%; }
+      .pill-select { flex:1 1 calc(50% - 3px); min-width:0; font-size:16px; /* prevent iOS zoom */ }
+      .icon-btn { flex-shrink:0; }
       .tcard { margin:12px 14px; }
       .smlist-hdr { padding:14px 14px 0; }
       #lbCards { padding:12px 14px 0; }
@@ -343,6 +352,41 @@
     .add-fab { position:fixed; bottom:calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 14px); right:16px; z-index:150; width:52px; height:52px; border-radius:50%; background:var(--f1); color:#fff; font-size:1.5rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 18px rgba(26,64,32,.32); border:none; cursor:pointer; transition:transform .15s; }
     .add-fab:active { transform:scale(.92); }
     @media(min-width:900px){ .add-fab { display:none !important; } }
+
+    /* ─── CSV dropdown menu ─────────────────────── */
+    .csv-menu {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: #fff;
+      border: 1.5px solid var(--bdr);
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.14);
+      padding: 6px;
+      min-width: 220px;
+      /* clamped to viewport — never bleeds off right or bottom */
+      max-width: calc(100vw - 20px);
+      box-sizing: border-box;
+    }
+    .csv-menu.open { display: block; }
+    .csv-menu-hdr {
+      font-size: .65rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--ink3);
+      padding: 6px 10px 4px;
+    }
+    .csv-menu-item {
+      display: block; width: 100%; text-align: left;
+      padding: 10px 12px; border: none; background: none;
+      border-radius: 8px; font-size: .83rem; font-weight: 600;
+      color: var(--ink); cursor: pointer; font-family: var(--font);
+      transition: background .12s;
+      white-space: nowrap;
+    }
+    .csv-menu-item:hover { background: var(--f7); color: var(--f1); }
+
+    /* ─── Global mobile overflow guard ─────────── */
+    html, body { overflow-x: hidden; max-width: 100%; }
+    *, *::before, *::after { box-sizing: border-box; }
   </style>
 </head>
 <body class="admin-layout">
@@ -1170,6 +1214,52 @@ function handleCSVSelect(sel) {
   else if (val === 'summary') exportCSVSummary();
   else if (val === 'products') switchTab('SalesProducts', document.querySelector('[onclick*=SalesProducts]'));
 }
+
+/* ── CSV dropdown menu (open/close) ─────────────────── */
+function openCSVMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('csvMenu');
+  const overlay = document.getElementById('csvOverlay');
+  if (!menu) return;
+
+  // Toggle: if already open, close it
+  if (menu.classList.contains('open')) { closeCSVMenu(); return; }
+
+  // Position the menu anchored to the button, clamped inside viewport
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const menuW = 230; // min-width
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Prefer right-aligned to button; clamp so it never exits the right edge
+  let left = rect.right - menuW;
+  if (left < 10) left = 10;
+  if (left + menuW > vw - 10) left = vw - menuW - 10;
+
+  // Prefer below button; flip above if no room
+  let top = rect.bottom + 6;
+  const approxMenuH = 180; // rough height
+  if (top + approxMenuH > vh - 10) top = rect.top - approxMenuH - 6;
+  if (top < 10) top = 10;
+
+  menu.style.left = left + 'px';
+  menu.style.top  = top  + 'px';
+  menu.classList.add('open');
+  if (overlay) overlay.style.display = 'block';
+}
+
+function closeCSVMenu() {
+  const menu = document.getElementById('csvMenu');
+  const overlay = document.getElementById('csvOverlay');
+  if (menu) menu.classList.remove('open');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// Also close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeCSVMenu();
+});
 </script>
 
 <script>
