@@ -3739,3 +3739,43 @@ body.net-2g .prod-card-img {
   max-width: 150px;
 }
 .topnav .aq-net-badge.hidden { display: none; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   GEO-LEAD LAYOUT FIX — paste at end of salesman.css
+   Fixes: horizontal overflow, gps-bar overflow, + Add button
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1. Viewport containment — kills the right-side white gap */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* 2. .card — constrain to viewport, don't bleed past margins */
+.card {
+  box-sizing: border-box;
+}
+
+/* 3. .gps-bar — margin:14px each side = 28px total; subtract it from 100% */
+.gps-bar {
+  width: calc(100% - 28px);
+  box-sizing: border-box;
+}
+
+/* 4. .prod-select-row — prevent wrap so button is never pushed off-screen */
+.prod-select-row {
+  flex-wrap: nowrap;
+}
+
+/* 5. .prod-select — allow shrink below intrinsic width (default min-width:auto blocks this) */
+.prod-select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 6. .prod-add-btn — lock button width, never compress */
+.prod-add-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
