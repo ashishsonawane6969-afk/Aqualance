@@ -74,7 +74,16 @@ console.log("✅ NEW network.js LOADED");
       return;
     }
 
-    var isLoginPage = /login|change-password/.test(path);
+    var isLoginPage        = /login/.test(path) && !/change-password/.test(path);
+    var isChangePassPage   = /change-password/.test(path);
+
+    // change-password: always show the form — never redirect to dashboard.
+    // The user may have a valid session but still need to set a new password.
+    if (isChangePassPage) {
+      _authGateResolve(null);
+      return;
+    }
+
     if (isLoginPage) {
       fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
         .then(function(res) {
@@ -585,6 +594,15 @@ window.fetch = function(url, options) {
      INIT — run when DOM is ready
   ══════════════════════════════════════════════════════════════ */
   function init() {
+    // Inject favicon if not already present — prevents 404 on every page
+    if (!document.querySelector('link[rel~="icon"]')) {
+      var fav = document.createElement('link');
+      fav.rel  = 'icon';
+      fav.type = 'image/png';
+      fav.href = '/images/icon-192.png';
+      document.head.appendChild(fav);
+    }
+
     NetQ.detect();
     NetBanner.init();
     Progress.init();
