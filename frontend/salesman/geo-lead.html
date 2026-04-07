@@ -948,7 +948,7 @@ function selectPhoto() {
       showToast('Only JPEG, PNG, WebP, and GIF images are allowed.', 'error');
       return;
     }
-    if (file.size > 3 * 1024 * 1024) { showToast('Photo too large. Max 3MB.', 'error'); return; }
+    if (file.size > 15 * 1024 * 1024) { showToast('Photo too large. Max 15MB.', 'error'); return; }
     const reader = new FileReader();
     reader.onload = ev => {
       const img = new Image();
