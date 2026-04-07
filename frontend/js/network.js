@@ -221,7 +221,6 @@ console.log("✅ NEW network.js LOADED");
     onChange: function (fn) { NetQ._listeners.push(fn); },
     _notify: function () {
       NetQ._listeners.forEach(function (fn) { try { fn(NetQ.tier); } catch (e) {} });
-      NetBanner.updateNetworkBadge();
     }
   };
 
@@ -299,7 +298,6 @@ console.log("✅ NEW network.js LOADED");
   var NetBanner = {
     _offlineBanner: null,
     _slowBanner:    null,
-    _badge:         null,
 
     init: function () {
       // Offline banner
@@ -320,28 +318,6 @@ console.log("✅ NEW network.js LOADED");
       document.body.appendChild(sb);
       NetBanner._slowBanner = sb;
 
-      // Network badge — appended to topnav on desktop so it never overflows,
-      // falls back to fixed positioning on pages without a topnav.
-      // Network badge — appended to topnav on desktop so it never overflows,
-      // falls back to fixed positioning on pages without a topnav.
-      var badge = document.createElement('div');
-      badge.id        = 'aq-net-badge';
-      badge.className = 'aq-net-badge hidden';
-      var topnav = document.querySelector('.topnav');
-      if (topnav) {
-        // Sit inside the topnav at the far right
-        badge.style.position = 'relative';
-        badge.style.top      = 'auto';
-        badge.style.right    = 'auto';
-        badge.style.bottom   = 'auto';
-        badge.style.left     = 'auto';
-        badge.style.marginLeft = 'auto';
-        badge.style.flexShrink = '0';
-        topnav.appendChild(badge);
-      } else {
-        document.body.appendChild(badge);
-      }
-      NetBanner._badge = badge;
 
       // Online / offline events
       window.addEventListener('offline', function () {
@@ -352,8 +328,7 @@ console.log("✅ NEW network.js LOADED");
         ob.classList.remove('show');
         setTimeout(function () { ob.classList.add('hidden'); }, 600);
         _flushQueue();
-        NetBanner.updateNetworkBadge();
-      });
+        });
 
       if (!navigator.onLine) {
         ob.classList.remove('hidden');
@@ -368,7 +343,6 @@ console.log("✅ NEW network.js LOADED");
         }
       }, 3000);
 
-      NetBanner.updateNetworkBadge();
     },
 
     retry: function () {
@@ -395,43 +369,6 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.setItem('aq_slow_dismissed', '1');
       NetBanner._slowBanner.classList.remove('show');
       setTimeout(function () { NetBanner._slowBanner.classList.add('hidden'); }, 600);
-    },
-    updateNetworkBadge: function () {
-      var b = NetBanner._badge;
-      if (!b) return;
-
-      // Only show network UI on the backend (admin portal)
-      if (window.location.pathname.indexOf('/admin') !== 0) {
-        b.classList.remove('show');
-        b.classList.add('hidden');
-        return;
-      }
-
-      if (!navigator.onLine) {
-        b.textContent = '✗ Offline';
-        b.className   = 'aq-net-badge show tier-offline';
-        return;
-      }
-
-      var tier  = NetQ.tier;
-      var label = { '2g': '2G', '3g': '3G', '4g': '4G', '5g': '5G', 'unknown': '?' }[tier] || '?';
-      var cls   = 'aq-net-badge show tier-' + tier;
-
-      // Add RTT if we have it
-      if (NetQ.rtt !== null && NetQ.rtt > 0) {
-        label += ' · ' + NetQ.rtt + 'ms';
-      }
-
-      b.textContent = '📶 ' + label;
-      b.className   = cls;
-
-      // Auto-hide badge after 5s (unless on 2G/3G — keep it visible as a reminder)
-      if (tier === '4g' || tier === '5g' || tier === 'unknown') {
-        clearTimeout(NetBanner._badgeTimer);
-        NetBanner._badgeTimer = setTimeout(function () {
-          b.classList.remove('show');
-        }, 5000);
-      }
     }
   };
 
