@@ -9,133 +9,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Geo Lead — Aqualence</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+  <!-- legacy CSS kept for public pages / backwards compat -->
   <link rel="stylesheet" href="../css/style.css" />
   <link rel="stylesheet" href="../css/scroll-fix.css" />
-  <link rel="stylesheet" href="../css/app-responsive.css" />
-  <link rel="stylesheet" href="../css/ui-fixes.css" />
-  <link rel="stylesheet" href="../css/responsive-fix.csz`s" />
   <link rel="stylesheet" href="../css/network.css" />
-  <style>
-    :root {
-      --br:#1a4020; --br2:#2a6535; --br3:#3d8c4a;
-      --pale:#e3f0ff; --ultra:#f0f7ff; --bdr:#dde8d4;
-      --ink:#1c2116; --ink2:#4a5e40; --ink3:#8fa880;
-      --err:#b91c1c; --ok:#166534; --ok-lt:#dcfce7;
-      --warn:#b06800; --warn-lt:#fff3cd;
-      --rad:12px;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;}
-
-    /* Top bar */
-    .topbar{background:var(--br);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
-    .back-btn{font-size:1.2rem;background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px 4px 0}
-    .topbar h2{font-size:.95rem;font-weight:700;flex:1}
-
-    /* GPS status */
-    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:12px;font-size:.8rem;font-weight:600;border:1.5px solid}
-    .gps-bar.loading{background:#fff8e1;border-color:#ffc107;color:#856404}
-    .gps-bar.ok{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
-    .gps-bar.outside{background:#fee2e2;border-color:#ef5350;color:var(--err)}
-    .gps-bar.error{background:var(--warn-lt);border-color:#ff9800;color:var(--warn)}
-    .gps-bar.acquiring{background:#e3f2fd;border-color:#2196f3;color:#0d47a1}
-    .gps-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-    .gps-bar.loading .gps-dot{background:#ffc107;animation:pulse 1s infinite}
-    .gps-bar.ok .gps-dot{background:#4caf50}
-    .gps-bar.outside .gps-dot{background:#ef5350}
-    .gps-bar.error .gps-dot{background:#ff9800}
-    .gps-bar.acquiring .gps-dot{background:#2196f3;animation:pulse 1s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-    .gps-detail{font-size:.7rem;font-weight:400;margin-top:2px;opacity:.8}
-
-    /* Card */
-    .card{margin:12px 14px 0;background:#fff;border-radius:14px;border:1px solid var(--bdr);box-shadow:0 1px 5px rgba(0,0,0,.04)}
-    .card-head{padding:13px 16px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
-    .step-num{width:24px;height:24px;border-radius:50%;background:var(--br);color:#fff;font-size:.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .card-head h3{font-size:.88rem;font-weight:700}
-    .card-body{padding:14px 16px}
-
-    /* Camera */
-    /* cam-wrap is hidden until camera is actually started — no big black box on load */
-    .cam-wrap{position:relative;border-radius:10px;overflow:hidden;background:#111;aspect-ratio:4/3;display:none}
-    .cam-wrap.active{display:block}
-    #videoEl{width:100%;height:100%;object-fit:cover;display:block}
-    #captureCanvas{display:none}
-    .cam-controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .cam-placeholder{border:2px dashed #ccc;border-radius:10px;padding:28px 16px;text-align:center;color:#888;background:#fafafa;margin-bottom:2px}
-    .cam-placeholder p{font-size:.8rem;margin:6px 0 0}
-    .photo-prev{width:100%;border-radius:10px;display:none}
-    .photo-prev.show{display:block}
-    .photo-status{font-size:.75rem;color:var(--ink3);margin-top:6px;text-align:center}
-
-    /* Form */
-    .fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-    .fg label{font-size:.7rem;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
-    .fg .req{color:var(--err)}
-    .fg input,.fg select,.fg textarea{padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:.85rem;font-family:inherit;color:var(--ink);background:#fff;outline:none;transition:border-color .15s;width:100%}
-    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--br2)}
-    .fg textarea{resize:vertical;min-height:65px}
-    .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    /* Auto-filled fields */
-    .auto-field{background:var(--ultra)!important;color:var(--br)!important;font-weight:600!important;border-color:var(--bdr)!important}
-
-    /* GPS proof grid */
-    .gps-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .gps-tile{background:var(--ultra);border-radius:10px;padding:10px;border:1px solid var(--bdr)}
-    .gps-tile-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
-    .gps-tile-val{font-weight:700;font-size:.87rem;color:var(--br)}
-
-    /* Sale toggle */
-    .sale-toggle{display:flex;gap:10px;margin-top:4px}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    .sale-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--bdr);font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;background:#fff;color:var(--ink3);font-family:inherit;display:flex;align-items:center;justify-content:center}
-    .sale-btn.yes.active{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
-    .sale-btn.no.active{background:#fee2e2;border-color:#ef5350;color:var(--err)}
-
-    /* Submit */
-    .submit-btn{width:100%;padding:15px;border-radius:14px;background:var(--br);color:#fff;font-size:.95rem;font-weight:700;border:none;cursor:pointer;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;font-family:inherit}
-    .submit-btn:disabled{opacity:.6;cursor:not-allowed}
-
-    /* Block overlay */
-    .block-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(185,28,28,.92);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}
-    .block-overlay.show{display:flex}
-    .block-card{background:#fff;border-radius:20px;padding:28px 24px;text-align:center;max-width:340px}
-    .block-card .bi{font-size:3rem;margin-bottom:10px}
-    .block-card h3{font-size:1.1rem;font-weight:800;color:var(--err);margin-bottom:8px}
-    .block-card p{font-size:.85rem;color:var(--ink3);line-height:1.5}
-    .block-dist{margin:12px 0;padding:12px;background:#fff5f5;border-radius:10px;border:1px solid #fecaca}
-    .block-dist strong{color:var(--err);font-size:1.1rem}
-
-    /* Toast */
-    .toast-container{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center}
-    .toast{background:#1c2116;color:#fff;padding:10px 18px;border-radius:999px;font-size:.82rem;font-weight:600;animation:slideUp .25s ease;white-space:nowrap}
-    .toast.success{background:var(--ok)} .toast.error{background:var(--err)}
-    @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-    .spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ── Product section ── */
-    .prod-select-row{margin-bottom:10px}
-    .prod-select{width:100%;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer}
-    .prod-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .prod-table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:300px}
-    .prod-table th{background:var(--ultra);color:var(--br2);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:7px 8px;border-bottom:1.5px solid var(--bdr);text-align:left}
-    .prod-table th:not(:first-child){text-align:right}
-    .prod-table td{padding:7px 6px;border-bottom:1px solid var(--bdr);vertical-align:middle;color:var(--ink2)}
-    .prod-table td:not(:first-child){text-align:right}
-    .prod-table tr:last-child td{border-bottom:none}
-    .prod-row-name{font-weight:600;color:var(--ink);font-size:.82rem;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-    .prod-num-input{width:64px;border:1.5px solid var(--bdr);border-radius:6px;padding:4px 6px;font-size:.8rem;text-align:right;font-family:inherit;background:#fff;-webkit-appearance:none;appearance:none}
-    .prod-num-input:focus{outline:none;border-color:var(--br2)}
-    .prod-row-total{font-weight:700;color:var(--br2);white-space:nowrap}
-    .prod-remove{background:none;border:none;cursor:pointer;color:#c62828;font-size:.95rem;padding:3px 5px;border-radius:6px;line-height:1}
-    .prod-remove:active{background:#fce4ec}
-    .prod-grand-row{display:flex;justify-content:space-between;align-items:center;padding:9px 6px 2px;border-top:2px solid var(--bdr);margin-top:4px;font-size:.85rem;font-weight:700}
-    .prod-grand-row span:last-child{color:var(--br2);font-size:.95rem;font-weight:800}
-    .prod-empty{text-align:center;padding:14px 8px;color:var(--ink3);font-size:.8rem;border:1.5px dashed var(--bdr);border-radius:8px;background:#fff}
-  </style>
-
 </head>
 <body>
 
@@ -210,13 +90,14 @@
 <div class="card" id="productCard">
   <div class="card-head"><div class="step-num">2</div><h3>Products to Add</h3></div>
   <div class="card-body">
-    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:5px;line-height:2;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
+    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:8px;line-height:1.5;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
       📦 Select products this shop wants to order or is interested in.
     </p>
     <div class="prod-select-row">
-      <select id="geoProductDropdown" class="prod-select" onchange="geoAddProduct()">
-        <option value="">— Tap to select a product —</option>
+      <select id="geoProductDropdown" class="prod-select">
+        <option value="">— Select a product —</option>
       </select>
+      <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
     </div>
     <div id="geoProdListWrap">
       <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
@@ -335,6 +216,9 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+  <script src="../js/core/api.js"></script>
+  <script src="../js/core/auth.js"></script>
+  <script src="../js/app.js"></script>
 <script nonce="CSP_NONCE" src="../js/network.js"></script>
 <script nonce="CSP_NONCE" src="js/salesman.js"></script>
 <script nonce="CSP_NONCE">
@@ -370,7 +254,7 @@ let _geocodeDone = false;
 // Auth check — rehydrate sessionStorage from cookie if tab was reopened
 async function _geoLeadAuth() {
   // Auth gate in network.js handles rehydration — just wait for it
-  if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
+  await AQAuth.rehydrate('salesman');
   return !!sessionStorage.getItem('aq_sales_user');
 }
 
@@ -409,7 +293,7 @@ function _geoRebuildDropdown() {
   const sel = document.getElementById('geoProductDropdown');
   if (!sel) return;
   const addedIds = new Set(_geoSelProds.map(p => p.id));
-  sel.innerHTML = '<option value="">— Tap to select a product —</option>';
+  sel.innerHTML = '<option value="">— Select a product —</option>';
   _geoAllProds.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
@@ -421,21 +305,16 @@ function _geoRebuildDropdown() {
 
 function geoAddProduct() {
   const sel = document.getElementById('geoProductDropdown');
-  if (!sel || !sel.value) return;
+  if (!sel || !sel.value) { showToast('Please select a product first.', 'error'); return; }
   const pid  = parseInt(sel.value, 10);
   const prod = _geoAllProds.find(p => p.id === pid);
-  if (!prod) { sel.value = ''; return; }
-  if (_geoSelProds.some(p => p.id === pid)) {
-    showToast(prod.name + ' already added.', 'error');
-    sel.value = '';
-    return;
-  }
+  if (!prod) return;
+  if (_geoSelProds.some(p => p.id === pid)) { showToast('Already added.', 'error'); return; }
   const price = parseFloat(prod.price) || 0;
   _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
   sel.value = '';
   _geoRenderTable();
   _geoRebuildDropdown();
-  showToast(prod.name + ' added ✓', 'success');
 }
 
 function _geoRenderTable() {
