@@ -433,9 +433,6 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-  <script src="../js/core/api.js"></script>
-  <script src="../js/core/auth.js"></script>
-  <script src="../js/app.js"></script>
 <script nonce="CSP_NONCE" src="../js/network.js"></script>
 <script nonce="CSP_NONCE" src="js/salesman.js"></script>
 <script nonce="CSP_NONCE">
@@ -470,8 +467,8 @@ let _geocodeDone = false;
 
 // Auth check — rehydrate sessionStorage from cookie if tab was reopened
 async function _geoLeadAuth() {
-  // Auth gate in network.js handles rehydration — just wait for it
-  await AQAuth.rehydrate('salesman');
+  // Auth gate in network.js handles rehydration via _aqAuthReady — just wait for it
+  if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
   return !!sessionStorage.getItem('aq_sales_user');
 }
 
@@ -1131,6 +1128,3 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
-
-
-
