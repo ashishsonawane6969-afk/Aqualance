@@ -9,13 +9,236 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Geo Lead — Aqualence</title>
-    <link rel="stylesheet" href="../css/theme.css" />
-  <link rel="stylesheet" href="../css/animations.css" />
-  <link rel="stylesheet" href="../css/dashboard.css" />
-  <!-- legacy CSS kept for public pages / backwards compat -->
-  <link rel="stylesheet" href="../css/style.css" />
-  <link rel="stylesheet" href="../css/scroll-fix.css" />
-  <link rel="stylesheet" href="../css/network.css" />
+  <link rel="stylesheet" href="/salesman/css/salesman.css" />
+  <style>
+    /* ── Task 1: Horizontal overflow fix ───────────────────────── */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100%; /* override 100vw — avoids scrollbar-induced bleed */
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* Topbar layout */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      height: 56px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .topbar h2 {
+      flex: 1;
+      min-width: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin: 0;
+    }
+    .back-btn {
+      flex-shrink: 0;
+      background: var(--surface-2, #eef4fb);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink, #0d2a45);
+    }
+
+    /* GPS bar */
+    .gps-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .gps-bar.loading   { background: #1a4474; color: #fff; }
+    .gps-bar.ok        { background: #1a5c2a; color: #fff; }
+    .gps-bar.outside   { background: #7a1a1a; color: #fff; }
+    .gps-bar.acquiring { background: #5a4a10; color: #fffde7; }
+    .gps-bar.error     { background: #7a1a1a; color: #fff; }
+    .gps-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: currentColor; opacity: .8; flex-shrink: 0;
+      animation: gpsPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes gpsPulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .gps-bar.ok    .gps-dot { animation: none; opacity: 1; }
+    .gps-bar.error .gps-dot { animation: none; }
+    .gps-detail { font-size: .72rem; opacity: .8; margin-top: 2px; }
+    #gpsStatus  { font-size: .85rem; font-weight: 600; line-height: 1.3; }
+
+    /* Cards */
+    .card {
+      margin: 12px 14px;
+      max-width: calc(100% - 28px);
+    }
+    .card-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border, #c8ddf0);
+      background: var(--brand-ultra, #f0f7ff);
+    }
+    .card-head h3 { font-size: .9rem; font-weight: 700; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--brand, #1565a8); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .card-body { padding: 14px; }
+
+    /* Camera */
+    .cam-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: var(--surface-2, #eef4fb);
+      border: 2px dashed var(--border-dark, #a0c0e0);
+      border-radius: 10px; padding: 24px 16px;
+      text-align: center; margin-bottom: 10px;
+      color: var(--ink-soft, #4a7a9b);
+    }
+    .cam-placeholder p { font-size: .82rem; line-height: 1.5; margin-top: 8px; }
+    .cam-wrap { display: none; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+    .cam-wrap.active { display: block; }
+    .cam-wrap video { width: 100%; max-height: 300px; display: block; background: #000; }
+    #captureCanvas { display: none; }
+    .photo-prev { display: none; width: 100%; border-radius: 10px; margin-bottom: 10px; max-height: 300px; object-fit: cover; }
+    .photo-prev.show { display: block; }
+    .cam-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .cam-controls .btn, .cam-controls button { flex: 1; min-width: 0; }
+    .photo-status { margin-top: 8px; font-size: .82rem; color: var(--success, #1e7d3a); font-weight: 600; }
+
+    /* Task 2: Product select — full width, no button */
+    .prod-select-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      max-width: 100%;
+      width: 100%;
+    }
+    .prod-select {
+      flex: 1 1 0;
+      min-width: 0;
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border, #c8ddf0);
+      border-radius: 10px;
+      font-size: 16px;
+      background: var(--surface, #fff);
+      color: var(--ink, #0d2a45);
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231565a8'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    .prod-select:focus {
+      outline: none;
+      border-color: var(--brand, #1565a8);
+      box-shadow: 0 0 0 3px rgba(21,101,168,.1);
+    }
+    .prod-empty { text-align: center; color: var(--ink-soft, #4a7a9b); padding: 18px; font-size: .82rem; }
+    .prod-table-wrap { overflow-x: auto; overscroll-behavior-x: contain; max-width: 100%; }
+    .prod-table { width: 100%; border-collapse: collapse; min-width: 340px; }
+    .prod-table th { background: var(--brand-ultra, #f0f7ff); padding: 8px 10px; font-size: .65rem; font-weight: 700; text-align: left; color: var(--brand, #1565a8); text-transform: uppercase; letter-spacing: .05em; border-bottom: 1.5px solid var(--border, #c8ddf0); white-space: nowrap; }
+    .prod-table td { padding: 9px 10px; font-size: .82rem; color: var(--ink-mid, #1e4a72); border-bottom: 1px solid var(--border, #c8ddf0); vertical-align: middle; }
+    .prod-table tr:last-child td { border-bottom: none; }
+    .prod-row-name { font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .prod-num-input { width: 65px; padding: 5px 7px; border: 1.5px solid var(--border, #c8ddf0); border-radius: 6px; font-size: .82rem; text-align: center; background: var(--surface, #fff); }
+    .prod-row-total { font-weight: 700; color: var(--brand, #1565a8); white-space: nowrap; }
+    .prod-remove { background: var(--error-pale, #fde8e6); color: var(--error, #c0392b); border: none; width: 26px; height: 26px; border-radius: 50%; font-size: .8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .prod-grand-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-top: 2px solid var(--border, #c8ddf0); font-weight: 700; font-size: .9rem; background: var(--brand-ultra, #f0f7ff); }
+
+    /* Form layout */
+    .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    @media (max-width: 400px) { .frow { grid-template-columns: 1fr; } }
+    .fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .fg label { font-size: .78rem; font-weight: 600; color: var(--ink-mid, #1e4a72); }
+    .fg input, .fg select, .fg textarea {
+      padding: 10px 12px;
+      border: 1.5px solid var(--border, #c8ddf0);
+      border-radius: 10px;
+      font-size: 16px;
+      color: var(--ink, #0d2a45);
+      background: var(--surface, #fff);
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    .fg input:focus, .fg select:focus, .fg textarea:focus {
+      outline: none;
+      border-color: var(--brand, #1565a8);
+      box-shadow: 0 0 0 3px rgba(21,101,168,.1);
+    }
+    .fg textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+    .auto-field { background: var(--brand-ultra, #f0f7ff) !important; }
+    .req { color: var(--error, #c0392b); }
+
+    /* Sale toggle */
+    .sale-toggle { display: flex; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border, #c8ddf0); background: var(--surface-2, #eef4fb); }
+    .sale-btn { flex: 1; padding: 11px; font-size: .85rem; font-weight: 600; color: var(--ink-soft, #4a7a9b); background: transparent; cursor: pointer; border: none; text-align: center; }
+    .sale-btn.yes.active { background: var(--success, #1e7d3a); color: #fff; }
+    .sale-btn.no.active  { background: var(--error, #c0392b); color: #fff; }
+
+    /* GPS grid */
+    .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gps-tile { background: var(--brand-ultra, #f0f7ff); border-radius: 10px; padding: 10px 12px; border: 1px solid var(--border, #c8ddf0); }
+    .gps-tile-lbl { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft, #4a7a9b); margin-bottom: 4px; }
+    .gps-tile-val { font-size: .9rem; font-weight: 700; color: var(--ink, #0d2a45); font-variant-numeric: tabular-nums; word-break: break-all; }
+
+    /* Block overlay */
+    .block-overlay { display: none; position: fixed; inset: 0; top:0;right:0;bottom:0;left:0; background: rgba(0,0,0,.6); z-index: 800; align-items: center; justify-content: center; padding: 16px; }
+    .block-overlay.show { display: flex; }
+    .block-card { background: #fff; border-radius: 20px; padding: 28px 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+    .bi { font-size: 3rem; margin-bottom: 12px; }
+    .block-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: var(--error, #c0392b); }
+    .block-card p  { font-size: .85rem; color: var(--ink-soft, #4a7a9b); line-height: 1.5; }
+    .block-dist { background: var(--error-pale, #fde8e6); border-radius: 10px; padding: 10px; margin: 12px 0; }
+    .block-dist strong { font-size: 1.4rem; font-weight: 800; color: var(--error, #c0392b); display: block; }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%; padding: 16px; border: none; border-radius: 14px;
+      background: var(--brand, #1565a8); color: #fff;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 18px rgba(21,101,168,.3);
+      margin-bottom: 24px;
+    }
+    .submit-btn:active { transform: scale(.98); opacity: .9; }
+    .submit-btn:disabled { opacity: .5; pointer-events: none; }
+
+    /* Spinner */
+    .spinner { display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Toast container */
+    .toast-container { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:9999; display:flex; flex-direction:column; gap:6px; align-items:center; width:calc(100% - 28px); max-width:400px; pointer-events:none; }
+    .toast { background:rgba(13,42,69,.92); color:#fff; padding:10px 18px; border-radius:999px; font-size:.82rem; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.2); text-align:center; pointer-events:all; }
+    .toast.success { background:rgba(30,125,58,.92); }
+    .toast.error   { background:rgba(192,57,43,.92); }
+
+
+
+
+    
+  </style>
 </head>
 <body>
 
@@ -94,10 +317,9 @@
       📦 Select products this shop wants to order or is interested in.
     </p>
     <div class="prod-select-row">
-      <select id="geoProductDropdown" class="prod-select">
+      <select id="geoProductDropdown" class="prod-select" onchange="if(this.value)geoAddProduct()">
         <option value="">— Select a product —</option>
       </select>
-      <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
     </div>
     <div id="geoProdListWrap">
       <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
@@ -305,11 +527,14 @@ function _geoRebuildDropdown() {
 
 function geoAddProduct() {
   const sel = document.getElementById('geoProductDropdown');
-  if (!sel || !sel.value) { showToast('Please select a product first.', 'error'); return; }
+  if (!sel || !sel.value) return;
   const pid  = parseInt(sel.value, 10);
   const prod = _geoAllProds.find(p => p.id === pid);
   if (!prod) return;
-  if (_geoSelProds.some(p => p.id === pid)) { showToast('Already added.', 'error'); return; }
+  if (_geoSelProds.some(p => p.id === pid)) {
+    sel.value = '';
+    return;
+  }
   const price = parseFloat(prod.price) || 0;
   _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
   sel.value = '';
