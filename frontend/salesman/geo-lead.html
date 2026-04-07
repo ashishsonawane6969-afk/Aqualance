@@ -233,6 +233,51 @@
     .toast { background:rgba(13,42,69,.92); color:#fff; padding:10px 18px; border-radius:999px; font-size:.82rem; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,.2); text-align:center; pointer-events:all; }
     .toast.success { background:rgba(30,125,58,.92); }
     .toast.error   { background:rgba(192,57,43,.92); }
+
+
+/* FINAL HARD OVERFLOW FIX */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+body {
+  position: relative;
+}
+
+/* Kill any element causing overflow */
+* {
+  max-width: 100%;
+}
+
+/* Fix common offenders */
+.card,
+.topbar,
+.gps-bar,
+.prod-select-row,
+.prod-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent hidden scroll from table */
+.prod-table {
+  min-width: unset !important;
+  width: 100%;
+}
+
+/* Fix flex overflow issues */
+.frow {
+  min-width: 0;
+}
+
+input, select, textarea {
+  min-width: 0;
+}
+
+    
   </style>
 </head>
 <body>
@@ -312,7 +357,7 @@
       📦 Select products this shop wants to order or is interested in.
     </p>
     <div class="prod-select-row">
-      <select id="geoProductDropdown" class="prod-select" onchange="if(this.value)geoAddProduct()">
+     <select id="geoProductDropdown" class="prod-select" onchange="geoAddProduct()">
         <option value="">— Select a product —</option>
       </select>
     </div>
@@ -521,18 +566,30 @@ function _geoRebuildDropdown() {
 }
 
 function geoAddProduct() {
+ function geoAddProduct() {
   const sel = document.getElementById('geoProductDropdown');
-  if (!sel || !sel.value) return;
-  const pid  = parseInt(sel.value, 10);
+  if (!sel) return;
+
+  const pid = parseInt(sel.value, 10);
+  if (!pid) return;
+
   const prod = _geoAllProds.find(p => p.id === pid);
   if (!prod) return;
+
   if (_geoSelProds.some(p => p.id === pid)) {
     sel.value = '';
     return;
   }
-  const price = parseFloat(prod.price) || 0;
-  _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
+
+  _geoSelProds.push({
+    id: pid,
+    name: prod.name,
+    price: parseFloat(prod.price) || 0,
+    qty: 1
+  });
+
   sel.value = '';
+
   _geoRenderTable();
   _geoRebuildDropdown();
 }
