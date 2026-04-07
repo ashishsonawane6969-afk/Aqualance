@@ -798,8 +798,8 @@ function handlePhoto(input) {
     input.value = '';
     return;
   }
-  // 2. Size limit — generous 5 MB client-side; server enforces 500 KB base64 cap
-  if (file.size > 5 * 1024 * 1024) { showToast('Photo too large. Max 5MB.', 'error'); input.value = ''; return; }
+  // 2. Size limit — generous 3 MB client-side; server enforces 200 KB base64 cap
+  if (file.size > 15 * 1024 * 1024) { showToast('Photo too large. Max 15MB.', 'error'); input.value = ''; return; }
 
   const reader = new FileReader();
   reader.onload = function(e) {
