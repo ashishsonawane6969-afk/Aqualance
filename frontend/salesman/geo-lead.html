@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../css/scroll-fix.css" />
   <link rel="stylesheet" href="../css/app-responsive.css" />
   <link rel="stylesheet" href="../css/ui-fixes.css" />
-  <link rel="stylesheet" href="../css/responsive-fix.csz`s" />
+  <link rel="stylesheet" href="../css/responsive-fix.css" />
   <link rel="stylesheet" href="../css/network.css" />
   <style>
     :root {
@@ -25,7 +25,7 @@
       --rad:12px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;}
+    body{background:#f0f4ec;font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;padding-bottom:100px}
 
     /* Top bar */
     .topbar{background:var(--br);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15)}
@@ -33,7 +33,7 @@
     .topbar h2{font-size:.95rem;font-weight:700;flex:1}
 
     /* GPS status */
-    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:12px;font-size:.8rem;font-weight:600;border:1.5px solid}
+    .gps-bar{margin:14px 14px 0;border-radius:var(--rad);padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:.8rem;font-weight:600;border:1.5px solid}
     .gps-bar.loading{background:#fff8e1;border-color:#ffc107;color:#856404}
     .gps-bar.ok{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
     .gps-bar.outside{background:#fee2e2;border-color:#ef5350;color:var(--err)}
@@ -87,7 +87,7 @@
 
     /* Sale toggle */
     .sale-toggle{display:flex;gap:10px;margin-top:4px}
-    /* .sr-only — provided by salesman.css */
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .sale-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--bdr);font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;background:#fff;color:var(--ink3);font-family:inherit;display:flex;align-items:center;justify-content:center}
     .sale-btn.yes.active{background:var(--ok-lt);border-color:#4caf50;color:var(--ok)}
     .sale-btn.no.active{background:#fee2e2;border-color:#ef5350;color:var(--err)}
@@ -116,8 +116,11 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── Product section ── */
-    .prod-select-row{margin-bottom:10px}
-    .prod-select{width:100%;border:1.5px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer}
+    .prod-select-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    .prod-select{flex:1;border:1.5px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:.84rem;font-family:inherit;background:#fff;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none}
+    .prod-select:focus{border-color:var(--br2)}
+    .prod-add-btn{background:var(--br2);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:.84rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .prod-add-btn:active{opacity:.85}
     .prod-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
     .prod-table{width:100%;border-collapse:collapse;font-size:.8rem;min-width:300px}
     .prod-table th{background:var(--ultra);color:var(--br2);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:7px 8px;border-bottom:1.5px solid var(--bdr);text-align:left}
@@ -210,13 +213,14 @@
 <div class="card" id="productCard">
   <div class="card-head"><div class="step-num">2</div><h3>Products to Add</h3></div>
   <div class="card-body">
-    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:5px;line-height:2;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
+    <p style="font-size:.78rem;color:var(--br);font-weight:600;margin-bottom:8px;line-height:1.5;background:var(--ultra);padding:8px 10px;border-radius:8px;border:1px solid var(--bdr)">
       📦 Select products this shop wants to order or is interested in.
     </p>
     <div class="prod-select-row">
-      <select id="geoProductDropdown" class="prod-select" onchange="geoAddProduct()">
-        <option value="">— Tap to select a product —</option>
+      <select id="geoProductDropdown" class="prod-select">
+        <option value="">— Select a product —</option>
       </select>
+      <button type="button" class="prod-add-btn" onclick="geoAddProduct()">+ Add</button>
     </div>
     <div id="geoProdListWrap">
       <div class="prod-empty" id="geoProdEmpty">No products added yet.</div>
@@ -409,7 +413,7 @@ function _geoRebuildDropdown() {
   const sel = document.getElementById('geoProductDropdown');
   if (!sel) return;
   const addedIds = new Set(_geoSelProds.map(p => p.id));
-  sel.innerHTML = '<option value="">— Tap to select a product —</option>';
+  sel.innerHTML = '<option value="">— Select a product —</option>';
   _geoAllProds.forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
@@ -421,21 +425,16 @@ function _geoRebuildDropdown() {
 
 function geoAddProduct() {
   const sel = document.getElementById('geoProductDropdown');
-  if (!sel || !sel.value) return;
+  if (!sel || !sel.value) { showToast('Please select a product first.', 'error'); return; }
   const pid  = parseInt(sel.value, 10);
   const prod = _geoAllProds.find(p => p.id === pid);
-  if (!prod) { sel.value = ''; return; }
-  if (_geoSelProds.some(p => p.id === pid)) {
-    showToast(prod.name + ' already added.', 'error');
-    sel.value = '';
-    return;
-  }
+  if (!prod) return;
+  if (_geoSelProds.some(p => p.id === pid)) { showToast('Already added.', 'error'); return; }
   const price = parseFloat(prod.price) || 0;
   _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
   sel.value = '';
   _geoRenderTable();
   _geoRebuildDropdown();
-  showToast(prod.name + ' added ✓', 'success');
 }
 
 function _geoRenderTable() {
@@ -489,7 +488,9 @@ function _geoUpdateGrandTotal() {
   if (el) el.textContent = '₹' + gt.toFixed(2);
 }
 
-/* _esc, showToast — provided by salesman.js (loaded above) */
+function _esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 /* ── Load assigned taluka ── */
 async function loadAssignedTaluka() {
@@ -1010,7 +1011,14 @@ function startTrackingPing() {
 }
 
 /* ══════════ HELPERS ══════════ */
-
+function showToast(msg, type) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type || '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
 </script>
 
 <script nonce="CSP_NONCE">
