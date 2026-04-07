@@ -3551,6 +3551,137 @@ td.db-actions .btn {
   flex-shrink: 0;
 }
 
+/* --- network.css --- */
+/* ═══════════════════════════════════════════════════════════════
+   network.css — Aqualence Ventures
+   Network status UI: offline banner · slow banner · progress bar
+   · network quality badge. Works on 2G → 5G.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Progress bar (thin, top of page) ──────────────────────── */
+.aq-progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 9999;
+  pointer-events: none;
+}
+.aq-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand, #2d6a4f), #52b788);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.2s ease, background 0.3s ease;
+  box-shadow: 0 0 8px rgba(82,183,136,.6);
+}
+
+/* ── Base banner ────────────────────────────────────────────── */
+.aq-net-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  z-index: 8000;
+  padding: 10px 18px;
+  border-radius: 24px;
+  font-size: .82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+}
+.aq-net-banner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.aq-net-banner.hidden { display: none; }
+
+.aq-net-banner button {
+  background: rgba(255,255,255,.25);
+  border: 1px solid rgba(255,255,255,.4);
+  color: inherit;
+  border-radius: 12px;
+  padding: 3px 12px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.aq-net-banner button:hover { background: rgba(255,255,255,.4); }
+
+/* ── Offline banner (dark) ──────────────────────────────────── */
+.aq-offline { background: #1a202c; color: #fff; }
+
+/* ── Slow network banner (amber) ────────────────────────────── */
+.aq-slow { background: #744210; color: #fefcbf; }
+
+/* ══════════════════════════════════════════════════════════════
+   NETWORK QUALITY BADGE
+   Mobile:  bottom-left, above bottom nav (if present)
+   Desktop: inside topnav, top-right, never clips off screen
+   ══════════════════════════════════════════════════════════════ */
+
+/* Mobile default — bottom-left, clear of bottom nav */
+
+/* Tier colour coding */
+.tier-unknown { background: #2d3748; color: #e2e8f0; }
+
+/* ── Desktop: move badge to topnav area, right-aligned ───────── */
+@media (min-width: 640px) {
+
+  /* Admin layout: sidebar is 260px wide on desktop;
+     badge must not overlap the sidebar or spill off-screen */
+
+  .aq-net-banner { bottom: 24px; }
+}
+
+/* On very narrow desktop (<800px) admin layout the badge can still clip.
+   Clamp right so it never overflows the viewport. */
+@media (min-width: 640px) and (max-width: 900px) {
+}
+
+/* ── Pages with no bottom nav: badge sits lower on mobile ─────── */
+/* Only push up when a bottom nav is actually present */
+body:has(#adminBottomNav)   .aq-net-banner { bottom: 80px; }
+
+/* ── Skeleton / loading pulse for slow connections ──────────── */
+.aq-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: aq-skeleton-shimmer 1.8s infinite;
+  border-radius: 8px;
+}
+@keyframes aq-skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Reduce animations to save bandwidth on slow connections */
+@media (prefers-reduced-data: reduce) {
+  .aq-skeleton { animation: none; background: #e8e8e8; }
+  .spinner     { animation-duration: 1.5s !important; }
+}
+
+/* 2G class: disable all animations for performance */
+body.net-2g * {
+  animation-duration: .01ms !important;
+  transition-duration: .01ms !important;
+}
+body.net-2g .prod-thumb,
+body.net-2g .prod-card-img {
+  image-rendering: pixelated;
+}
+
+/* ── Badge anchored inside .topnav (desktop, admin pages) ────── */
+
 
 /* ═══════════════════════════════════════════════════════════
    GEO-LEAD — prod-select-row overflow fix
