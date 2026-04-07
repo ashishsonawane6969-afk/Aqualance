@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/customer.css',   // ✅ was '/css/app.css' — file doesn't exist
   '/js/app.js',
-  '/js/network.js',
+
   '/images/icon-192.png',
   '/images/icon-512.png',
 ];
