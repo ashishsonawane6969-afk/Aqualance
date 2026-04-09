@@ -172,6 +172,15 @@ function _productCardHTML(p) {
     ? '<div class="product-desc">' + (p.description.length > 80 ? p.description.slice(0, 80) + '…' : p.description) + '</div>'
     : '';
 
+  // Bundle info line
+  var bundleHTML = '';
+  if (p.is_bundle && p.display_name) {
+    bundleHTML = '<div class="product-bundle-line">'
+      + '<span class="product-bundle-tag">📦 Bundle</span>'
+      + '<span class="product-bundle-name">' + p.display_name.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>'
+      + '</div>';
+  }
+
   // Cart control
   var cartHTML;
   if (p.stock === 0) {
@@ -200,6 +209,7 @@ function _productCardHTML(p) {
     + '<div class="product-info">'
     +   '<div class="product-category">' + p.category + '</div>'
     +   '<div class="product-name">' + p.name + '</div>'
+    +   bundleHTML
     +   descHTML
     +   '<div class="product-price-row">'
     +     '<div><div class="product-price">₹' + parseFloat(p.price).toFixed(0) + '</div>' + mrpHTML + '</div>'
