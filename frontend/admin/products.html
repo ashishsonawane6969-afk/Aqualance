@@ -68,7 +68,7 @@
       #productCards { display: none; }
     }
 
-    /* ── Modal form alignment fixes ── */
+    /* ── Modal form alignment ── */
     #productModal .modal { max-width: 520px; }
     #productModal form { padding: 14px 18px 4px; }
     #productModal .form-row {
@@ -77,7 +77,10 @@
       gap: 12px;
     }
     #productModal .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
-    #productModal .form-group label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .03em; }
+    #productModal .form-group label {
+      font-size: .78rem; font-weight: 600; color: var(--ink-soft);
+      text-transform: uppercase; letter-spacing: .03em;
+    }
     #productModal .form-group input,
     #productModal .form-group select,
     #productModal .form-group textarea {
@@ -148,14 +151,13 @@
       margin: 0;
     }
     .bundle-fields.open {
-      max-height: 600px; opacity: 1; margin-bottom: 12px;
+      max-height: 620px; opacity: 1; margin-bottom: 12px;
     }
 
     .bundle-preview {
       padding: 12px 16px; border-radius: 12px; margin-top: 8px;
       background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
       border: 1px solid rgba(21,101,168,.15);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
       min-height: 44px; transition: all .3s;
     }
     .bundle-preview .bp-title {
@@ -179,6 +181,17 @@
       background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
       letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
     }
+
+    /* Pack size disabled state */
+    #pPackSize:disabled {
+      opacity: 0.45; cursor: not-allowed; background: var(--surface-2);
+    }
+
+    /* Field hint text inside labels */
+    .field-hint {
+      font-weight: 400; text-transform: none; font-size: .68rem;
+      color: var(--ink-faint); letter-spacing: 0;
+    }
   </style>
 </head>
 <body class="admin-layout">
@@ -197,7 +210,6 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>
         Leaderboard
       </a>
-
       <a href="/admin/orders.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders</a>
       <a href="/admin/products.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products</a>
       <a href="/admin/salesmen.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
@@ -260,48 +272,45 @@
     </div>
     <form id="productForm" novalidate>
       <input type="hidden" id="productId" />
+
       <div class="form-row">
         <div class="form-group">
-          <label for="pName">Product Name *
-            <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
-          </label>
+          <label for="pName">Product Name *</label>
+          <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
         </div>
         <div class="form-group">
-          <label for="pCategory">Category
-            <select id="pCategory">
-          </label>
+          <label for="pCategory">Category</label>
+          <select id="pCategory">
             <option>Face Care</option><option>Hair Care</option><option>Body Care</option>
             <option>Essentials</option><option>New Launches</option><option>General</option>
           </select>
         </div>
       </div>
+
       <div class="form-group">
-        <label for="pDescription">Description
-          <textarea id="pDescription" rows="3" placeholder="Product description..."></textarea>
-        </label>
+        <label for="pDescription">Description</label>
+        <textarea id="pDescription" rows="3" placeholder="Product description..."></textarea>
       </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label for="pPrice">Price (₹) *
-            <input type="number" id="pPrice" required min="0" step="0.01" placeholder="120.00" />
-          </label>
+          <label for="pPrice">Price (₹) *</label>
+          <input type="number" id="pPrice" required min="0" step="0.01" placeholder="120.00" />
         </div>
         <div class="form-group">
-          <label for="pMrp">MRP (₹)
-            <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
-          </label>
+          <label for="pMrp">MRP (₹)</label>
+          <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
         </div>
       </div>
+
       <div class="form-row">
         <div class="form-group">
-          <label for="pStock">Stock
-            <input type="number" id="pStock" min="0" placeholder="100" />
-          </label>
+          <label for="pStock">Stock</label>
+          <input type="number" id="pStock" min="0" placeholder="100" />
         </div>
         <div class="form-group">
-          <label for="pUnit">Unit
-            <select id="pUnit">
-          </label>
+          <label for="pUnit">Unit</label>
+          <select id="pUnit">
             <option>piece</option><option>bottle</option><option>pack</option><option>box</option>
           </select>
         </div>
@@ -309,7 +318,7 @@
 
       <!-- ── Bundle Product Section ── -->
       <label class="bundle-toggle-row" for="pIsBundle">
-        <input type="checkbox" id="pIsBundle" onchange="toggleBundleFields(this.checked)" />
+        <input type="checkbox" id="pIsBundle" />
         <span class="bundle-switch"></span>
         <span class="bundle-label">Bundle Product<small>Enable pack/combo configuration</small></span>
       </label>
@@ -317,31 +326,33 @@
       <div class="bundle-fields" id="bundleFields">
         <div class="form-row">
           <div class="form-group">
-            <label for="pBaseQty">Base Quantity *
-              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" oninput="updateBundlePreview()" />
-            </label>
+            <label for="pBaseQty">Base Quantity *</label>
+            <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
           </div>
           <div class="form-group">
-            <label for="pBaseUnit">Unit *
-              <select id="pBaseUnit" onchange="updateBundlePreview()">
-                <option value="GM">GM</option>
-                <option value="KG">KG</option>
-                <option value="L">L</option>
-                <option value="ML">ML</option>
-                <option value="PCS">PCS</option>
-              </select>
-            </label>
+            <label for="pBaseUnit">Measurement Unit *</label>
+            <select id="pBaseUnit">
+              <option value="GM">GM</option>
+              <option value="KG">KG</option>
+              <option value="L">L</option>
+              <option value="ML">ML</option>
+              <option value="PCS">PCS</option>
+            </select>
           </div>
         </div>
         <div class="form-group">
-          <label for="pPackSize">Pack Size *
-            <input type="number" id="pPackSize" min="1" step="1" placeholder="5" oninput="updateBundlePreview()" />
+          <label for="pPackSize">
+            Pack Size *
+            <span class="field-hint">(units per pack — enabled when bundle is checked)</span>
           </label>
+          <input type="number" id="pPackSize" min="1" step="1" placeholder="5" disabled />
         </div>
         <div class="form-group">
-          <label for="pDisplayName">Display Name
-            <input type="text" id="pDisplayName" placeholder="Auto-generated (editable)" oninput="_bundleNameOverride=true" />
+          <label for="pDisplayName">
+            Display Name
+            <span class="field-hint">(auto-generated — edit to override)</span>
           </label>
+          <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
         </div>
         <div class="bundle-preview" id="bundlePreview">
           <div class="bp-title">📦 Live Preview</div>
@@ -366,6 +377,7 @@
           </div>
         </div>
       </div>
+
       <div id="productFormError" class="login-error hidden"></div>
       <button type="submit" class="btn btn-primary btn-full">Save Product</button>
     </form>
@@ -388,171 +400,247 @@
     <a href="/admin/salesmen.html" class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
   </div>
 </nav>
+
 <script>
-function toggleSidebar(){
-  var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
-  var isOpen=s.classList.toggle("open");
-  o.classList.toggle("show",isOpen);
-  document.body.style.overflow=isOpen?"hidden":"";
-}
-function closeSidebar(){
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("sidebarOverlay").classList.remove("show");
-  document.body.style.overflow="";
-}
-(function(){
-  // Close sidebar on Escape key
-  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSidebar();});
-  // Mark active bottom nav item
-  var path=window.location.pathname.split("/").pop();
-  document.querySelectorAll("#adminBottomNav .bnav-item").forEach(function(a){
-    if(a.getAttribute("href")===path)a.classList.add("active");
+/* ── Sidebar toggle ─────────────────────────────────────────── */
+(function () {
+  'use strict';
+  function toggleSidebar() {
+    var s = document.getElementById('sidebar');
+    var o = document.getElementById('sidebarOverlay');
+    var isOpen = s.classList.toggle('open');
+    o.classList.toggle('show', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    document.getElementById('mobMenuBtn').setAttribute('aria-expanded', String(isOpen));
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+    document.getElementById('mobMenuBtn').setAttribute('aria-expanded', 'false');
+  }
+  window.toggleSidebar = toggleSidebar;
+  window.closeSidebar  = closeSidebar;
+
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSidebar(); });
+
+  // Mark active nav items
+  var path = window.location.pathname.split('/').pop();
+  document.querySelectorAll('#adminBottomNav .bnav-item').forEach(function (a) {
+    a.classList.toggle('active', a.getAttribute('href') === path);
   });
-  // Mark active sidebar item
-  document.querySelectorAll(".sidebar .nav-item").forEach(function(a){
-    if(a.getAttribute("href")===path)a.classList.add("active");
-    else a.classList.remove("active");
+  document.querySelectorAll('.sidebar .nav-item').forEach(function (a) {
+    a.classList.toggle('active', a.getAttribute('href') === path);
   });
 })();
 </script>
 
 <script>
-// ── Image upload: file picker → base64 preview + store for submit ──
-(function(){
-  var fileInput  = document.getElementById('pImageFile');
-  var urlInput   = document.getElementById('pImage');
-  var preview    = document.getElementById('imgPreview');
-  var placeholder= document.getElementById('imgPreviewPlaceholder');
-  var _b64       = null; // holds base64 data when a file is chosen
+/* ── Image upload widget ────────────────────────────────────── */
+(function () {
+  'use strict';
 
-  function showPreview(src){
-    if(src){ preview.src=src; preview.style.display='block'; placeholder.style.display='none'; }
-    else   { preview.src=''; preview.style.display='none';  placeholder.style.display=''; }
+  var fileInput    = document.getElementById('pImageFile');
+  var urlInput     = document.getElementById('pImage');
+  var preview      = document.getElementById('imgPreview');
+  var placeholder  = document.getElementById('imgPreviewPlaceholder');
+  var _b64         = null;
+
+  function showImagePreview(src) {
+    if (src) {
+      preview.src = src;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+      placeholder.style.display = '';
+    }
   }
 
-  // File chosen → convert to base64, show preview
-  fileInput.addEventListener('change', function(){
+  fileInput.addEventListener('change', function () {
     var file = fileInput.files[0];
-    if(!file) return;
+    if (!file) return;
     var reader = new FileReader();
-    reader.onload = function(e){
-      _b64 = e.target.result;          // data:image/...;base64,...
-      urlInput.value = '';             // clear URL field when file is used
-      showPreview(_b64);
+    reader.onload = function (e) {
+      _b64 = e.target.result;
+      urlInput.value = '';
+      showImagePreview(_b64);
     };
     reader.readAsDataURL(file);
   });
 
-  // URL typed → show preview, clear file choice
-  urlInput.addEventListener('input', function(){
+  urlInput.addEventListener('input', function () {
     _b64 = null;
     fileInput.value = '';
-    showPreview(urlInput.value.trim() || null);
+    showImagePreview(urlInput.value.trim() || null);
   });
 
-  // When modal opens for edit, pre-fill preview from existing image
-  var origOpen = window.editProduct;
-  // Hook into modal reset to clear preview
-  var origOpenModal = window.openProductModal;
-  if(origOpenModal){
-    window.openProductModal = function(id){
-      origOpenModal(id);
-      if(!id){ _b64=null; fileInput.value=''; showPreview(null); }
-    };
-  }
-
-  // Expose b64 getter so admin.js submit can read it
-  window._getProductImageB64 = function(){ return _b64; };
-
-  // After edit loads, update preview
-  var origEdit = window.editProduct;
-  if(origEdit){
-    window.editProduct = async function(id){
-      _b64=null; fileInput.value='';
-      await origEdit(id);
-      var url = document.getElementById('pImage').value;
-      showPreview(url || null);
-    };
-  }
+  /* Public API used by admin.js */
+  window._getProductImageB64      = function () { return _b64; };
+  window._resetProductImageWidget = function () {
+    _b64 = null;
+    fileInput.value = '';
+    showImagePreview(null);
+  };
+  window._setProductImagePreview  = function (url) {
+    _b64 = null;
+    fileInput.value = '';
+    showImagePreview(url || null);
+  };
 })();
 </script>
 
 <script>
-/* ── Bundle Product Logic ─────────────────────────────────────── */
-var _bundleNameOverride = false;
+/* ── Bundle Product Logic ───────────────────────────────────── */
+(function () {
+  'use strict';
 
-function toggleBundleFields(checked) {
-  var bf = document.getElementById('bundleFields');
-  if (checked) {
-    bf.classList.add('open');
-  } else {
-    bf.classList.remove('open');
-  }
-}
+  // Tracks whether the user has manually typed in the display name field.
+  // When true, auto-generation will NOT overwrite their value.
+  // Resets to false when: modal opens fresh, bundle is disabled, or user clears the field.
+  var _nameOverride = false;
 
-function updateBundlePreview() {
-  var qty      = parseFloat(document.getElementById('pBaseQty').value) || 0;
-  var unit     = document.getElementById('pBaseUnit').value || 'GM';
-  var packSize = parseInt(document.getElementById('pPackSize').value, 10) || 0;
-  var preview  = document.getElementById('bundlePreview');
-  var nameEl   = document.getElementById('pDisplayName');
+  // Element references — resolved once, reused everywhere
+  var elIsBundle     = document.getElementById('pIsBundle');
+  var elBundleFields = document.getElementById('bundleFields');
+  var elBaseQty      = document.getElementById('pBaseQty');
+  var elBaseUnit     = document.getElementById('pBaseUnit');
+  var elPackSize     = document.getElementById('pPackSize');
+  var elDisplayName  = document.getElementById('pDisplayName');
+  var elPreview      = document.getElementById('bundlePreview');
 
-  if (qty > 0 && packSize > 0) {
-    var displayName = qty + ' ' + unit + ' × ' + packSize + ' Pack';
-    var totalQty    = qty * packSize;
-
-    // Only auto-fill if user hasn't manually edited
-    if (!_bundleNameOverride) {
-      nameEl.value = displayName;
-    }
-
-    preview.innerHTML =
-      '<div class="bp-title">📦 Live Preview</div>' +
-      '<div class="bp-name">' + _esc(nameEl.value || displayName) + '</div>' +
-      '<div class="bp-total">Total: ' + totalQty + ' ' + unit + '</div>';
-  } else {
-    preview.innerHTML =
+  /* ── Helpers ── */
+  function renderEmptyPreview() {
+    elPreview.innerHTML =
       '<div class="bp-title">📦 Live Preview</div>' +
       '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
   }
-}
 
-function resetBundleFields() {
-  _bundleNameOverride = false;
-  document.getElementById('pIsBundle').checked = false;
-  document.getElementById('pBaseQty').value = '';
-  document.getElementById('pBaseUnit').value = 'GM';
-  document.getElementById('pPackSize').value = '';
-  document.getElementById('pDisplayName').value = '';
-  toggleBundleFields(false);
-  document.getElementById('bundlePreview').innerHTML =
-    '<div class="bp-title">📦 Live Preview</div>' +
-    '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
-}
-
-function prefillBundleFields(product) {
-  if (product.is_bundle) {
-    document.getElementById('pIsBundle').checked = true;
-    document.getElementById('pBaseQty').value = product.base_quantity || '';
-    document.getElementById('pBaseUnit').value = product.base_unit || 'GM';
-    document.getElementById('pPackSize').value = product.pack_size || '';
-    document.getElementById('pDisplayName').value = product.display_name || '';
-    if (product.display_name) _bundleNameOverride = true;
-    toggleBundleFields(true);
-    updateBundlePreview();
-  } else {
-    resetBundleFields();
+  function buildAutoName(qty, unit, packSize) {
+    return qty + ' ' + unit + ' \u00d7 ' + packSize + ' Pack';
   }
-}
+
+  /* ── Toggle bundle section open/closed ── */
+  function toggleBundleFields(isChecked) {
+    elBundleFields.classList.toggle('open', isChecked);
+    elPackSize.disabled = !isChecked;
+    if (!isChecked) {
+      renderEmptyPreview();
+    } else {
+      updateBundlePreview();
+    }
+  }
+
+  /* ── Refresh the live preview panel ── */
+  function updateBundlePreview() {
+    var qty      = parseFloat(elBaseQty.value) || 0;
+    var unit     = elBaseUnit.value || 'GM';
+    var packSize = parseInt(elPackSize.value, 10) || 0;
+
+    if (qty > 0 && packSize > 0) {
+      var autoName = buildAutoName(qty, unit, packSize);
+      var totalQty = +(qty * packSize).toFixed(4);
+
+      // Auto-fill display name only when user has NOT manually set it
+      if (!_nameOverride) {
+        elDisplayName.value = autoName;
+      }
+
+      var previewName = elDisplayName.value.trim() || autoName;
+      elPreview.innerHTML =
+        '<div class="bp-title">📦 Live Preview</div>' +
+        '<div class="bp-name">' + _esc(previewName) + '</div>' +
+        '<div class="bp-total">Total quantity: ' + totalQty + '\u00a0' + unit + '</div>';
+    } else {
+      renderEmptyPreview();
+    }
+  }
+
+  /* ── Reset all bundle fields to defaults ── */
+  function resetBundleFields() {
+    _nameOverride          = false;
+    elIsBundle.checked     = false;
+    elBaseQty.value        = '';
+    elBaseUnit.value       = 'GM';
+    elPackSize.value       = '';
+    elPackSize.disabled    = true;
+    elDisplayName.value    = '';
+    elBundleFields.classList.remove('open');
+    renderEmptyPreview();
+  }
+
+  /* ── Pre-fill when editing an existing product ── */
+  function prefillBundleFields(product) {
+    if (product && product.is_bundle) {
+      elIsBundle.checked = true;
+
+      var qty      = product.base_quantity != null ? product.base_quantity : '';
+      var unit     = product.base_unit || 'GM';
+      var packSize = product.pack_size  != null ? product.pack_size  : '';
+
+      elBaseQty.value     = qty;
+      elBaseUnit.value    = unit;
+      elPackSize.value    = packSize;
+      elPackSize.disabled = false;
+
+      // Determine if the saved display_name was manually set or auto-generated.
+      // If it matches what auto-generation would produce → not an override.
+      var savedName = (product.display_name || '').trim();
+      var autoName  = (qty && packSize)
+        ? buildAutoName(qty, unit, packSize)
+        : '';
+
+      _nameOverride       = savedName !== '' && savedName !== autoName;
+      elDisplayName.value = savedName;
+
+      elBundleFields.classList.add('open');
+      updateBundlePreview();
+    } else {
+      resetBundleFields();
+    }
+  }
+
+  /* ── Event listeners ── */
+
+  // Checkbox toggle
+  elIsBundle.addEventListener('change', function () {
+    toggleBundleFields(this.checked);
+  });
+
+  // Bundle metric inputs → refresh preview
+  elBaseQty.addEventListener('input', function () {
+    if (elIsBundle.checked) updateBundlePreview();
+  });
+  elBaseUnit.addEventListener('change', function () {
+    if (elIsBundle.checked) updateBundlePreview();
+  });
+  elPackSize.addEventListener('input', function () {
+    if (elIsBundle.checked) updateBundlePreview();
+  });
+
+  // Manual display name edit:
+  //   - typing sets override so auto-gen stops overwriting
+  //   - clearing the field removes the override so auto-gen resumes
+  elDisplayName.addEventListener('input', function () {
+    _nameOverride = this.value.trim() !== '';
+    if (elIsBundle.checked) updateBundlePreview();
+  });
+
+  /* ── Expose on window for admin.js lifecycle hooks ── */
+  window.resetBundleFields   = resetBundleFields;
+  window.prefillBundleFields = prefillBundleFields;
+  window.updateBundlePreview = updateBundlePreview;
+})();
 </script>
 
 <script src="/js/network.js"></script>
 
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  window.addEventListener('load', function () {
     navigator.serviceWorker.register('/sw.js')
-      .catch(err => console.warn('SW registration failed:', err));
+      .catch(function (err) { console.warn('SW registration failed:', err); });
   });
 }
 </script>
