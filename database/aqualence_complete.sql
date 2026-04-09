@@ -89,21 +89,28 @@ CREATE TABLE `talukas` (
 -- TABLE: products
 -- ============================================================
 CREATE TABLE `products` (
-  `id`          INT             NOT NULL AUTO_INCREMENT,
-  `name`        VARCHAR(150)    NOT NULL,
-  `description` TEXT,
-  `price`       DECIMAL(10,2)   NOT NULL,
-  `mrp`         DECIMAL(10,2)   DEFAULT NULL,
-  `image`       LONGTEXT        NOT NULL,
-  `images`      TEXT            DEFAULT NULL,
-  `category`    VARCHAR(100)    NOT NULL DEFAULT 'General',
-  `stock`       INT             NOT NULL DEFAULT 100,
-  `unit`        VARCHAR(50)     NOT NULL DEFAULT 'piece',
-  `is_active`   TINYINT(1)      NOT NULL DEFAULT 1,
-  `created_at`  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `id`            INT             NOT NULL AUTO_INCREMENT,
+  `name`          VARCHAR(150)    NOT NULL,
+  `description`   TEXT,
+  `price`         DECIMAL(10,2)   NOT NULL,
+  `mrp`           DECIMAL(10,2)   DEFAULT NULL,
+  `image`         LONGTEXT        NOT NULL,
+  `images`        TEXT            DEFAULT NULL,
+  `category`      VARCHAR(100)    NOT NULL DEFAULT 'General',
+  `stock`         INT             NOT NULL DEFAULT 100,
+  `unit`          VARCHAR(50)     NOT NULL DEFAULT 'piece',
+  `is_active`     TINYINT(1)      NOT NULL DEFAULT 1,
+  -- Bundle product fields
+  `is_bundle`     TINYINT(1)      NOT NULL DEFAULT 0,
+  `base_quantity` DECIMAL(10,2)   DEFAULT NULL,
+  `base_unit`     VARCHAR(10)     DEFAULT NULL,
+  `pack_size`     INT             DEFAULT NULL,
+  `display_name`  VARCHAR(255)    DEFAULT NULL,
+  `created_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  INDEX `idx_products_cat` (`category`)
+  INDEX `idx_products_cat`    (`category`),
+  INDEX `idx_products_bundle` (`is_bundle`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
