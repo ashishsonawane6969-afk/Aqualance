@@ -1,0 +1,41 @@
+{
+  "name": "Aqualence Ventures — iKrish",
+  "short_name": "Aqualence",
+  "description": "iKrish Distribution Ordering & Salesman Management System",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#052d54",
+  "theme_color": "#1565a8",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Order",
+      "url": "/checkout.html",
+      "description": "Place a new water order"
+    },
+    {
+      "name": "Track Delivery",
+      "url": "/delivery/dashboard.html",
+      "description": "View delivery assignments"
+    }
+  ],
+  "prefer_related_applications": false
+}

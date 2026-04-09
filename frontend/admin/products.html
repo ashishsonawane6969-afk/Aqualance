@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Products — Admin | Aqualence Ventures</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    .main-area { min-width: 0; overflow-x: hidden; }
+    .content-area { min-width: 0; overflow-x: hidden; max-width: 100%; }
+    .card { min-width: 0; }
+    .table-wrap { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+    .table-wrap table { min-width: 560px; border-collapse: collapse; width: 100%; }
+    .table-wrap thead th { white-space: nowrap; }
+    .filter-bar { flex-wrap: wrap; }
+    .search-input { min-width: 0; flex: 1 1 140px; }
+    select.filter-select { max-width: 130px; }
+
+    /* Product image thumbnail in table */
+    .prod-thumb {
+      width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--border); display: block; flex-shrink: 0;
+      background: #f5f5f5;
+    }
+    .prod-thumb-placeholder {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0; border: 1px solid var(--border);
+    }
+    .prod-name-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .prod-name-text { font-weight: 600; color: var(--ink); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+
+    /* Mobile: card layout instead of table */
+    @media (max-width: 640px) {
+      .table-wrap { display: none !important; }
+      #productCards { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+      .prod-card {
+        background: #fff; border-radius: 14px; border: 1px solid var(--border);
+        padding: 12px; display: flex; gap: 12px; align-items: flex-start;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      }
+      .prod-card-img {
+        width: 52px; height: 52px; border-radius: 10px; object-fit: cover;
+        border: 1px solid var(--border); flex-shrink: 0; background: #f5f5f5;
+      }
+      .prod-card-img-placeholder {
+        width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+        border: 1px solid var(--border);
+      }
+      .prod-card-body { flex: 1; min-width: 0; }
+      .prod-card-name { font-weight: 700; font-size: .88rem; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
+      .prod-card-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .75rem; color: var(--ink-soft); margin-bottom: 8px; }
+      .prod-card-meta b { color: var(--ink); }
+      .prod-card-actions { display: flex; gap: 6px; }
+      .prod-card-actions .btn { padding: 5px 14px; font-size: .75rem; }
+    }
+    @media (min-width: 641px) {
+      #productCards { display: none; }
+    }
+
+    /* ── Modal form alignment fixes ── */
+    #productModal .modal { max-width: 520px; }
+    #productModal form { padding: 14px 18px 4px; }
+    #productModal .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    #productModal .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+    #productModal .form-group label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .03em; }
+    #productModal .form-group input,
+    #productModal .form-group select,
+    #productModal .form-group textarea {
+      width: 100%; box-sizing: border-box;
+      padding: 9px 12px; border-radius: var(--r-md);
+      border: 1.5px solid var(--border); font-size: .9rem;
+      background: var(--surface); color: var(--ink);
+      transition: border-color .15s;
+    }
+    #productModal .form-group input:focus,
+    #productModal .form-group select:focus,
+    #productModal .form-group textarea:focus {
+      outline: none; border-color: var(--brand);
+    }
+    /* ── Image upload widget ── */
+    .img-upload-wrap {
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .img-preview-box {
+      width: 88px; height: 88px; flex-shrink: 0;
+      border-radius: 12px; border: 1.5px dashed var(--border-dark);
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .img-upload-controls {
+      flex: 1; display: flex; flex-direction: column; gap: 6px;
+    }
+    .img-file-label {
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+      white-space: nowrap; align-self: flex-start;
+    }
+    @media (max-width: 480px) {
+      #productModal .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* ── Bundle Product Styles ── */
+    .bundle-toggle-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; margin: 4px 0 12px;
+      background: linear-gradient(135deg, rgba(21,101,168,.06), rgba(76,175,80,.06));
+      border-radius: var(--r-md); border: 1px solid rgba(21,101,168,.12);
+      cursor: pointer; transition: all .2s;
+    }
+    .bundle-toggle-row:hover { border-color: var(--brand); }
+    .bundle-toggle-row input[type=checkbox] { display: none; }
+    .bundle-switch {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+      background: #ccc; border-radius: 12px; transition: background .25s;
+    }
+    .bundle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s;
+    }
+    .bundle-toggle-row input:checked ~ .bundle-switch {
+      background: linear-gradient(135deg, #1565a8, #43a047);
+    }
+    .bundle-toggle-row input:checked ~ .bundle-switch::after {
+      transform: translateX(20px);
+    }
+    .bundle-label { font-size: .82rem; font-weight: 600; color: var(--ink); user-select: none; }
+    .bundle-label small { font-weight: 400; color: var(--ink-soft); display: block; font-size: .72rem; margin-top: 1px; }
+
+    .bundle-fields {
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
+      margin: 0;
+    }
+    .bundle-fields.open {
+      max-height: 600px; opacity: 1; margin-bottom: 12px;
+    }
+
+    .bundle-preview {
+      padding: 12px 16px; border-radius: 12px; margin-top: 8px;
+      background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
+      border: 1px solid rgba(21,101,168,.15);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      min-height: 44px; transition: all .3s;
+    }
+    .bundle-preview .bp-title {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+      font-weight: 700; color: var(--ink-soft); margin-bottom: 6px;
+    }
+    .bundle-preview .bp-name {
+      font-size: 1rem; font-weight: 700; color: var(--ink);
+      letter-spacing: .01em; line-height: 1.4;
+    }
+    .bundle-preview .bp-total {
+      font-size: .78rem; color: var(--sage); font-weight: 600; margin-top: 4px;
+    }
+    .bundle-preview .bp-empty {
+      font-size: .78rem; color: var(--ink-faint); font-style: italic;
+    }
+
+    .bundle-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: 6px; font-size: .65rem; font-weight: 700;
+      background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
+      letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="admin-layout">
+<div class="app-layout">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user"><div class="name" id="sidebarName">Admin</div><div class="role">Administrator</div></div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</a>
+      <a href="/admin/overview.html" class="nav-item" data-page="overview">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+        Overview
+      </a>
+      <a href="/admin/leaderboard.html" class="nav-item" data-page="leaderboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>
+        Leaderboard
+      </a>
+
+      <a href="/admin/orders.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders</a>
+      <a href="/admin/products.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products</a>
+      <a href="/admin/salesmen.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
+      <a href="/admin/geo-map.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map</a>
+      <a href="/admin/delivery-boys.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys
+      </a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer"><button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button></div>
+  </aside>
+
+  <div class="main-area">
+    <div class="topnav">
+      <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
+      <h2>📦 Products Management</h2>
+      <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Add Product</button>
+    </div>
+    <div class="content-area">
+      <div class="card">
+        <div class="card-header">
+          <div class="filter-bar">
+            <input type="text" class="search-input" id="searchProducts" placeholder="🔍 Search products..." oninput="filterProducts()" />
+            <select class="filter-select" id="catFilter" onchange="filterProducts()">
+              <option value="">All Categories</option>
+              <option>New Launches</option>
+              <option>Face Care</option>
+              <option>Hair Care</option>
+              <option>Body Care</option>
+              <option>Essentials</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Product</th><th>Category</th><th>Price</th><th>MRP</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="productsTableBody">
+                <tr><td colspan="7" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Mobile card view (shown on screens < 640px) -->
+          <div id="productCards"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="productModalTitle">Add Product</h3>
+      <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+    </div>
+    <form id="productForm" novalidate>
+      <input type="hidden" id="productId" />
+      <div class="form-row">
+        <div class="form-group">
+          <label for="pName">Product Name *
+            <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="pCategory">Category
+            <select id="pCategory">
+          </label>
+            <option>Face Care</option><option>Hair Care</option><option>Body Care</option>
+            <option>Essentials</option><option>New Launches</option><option>General</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="pDescription">Description
+          <textarea id="pDescription" rows="3" placeholder="Product description..."></textarea>
+        </label>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="pPrice">Price (₹) *
+            <input type="number" id="pPrice" required min="0" step="0.01" placeholder="120.00" />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="pMrp">MRP (₹)
+            <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
+          </label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="pStock">Stock
+            <input type="number" id="pStock" min="0" placeholder="100" />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="pUnit">Unit
+            <select id="pUnit">
+          </label>
+            <option>piece</option><option>bottle</option><option>pack</option><option>box</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ── Bundle Product Section ── -->
+      <label class="bundle-toggle-row" for="pIsBundle">
+        <input type="checkbox" id="pIsBundle" onchange="toggleBundleFields(this.checked)" />
+        <span class="bundle-switch"></span>
+        <span class="bundle-label">Bundle Product<small>Enable pack/combo configuration</small></span>
+      </label>
+
+      <div class="bundle-fields" id="bundleFields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pBaseQty">Base Quantity *
+              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" oninput="updateBundlePreview()" />
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="pBaseUnit">Unit *
+              <select id="pBaseUnit" onchange="updateBundlePreview()">
+                <option value="GM">GM</option>
+                <option value="KG">KG</option>
+                <option value="L">L</option>
+                <option value="ML">ML</option>
+                <option value="PCS">PCS</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pPackSize">Pack Size *
+            <input type="number" id="pPackSize" min="1" step="1" placeholder="5" oninput="updateBundlePreview()" />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="pDisplayName">Display Name
+            <input type="text" id="pDisplayName" placeholder="Auto-generated (editable)" oninput="_bundleNameOverride=true" />
+          </label>
+        </div>
+        <div class="bundle-preview" id="bundlePreview">
+          <div class="bp-title">📦 Live Preview</div>
+          <div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="pImage">Product Image</label>
+        <div class="img-upload-wrap">
+          <div class="img-preview-box" id="imgPreviewBox">
+            <img id="imgPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;" />
+            <span id="imgPreviewPlaceholder" style="font-size:2rem;">🖼️</span>
+          </div>
+          <div class="img-upload-controls">
+            <label class="btn btn-outline btn-sm img-file-label" for="pImageFile">
+              📁 Upload Image
+              <input type="file" id="pImageFile" accept="image/*" style="display:none" />
+            </label>
+            <span style="font-size:.75rem;color:var(--ink-soft);text-align:center;">or paste a URL below</span>
+            <input type="url" id="pImage" placeholder="https://example.com/image.jpg" style="font-size:.82rem;" />
+          </div>
+        </div>
+      </div>
+      <div id="productFormError" class="login-error hidden"></div>
+      <button type="submit" class="btn btn-primary btn-full">Save Product</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="/admin/js/admin.js"></script>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ADMIN BOTTOM NAV (mobile) -->
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html" class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/products.html" class="bnav-item"><span class="bnav-icon">📦</span><span>Products</span></a>
+    <a href="/admin/salesmen.html" class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+  </div>
+</nav>
+<script>
+function toggleSidebar(){
+  var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
+  var isOpen=s.classList.toggle("open");
+  o.classList.toggle("show",isOpen);
+  document.body.style.overflow=isOpen?"hidden":"";
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+  document.body.style.overflow="";
+}
+(function(){
+  // Close sidebar on Escape key
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSidebar();});
+  // Mark active bottom nav item
+  var path=window.location.pathname.split("/").pop();
+  document.querySelectorAll("#adminBottomNav .bnav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+  });
+  // Mark active sidebar item
+  document.querySelectorAll(".sidebar .nav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+    else a.classList.remove("active");
+  });
+})();
+</script>
+
+<script>
+// ── Image upload: file picker → base64 preview + store for submit ──
+(function(){
+  var fileInput  = document.getElementById('pImageFile');
+  var urlInput   = document.getElementById('pImage');
+  var preview    = document.getElementById('imgPreview');
+  var placeholder= document.getElementById('imgPreviewPlaceholder');
+  var _b64       = null; // holds base64 data when a file is chosen
+
+  function showPreview(src){
+    if(src){ preview.src=src; preview.style.display='block'; placeholder.style.display='none'; }
+    else   { preview.src=''; preview.style.display='none';  placeholder.style.display=''; }
+  }
+
+  // File chosen → convert to base64, show preview
+  fileInput.addEventListener('change', function(){
+    var file = fileInput.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      _b64 = e.target.result;          // data:image/...;base64,...
+      urlInput.value = '';             // clear URL field when file is used
+      showPreview(_b64);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // URL typed → show preview, clear file choice
+  urlInput.addEventListener('input', function(){
+    _b64 = null;
+    fileInput.value = '';
+    showPreview(urlInput.value.trim() || null);
+  });
+
+  // When modal opens for edit, pre-fill preview from existing image
+  var origOpen = window.editProduct;
+  // Hook into modal reset to clear preview
+  var origOpenModal = window.openProductModal;
+  if(origOpenModal){
+    window.openProductModal = function(id){
+      origOpenModal(id);
+      if(!id){ _b64=null; fileInput.value=''; showPreview(null); }
+    };
+  }
+
+  // Expose b64 getter so admin.js submit can read it
+  window._getProductImageB64 = function(){ return _b64; };
+
+  // After edit loads, update preview
+  var origEdit = window.editProduct;
+  if(origEdit){
+    window.editProduct = async function(id){
+      _b64=null; fileInput.value='';
+      await origEdit(id);
+      var url = document.getElementById('pImage').value;
+      showPreview(url || null);
+    };
+  }
+})();
+</script>
+
+<script>
+/* ── Bundle Product Logic ─────────────────────────────────────── */
+var _bundleNameOverride = false;
+
+function toggleBundleFields(checked) {
+  var bf = document.getElementById('bundleFields');
+  if (checked) {
+    bf.classList.add('open');
+  } else {
+    bf.classList.remove('open');
+  }
+}
+
+function updateBundlePreview() {
+  var qty      = parseFloat(document.getElementById('pBaseQty').value) || 0;
+  var unit     = document.getElementById('pBaseUnit').value || 'GM';
+  var packSize = parseInt(document.getElementById('pPackSize').value, 10) || 0;
+  var preview  = document.getElementById('bundlePreview');
+  var nameEl   = document.getElementById('pDisplayName');
+
+  if (qty > 0 && packSize > 0) {
+    var displayName = qty + ' ' + unit + ' × ' + packSize + ' Pack';
+    var totalQty    = qty * packSize;
+
+    // Only auto-fill if user hasn't manually edited
+    if (!_bundleNameOverride) {
+      nameEl.value = displayName;
+    }
+
+    preview.innerHTML =
+      '<div class="bp-title">📦 Live Preview</div>' +
+      '<div class="bp-name">' + _esc(nameEl.value || displayName) + '</div>' +
+      '<div class="bp-total">Total: ' + totalQty + ' ' + unit + '</div>';
+  } else {
+    preview.innerHTML =
+      '<div class="bp-title">📦 Live Preview</div>' +
+      '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
+  }
+}
+
+function resetBundleFields() {
+  _bundleNameOverride = false;
+  document.getElementById('pIsBundle').checked = false;
+  document.getElementById('pBaseQty').value = '';
+  document.getElementById('pBaseUnit').value = 'GM';
+  document.getElementById('pPackSize').value = '';
+  document.getElementById('pDisplayName').value = '';
+  toggleBundleFields(false);
+  document.getElementById('bundlePreview').innerHTML =
+    '<div class="bp-title">📦 Live Preview</div>' +
+    '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
+}
+
+function prefillBundleFields(product) {
+  if (product.is_bundle) {
+    document.getElementById('pIsBundle').checked = true;
+    document.getElementById('pBaseQty').value = product.base_quantity || '';
+    document.getElementById('pBaseUnit').value = product.base_unit || 'GM';
+    document.getElementById('pPackSize').value = product.pack_size || '';
+    document.getElementById('pDisplayName').value = product.display_name || '';
+    if (product.display_name) _bundleNameOverride = true;
+    toggleBundleFields(true);
+    updateBundlePreview();
+  } else {
+    resetBundleFields();
+  }
+}
+</script>
+
+<script src="/js/network.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

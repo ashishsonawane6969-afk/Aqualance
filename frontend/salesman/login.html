@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Salesman Login — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/salesman/css/salesman.css" />
+<!--
+  <style>
+    .login-page {
+      background: linear-gradient(135deg, #052d54 0%, #2d5230 50%, #1a3a1c 100%);
+      min-height: 100vh;
+    }
+    .salesman-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3);
+      color: var(--gold-light); border-radius: 20px; padding: 5px 14px;
+      font-size: .78rem; font-weight: 600; margin-bottom: 20px;
+    }
+  </style>
+  -->
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div style="font-size:2.2rem; margin-bottom:6px;">💼</div>
+      <div class="footer-brand" style="font-size:1.4rem">Aqualence Ventures</div>
+      <div style="font-size:.78rem;color:var(--ink-soft);margin-top:3px">iKrish Field Sales Portal</div>
+    </div>
+    <div class="salesman-badge">🌿 Salesman / Field Executive</div>
+    <div id="loginError" class="login-error hidden"></div>
+    <form id="salesmanLoginForm" novalidate>
+      <div class="form-group">
+        <label for="phone">Phone Number
+          <input type="tel" id="phone" placeholder="Enter your phone number" maxlength="10" required autocomplete="username" />
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="password">Password
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password" />
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+        Login to Field App
+      </button>
+    </form>
+    
+      
+    </div>
+  </div>
+</div>
+<script src="/js/network.js"></script>
+<script src="/salesman/js/salesman.js"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

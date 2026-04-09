@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description"
+    content="iKrish Wellness Products — Premium skincare, haircare & daily essentials from Aqualence Ventures, Sangamner." />
+  <title>Aqualence Ventures — iKrish Wellness</title>
+  <link rel="stylesheet" href="/customer.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+<style>html,body{overflow-x:hidden;max-width:100%;}*,*::before,*::after{box-sizing:border-box;}img,iframe,canvas{max-width:100%;height:auto;}select{max-width:100%;}.filter-bar,.controls-bar,.filter-row{flex-wrap:wrap;}@media(max-width:767px){select{font-size:16px;}}</style></head>
+
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="/index.html" class="logo" aria-label="Aqualence Ventures home">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2C8.5 2 5 5.5 5 10c0 5.25 7 12 7 12s7-6.75 7-12c0-4.5-3.5-8-7-8zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 7.5 12 7.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+        </div>
+        <div class="logo-text">
+          Aqualence <span>Ventures</span>
+          <div class="logo-sub">iKrish Wellness</div>
+        </div>
+      </a>
+
+      <!-- Desktop search bar -->
+      <div class="topbar-search desktop-search-wrap" role="search">
+        <div class="search-pill-wrap">
+          <span class="search-icon" aria-hidden="true">&#128269;</span>
+          <label for="productSearchDesktop" class="sr-only">Search products</label>
+          <input type="search" id="productSearchDesktop" placeholder="Search products, categories…" autocomplete="off"
+            autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" />
+          <button class="search-clear-btn" id="searchClearBtnDesktop" aria-label="Clear search"
+            style="display:none">&#10005;</button>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/contact.html" class="header-action" title="Contact us" aria-label="Contact us">&#128222;</a>
+        <a href="/cart.html" class="cart-btn" id="cartBtnTop" aria-label="View cart">
+          &#128722;
+          <span class="cart-count" id="cartCount" style="display:none" aria-live="polite">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Welcome banner">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-eyebrow">&#10024; Trusted by 1000+ customers</div>
+        <h1>iKrish <em>Wellness</em> Products</h1>
+        <p>Premium skincare, haircare &amp; daily essentials — your trusted super stockist in Sangamner.</p>
+        <div class="hero-badges">
+          <div class="hero-badge-item"><span>&#127807;</span><span>Natural</span></div>
+          <div class="hero-badge-item"><span>&#128666;</span><span>Fast Delivery</span></div>
+          <div class="hero-badge-item"><span>&#128175;</span><span>Genuine</span></div>
+          <div class="hero-badge-item"><span>&#128230;</span><span>16+ Products</span></div>
+        </div>
+        <div class="hero-ctas">
+          <a href="#products" class="btn btn-gold btn-lg">Shop Now &#8594;</a>
+          <a href="/contact.html" class="btn btn-hero-outline btn-lg">&#128222; Call Us</a>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-blob">&#127807;</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST BAR -->
+  <div class="trust-bar">
+    <div class="trust-bar-inner">
+      <div class="trust-item"><span>&#127942;</span><span>Premium Quality</span></div>
+      <div class="trust-divider" aria-hidden="true"></div>
+      <div class="trust-item"><span>&#128274;</span><span>Secure Ordering</span></div>
+      <div class="trust-divider" aria-hidden="true"></div>
+      <div class="trust-item"><span>&#128666;</span><span>Fast Delivery</span></div>
+      <div class="trust-divider" aria-hidden="true"></div>
+      <div class="trust-item"><span>&#128222;</span><span>9764636636</span></div>
+    </div>
+  </div>
+
+  <!-- MOBILE SEARCH -->
+  <div class="product-search-bar mobile-search" role="search">
+    <div class="search-pill-wrap">
+      <span class="search-icon" aria-hidden="true">&#128269;</span>
+      <label for="productSearch" class="sr-only">Search products</label>
+      <input type="search" id="productSearch" placeholder="Search products…" autocomplete="off" autocorrect="off"
+        autocapitalize="off" spellcheck="false" inputmode="search" />
+      <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear search"
+        style="display:none">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- CATEGORY FILTER -->
+  <nav class="cat-bar" aria-label="Filter by category">
+    <div class="cat-bar-inner" id="catBar">
+      <button class="cat-pill active" data-cat="All">All</button>
+      <button class="cat-pill" data-cat="New Launches">&#128314; New</button>
+      <button class="cat-pill" data-cat="Face Care">&#128134; Face</button>
+      <button class="cat-pill" data-cat="Hair Care">&#128135; Hair</button>
+      <button class="cat-pill" data-cat="Body Care">&#129396; Body</button>
+      <button class="cat-pill" data-cat="Essentials">&#129516; Essentials</button>
+    </div>
+  </nav>
+
+  <!-- PRODUCTS SECTION -->
+  <main id="products" class="products-section">
+    <div class="products-header">
+      <div class="products-header-left">
+        <h2 class="section-title" style="margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Our Products</h2>
+        <span class="products-count" id="productsCount" aria-live="polite"></span>
+      </div>
+      <div class="products-header-right" style="flex-shrink:0; min-width:0;">
+        <select class="filter-select sort-select" id="sortSelect" aria-label="Sort products" style="max-width:min(130px, 38vw); min-width:0; font-size:clamp(.7rem,3vw,.82rem);">
+          <option value="default">Default</option>
+          <option value="price-asc">Price ↑ Low</option>
+          <option value="price-desc">Price ↓ High</option>
+          <option value="name-asc">Name A–Z</option>
+          <option value="discount">Best Discount</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Products grid (skeletons shown while loading) -->
+    <div class="products-grid" id="productsGrid" role="list">
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+      <div class="product-card-skeleton skeleton" aria-hidden="true"></div>
+    </div>
+
+    <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
+      <button class="btn btn-outline load-more-btn" onclick="loadMoreProducts()">
+        Load More Products &#8595;
+      </button>
+    </div>
+  </main>
+
+  <!-- FEATURES SECTION -->
+  <section class="features-section" aria-label="Why choose us">
+    <div class="features-inner">
+      <h2 class="features-title">Why Choose Aqualence?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">&#128666;</div>
+          <h3>Fast Delivery</h3>
+          <p>Quick delivery across Sangamner and nearby areas</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128175;</div>
+          <h3>100% Genuine</h3>
+          <p>Authorized dealer of iKrish Wellness products</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#127807;</div>
+          <h3>Natural Ingredients</h3>
+          <p>Crafted with premium natural ingredients</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">&#128222;</div>
+          <h3>Dedicated Support</h3>
+          <p>Call us anytime at 9764636636</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand-col">
+        <div class="footer-logo">&#127807; Aqualence Ventures</div>
+        <p class="footer-tagline">Premium iKrish Wellness products delivered to your door.</p>
+        <div class="footer-contact">
+          <div>&#128205; Ghulewadi, Sangamner — 422605, MH</div>
+          <div>&#128222; <a href="tel:9764636636">9764636636</a></div>
+        </div>
+      </div>
+      <div class="footer-links-row">
+        <div class="footer-links-group">
+          <h4>Quick Links</h4>
+          <a href="/index.html">Home</a>
+          <a href="/cart.html">Cart</a>
+          <a href="/checkout.html">Checkout</a>
+          <a href="/contact.html">Contact Us</a>
+        </div>
+        <div class="footer-links-group">
+          <h4>Portals</h4>
+          <a href="/admin/login.html">Admin</a>
+          <a href="/delivery/login.html">Delivery</a>
+          <a href="/salesman/login.html">Salesman</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&#169; 2025 Aqualence Ventures. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <div class="bottom-nav-inner">
+      <a href="/index.html" class="bnav-item active">
+        <span class="bnav-icon" aria-hidden="true">&#127968;</span>
+        <span>Home</span>
+      </a>
+      <a href="#products" class="bnav-item">
+        <span class="bnav-icon" aria-hidden="true">&#128717;</span>
+        <span>Products</span>
+      </a>
+      <a href="/cart.html" class="bnav-fab" aria-label="Cart">
+        <div class="bnav-fab-btn" aria-hidden="true">&#128722;</div>
+      </a>
+      <a href="/checkout.html" class="bnav-item">
+        <span class="bnav-icon" aria-hidden="true">&#128230;</span>
+        <span>Order</span>
+      </a>
+      <a href="/contact.html" class="bnav-item">
+        <span class="bnav-icon" aria-hidden="true">&#128222;</span>
+        <span>Contact</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- TOAST CONTAINER -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- BACK TO TOP -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top" style="display:none">&#8679;</button>
+
+  <script src="/js/app.js"></script>
+  <!-- AI Product Assistant widget — server-side Gemini, see backend/routes/ai.js -->
+  <script src="/js/chat.js"></script>
+  <script src="/js/network.js"></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .catch(err => console.warn('SW registration failed:', err));
+      });
+    }
+
+    /* ── Bottom nav active circle animation ─────────────────────── */
+    (function () {
+      const items = document.querySelectorAll('.bnav-item');
+
+      function setActive(el) {
+        items.forEach(i => i.classList.remove('active'));
+        if (el) el.classList.add('active');
+      }
+
+      // Tap on any nav item: set active immediately
+      items.forEach(item => {
+        item.addEventListener('click', () => setActive(item));
+      });
+
+      // On index page: watch scroll to auto-switch Home ↔ Products
+      const prodSection = document.getElementById('products');
+      const homeItem = document.querySelector('.bnav-item[href="/index.html"]');
+      const prodItem = document.querySelector('.bnav-item[href="#products"]');
+
+      if (prodSection && homeItem && prodItem) {
+        const obs = new IntersectionObserver(entries => {
+          if (entries[0].isIntersecting) {
+            setActive(prodItem);
+          } else {
+            // Only revert to Home if we're near the top
+            if (window.scrollY < prodSection.offsetTop - 120) setActive(homeItem);
+          }
+        }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+        obs.observe(prodSection);
+      }
+    })();
+
+  </script>
+</body>
+
+</html>
