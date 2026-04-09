@@ -4250,6 +4250,38 @@ body {
   overflow: hidden;
 }
 
+/* Bundle info line on product cards */
+.product-bundle-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.product-bundle-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: .55rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1565a8, #43a047);
+  color: #fff;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.product-bundle-name {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--ink-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .product-desc {
   font-size: .7rem;
   color: var(--ink-soft);
