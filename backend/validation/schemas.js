@@ -77,8 +77,14 @@ const productWriteSchema = Joi.object({
                  ).optional().allow(null),
   category:    safeText(80).optional().allow('', null).default('General'),
   stock:       Joi.number().integer().min(0).max(999_999).optional(),
-  unit:        safeText(50).optional().allow('', null).default('piece'),
-  is_active:   Joi.boolean().optional(),
+  unit:          safeText(50).optional().allow('', null).default('piece'),
+  is_active:     Joi.boolean().optional(),
+  // ── Bundle product fields ──
+  base_quantity: Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+  base_unit:     Joi.string().valid('GM','KG','L','ML','PCS').optional().allow(null, ''),
+  pack_size:     Joi.number().integer().positive().max(9999).optional().allow(null),
+  is_bundle:     Joi.boolean().optional().default(false),
+  display_name:  safeText(255).optional().allow('', null),
 }).options({ stripUnknown: true });
 
 const productQuerySchema = Joi.object({
