@@ -568,15 +568,19 @@ function renderProductsTable(products) {
 
   // ── Desktop table ──────────────────────────────────────────────
   tbody.innerHTML = products.map(p => {
-    const safeName = p.name.replace(/'/g, "\'");
+    const safeName = p.name.replace(/'/g, "\'" );
     const imgHtml = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-thumb-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-thumb-placeholder">🌿</div>`;
+    const bundleBadge = p.is_bundle ? `<div class="bundle-badge">📦 Bundle</div>` : '';
+    const nameDisplay = p.is_bundle && p.display_name
+      ? `<span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>${bundleBadge}<span style="font-size:.72rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>`
+      : `<span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>${bundleBadge}`;
     return `<tr>
       <td>
-        <div class="prod-name-cell">
+        <div class="prod-name-cell" style="flex-wrap:wrap">
           ${imgHtml}
-          <span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>
+          <div style="min-width:0">${nameDisplay}</div>
         </div>
       </td>
       <td><span class="tag tag-sage">${_esc(p.category)}</span></td>
@@ -601,10 +605,13 @@ function renderProductsTable(products) {
     const status = p.is_active
       ? '<span class="tag tag-green" style="font-size:.65rem;padding:2px 8px">Active</span>'
       : '<span class="tag tag-red" style="font-size:.65rem;padding:2px 8px">Inactive</span>';
+    const bundleLine = p.is_bundle && p.display_name
+      ? `<span class="bundle-badge" style="font-size:.6rem">📦 ${_esc(p.display_name)}</span>` : '';
     return `<div class="prod-card">
       ${imgHtml}
       <div class="prod-card-body">
         <div class="prod-card-name">${_esc(p.name)}</div>
+        ${bundleLine}
         <div class="prod-card-meta">
           <span><b>${fmtCurrency(p.price)}</b>${p.mrp ? ` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>` : ''}</span>
           <span>Stock: <b>${p.stock}</b></span>
@@ -625,6 +632,7 @@ function openProductModal(productId) {
   document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
   document.getElementById('productForm').reset();
   document.getElementById('productFormError').classList.add('hidden');
+  if (typeof resetBundleFields === 'function') resetBundleFields();
   if (!productId) openModal('productModal');
 }
 
@@ -642,6 +650,7 @@ async function editProduct(id) {
     document.getElementById('pStock').value      = p.stock;
     document.getElementById('pUnit').value       = p.unit || 'piece';
     document.getElementById('pImage').value      = p.image || '';
+    if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
     openModal('productModal');
   } catch { showToast('Could not load product', 'error'); }
 }
@@ -651,33 +660,52 @@ document.getElementById('productForm')?.addEventListener('submit', async e => {
   const errDiv = document.getElementById('productFormError');
   errDiv.classList.add('hidden');
   const id = document.getElementById('productId').value;
+
+  const isBundle = document.getElementById('pIsBundle')?.checked || false;
+  const baseQty  = parseFloat(document.getElementById('pBaseQty')?.value) || null;
+  const packSize = parseInt(document.getElementById('pPackSize')?.value, 10) || null;
+
+  // Bundle validation
+  if (isBundle) {
+    if (!baseQty || baseQty <= 0) {
+      errDiv.textContent = 'Base Quantity must be greater than 0 for bundle products.';
+      errDiv.classList.remove('hidden');
+      return;
+    }
+    if (!packSize || packSize <= 0) {
+      errDiv.textContent = 'Pack Size is required and must be greater than 0 for bundle products.';
+      errDiv.classList.remove('hidden');
+      return;
+    }
+  }
+
   const body = {
-    name:        document.getElementById('pName').value.trim(),
-    category:    document.getElementById('pCategory').value,
-    description: document.getElementById('pDescription').value.trim(),
-    price:       parseFloat(document.getElementById('pPrice').value),
-    mrp:         parseFloat(document.getElementById('pMrp').value) || null,
-    stock:       parseInt(document.getElementById('pStock').value) || 0,
-    unit:        document.getElementById('pUnit').value,
-    image:       (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) || document.getElementById('pImage').value.trim(),
-    is_active:   true,
+    name:          document.getElementById('pName').value.trim(),
+    category:      document.getElementById('pCategory').value,
+    description:   document.getElementById('pDescription').value.trim(),
+    price:         parseFloat(document.getElementById('pPrice').value),
+    mrp:           parseFloat(document.getElementById('pMrp').value) || null,
+    stock:         parseInt(document.getElementById('pStock').value) || 0,
+    unit:          document.getElementById('pUnit').value,
+    image:         (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) || document.getElementById('pImage').value.trim(),
+    is_active:     true,
+    is_bundle:     isBundle,
+    base_quantity: isBundle ? baseQty : null,
+    base_unit:     isBundle ? (document.getElementById('pBaseUnit')?.value || null) : null,
+    pack_size:     isBundle ? packSize : null,
+    display_name:  isBundle ? (document.getElementById('pDisplayName')?.value.trim() || null) : null,
   };
   if (!body.name || !body.price) { errDiv.textContent = 'Name and price are required.'; errDiv.classList.remove('hidden'); return; }
   try {
     const url    = id ? `${API}/products/${id}` : `${API}/products`;
     const method = id ? 'PUT' : 'POST';
     const res  = await apiFetch(url, { method, body: JSON.stringify(body) });
-    // apiFetch (via network.js) throws and redirects on 401/403 before we get here.
-    // Parsing the body on a redirect-in-progress response would throw — that's fine;
-    // the catch below only runs for genuine API errors (422 validation, 500, etc.).
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
     loadProducts();
   } catch (err) {
-    // 'Session expired' errors come from the auth guard in apiFetch/network.js —
-    // adminLogout() is already running; don't clobber the page with an error div.
     if (err.message && err.message.includes('Session expired')) return;
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
