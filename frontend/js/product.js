@@ -358,11 +358,6 @@ function _renderProduct(p) {
       </div>
 
       <h1 class="pd-name">${_esc(p.name)}</h1>
-      ${p.is_bundle ? `<div class="pd-bundle-row">
-        <span class="pd-bundle-badge">📦 Bundle Pack</span>
-        ${p.display_name ? `<span class="pd-bundle-name">${_esc(p.display_name)}</span>` : ''}
-        ${(p.base_quantity && p.pack_size && p.base_unit) ? `<span class="pd-bundle-total">Total: ${parseFloat(p.base_quantity) * parseInt(p.pack_size,10)} ${_esc(p.base_unit)}</span>` : ''}
-      </div>` : ''}
 
       <div class="pd-price-row">${priceHTML}</div>
 
@@ -371,6 +366,10 @@ function _renderProduct(p) {
       </div>
 
       ${descSection}
+
+      ${p.is_bundle && p.display_name ? `<div class="pd-bundle-pill-wrap">
+        <span class="pd-bundle-pill">${_esc(p.display_name)}</span>
+      </div>` : ''}
 
       <div class="pd-specs-section">
         <h3 class="pd-section-title">Product Details</h3>
@@ -417,25 +416,20 @@ function _injectGalleryArrowStyles() {
     @media (max-width: 480px) {
       .pd-gallery-arrow { width: 32px; height: 32px; font-size: 1.1rem; }
     }
-    /* Bundle badge on product detail page */
-    .pd-bundle-row {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-      margin: 6px 0 10px;
+    /* Bundle pill on product detail page */
+    .pd-bundle-pill-wrap {
+      margin: 16px 0;
     }
-    .pd-bundle-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 4px 12px; border-radius: 8px; font-size: .75rem; font-weight: 700;
-      background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
-      letter-spacing: .03em; text-transform: uppercase;
-    }
-    .pd-bundle-name {
-      font-size: .88rem; font-weight: 600; color: #333;
-      background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
-      padding: 4px 12px; border-radius: 8px;
-      border: 1px solid rgba(21,101,168,.12);
-    }
-    .pd-bundle-total {
-      font-size: .78rem; font-weight: 600; color: #43a047;
+    .pd-bundle-pill {
+      display: inline-block;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      color: #fff;
+      background: #0d2137;
+      border: 2px solid #0d2137;
     }
   `;
   document.head.appendChild(style);
