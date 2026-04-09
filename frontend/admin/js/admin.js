@@ -532,6 +532,7 @@ document.getElementById('searchOrders')?.addEventListener('input', function() {
 if (page === 'orders') adminAuthRehydrate().then(function(ok) { if (ok) loadOrders(); });
 
 /* ─────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────
    PRODUCTS PAGE
 ───────────────────────────────────────────────────────────── */
 let allProductsList = [];
@@ -568,19 +569,21 @@ function renderProductsTable(products) {
 
   // ── Desktop table ──────────────────────────────────────────────
   tbody.innerHTML = products.map(p => {
-    const safeName = p.name.replace(/'/g, "\'" );
-    const imgHtml = p.image
+    const safeName   = p.name.replace(/'/g, "\\'");
+    const imgHtml    = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-thumb-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-thumb-placeholder">🌿</div>`;
     const bundleBadge = p.is_bundle ? `<div class="bundle-badge">📦 Bundle</div>` : '';
-    const nameDisplay = p.is_bundle && p.display_name
-      ? `<span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>${bundleBadge}<span style="font-size:.72rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>`
-      : `<span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>${bundleBadge}`;
+    const displaySub  = p.is_bundle && p.display_name
+      ? `<span style="font-size:.72rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>` : '';
     return `<tr>
       <td>
         <div class="prod-name-cell" style="flex-wrap:wrap">
           ${imgHtml}
-          <div style="min-width:0">${nameDisplay}</div>
+          <div style="min-width:0">
+            <span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>
+            ${bundleBadge}${displaySub}
+          </div>
         </div>
       </td>
       <td><span class="tag tag-sage">${_esc(p.category)}</span></td>
@@ -598,11 +601,11 @@ function renderProductsTable(products) {
   // ── Mobile cards ───────────────────────────────────────────────
   if (!cards) return;
   cards.innerHTML = products.map(p => {
-    const safeName = p.name.replace(/'/g, "\'");
-    const imgHtml = p.image
+    const safeName   = p.name.replace(/'/g, "\\'");
+    const imgHtml    = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-card-img-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-card-img-placeholder">🌿</div>`;
-    const status = p.is_active
+    const status     = p.is_active
       ? '<span class="tag tag-green" style="font-size:.65rem;padding:2px 8px">Active</span>'
       : '<span class="tag tag-red" style="font-size:.65rem;padding:2px 8px">Inactive</span>';
     const bundleLine = p.is_bundle && p.display_name
@@ -632,7 +635,12 @@ function openProductModal(productId) {
   document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
   document.getElementById('productForm').reset();
   document.getElementById('productFormError').classList.add('hidden');
+
+  // Reset bundle state — function is defined in products.html inline script
   if (typeof resetBundleFields === 'function') resetBundleFields();
+  // Reset image widget — function exposed by image widget IIFE in products.html
+  if (typeof window._resetProductImageWidget === 'function') window._resetProductImageWidget();
+
   if (!productId) openModal('productModal');
 }
 
@@ -641,31 +649,55 @@ async function editProduct(id) {
   try {
     const res = await apiFetch(`${API}/products/${id}`);
     const p   = (await res.json()).data;
-    document.getElementById('productId').value  = p.id;
-    document.getElementById('pName').value       = p.name;
-    document.getElementById('pCategory').value   = p.category;
-    document.getElementById('pDescription').value= p.description || '';
-    document.getElementById('pPrice').value      = p.price;
-    document.getElementById('pMrp').value        = p.mrp || '';
-    document.getElementById('pStock').value      = p.stock;
-    document.getElementById('pUnit').value       = p.unit || 'piece';
-    document.getElementById('pImage').value      = p.image || '';
+    if (!p) throw new Error('Product not found');
+
+    document.getElementById('productId').value    = p.id;
+    document.getElementById('pName').value        = p.name;
+    document.getElementById('pCategory').value    = p.category;
+    document.getElementById('pDescription').value = p.description || '';
+    document.getElementById('pPrice').value       = p.price;
+    document.getElementById('pMrp').value         = p.mrp || '';
+    document.getElementById('pStock').value       = p.stock;
+    document.getElementById('pUnit').value        = p.unit || 'piece';
+    document.getElementById('pImage').value       = p.image || '';
+
+    // Update image preview widget with existing image
+    if (typeof window._setProductImagePreview === 'function') {
+      window._setProductImagePreview(p.image || null);
+    }
+
+    // Pre-fill bundle fields if applicable
     if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
+
     openModal('productModal');
-  } catch { showToast('Could not load product', 'error'); }
+  } catch (err) {
+    showToast('Could not load product: ' + err.message, 'error');
+  }
 }
 
-document.getElementById('productForm')?.addEventListener('submit', async e => {
+document.getElementById('productForm')?.addEventListener('submit', async function (e) {
   e.preventDefault();
   const errDiv = document.getElementById('productFormError');
   errDiv.classList.add('hidden');
-  const id = document.getElementById('productId').value;
 
+  const id       = document.getElementById('productId').value;
   const isBundle = document.getElementById('pIsBundle')?.checked || false;
   const baseQty  = parseFloat(document.getElementById('pBaseQty')?.value) || null;
   const packSize = parseInt(document.getElementById('pPackSize')?.value, 10) || null;
+  const name     = document.getElementById('pName').value.trim();
+  const price    = parseFloat(document.getElementById('pPrice').value);
 
-  // Bundle validation
+  // ── Validation ──────────────────────────────────────────────────
+  if (!name) {
+    errDiv.textContent = 'Product name is required.';
+    errDiv.classList.remove('hidden');
+    return;
+  }
+  if (!price || price <= 0) {
+    errDiv.textContent = 'A valid price greater than 0 is required.';
+    errDiv.classList.remove('hidden');
+    return;
+  }
   if (isBundle) {
     if (!baseQty || baseQty <= 0) {
       errDiv.textContent = 'Base Quantity must be greater than 0 for bundle products.';
@@ -680,14 +712,15 @@ document.getElementById('productForm')?.addEventListener('submit', async e => {
   }
 
   const body = {
-    name:          document.getElementById('pName').value.trim(),
+    name,
     category:      document.getElementById('pCategory').value,
     description:   document.getElementById('pDescription').value.trim(),
-    price:         parseFloat(document.getElementById('pPrice').value),
+    price,
     mrp:           parseFloat(document.getElementById('pMrp').value) || null,
     stock:         parseInt(document.getElementById('pStock').value) || 0,
     unit:          document.getElementById('pUnit').value,
-    image:         (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) || document.getElementById('pImage').value.trim(),
+    image:         (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) ||
+                   document.getElementById('pImage').value.trim(),
     is_active:     true,
     is_bundle:     isBundle,
     base_quantity: isBundle ? baseQty : null,
@@ -695,12 +728,12 @@ document.getElementById('productForm')?.addEventListener('submit', async e => {
     pack_size:     isBundle ? packSize : null,
     display_name:  isBundle ? (document.getElementById('pDisplayName')?.value.trim() || null) : null,
   };
-  if (!body.name || !body.price) { errDiv.textContent = 'Name and price are required.'; errDiv.classList.remove('hidden'); return; }
+
   try {
     const url    = id ? `${API}/products/${id}` : `${API}/products`;
     const method = id ? 'PUT' : 'POST';
-    const res  = await apiFetch(url, { method, body: JSON.stringify(body) });
-    const data = await res.json();
+    const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
+    const data   = await res.json();
     if (!data.success) throw new Error(data.message);
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
@@ -723,7 +756,7 @@ async function deleteProduct(id, name) {
   } catch (err) { showToast(err.message, 'error'); }
 }
 
-if (page === 'products') adminAuthRehydrate().then(function(ok) { if (ok) loadProducts(); });
+if (page === 'products') adminAuthRehydrate().then(function (ok) { if (ok) loadProducts(); });
 
 /* ─────────────────────────────────────────────────────────────
    DELIVERY BOYS PAGE
