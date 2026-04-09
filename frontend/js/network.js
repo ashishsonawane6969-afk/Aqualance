@@ -302,83 +302,14 @@ console.log("✅ NEW network.js LOADED");
   }
 
   /* ══════════════════════════════════════════════════════════════
-     3. OFFLINE BANNER + SLOW NETWORK BANNER
+     3. OFFLINE / SLOW BANNERS — REMOVED (no-op stubs)
   ══════════════════════════════════════════════════════════════ */
   var NetBanner = {
     _offlineBanner: null,
     _slowBanner:    null,
-
-    init: function () {
-      // Offline banner
-      var ob = document.createElement('div');
-      ob.id        = 'aq-offline-banner';
-      ob.className = 'aq-net-banner aq-offline hidden';
-      ob.innerHTML = '<span>📶 No internet connection — working offline</span>' +
-                     '<button onclick="NetBanner.retry()">Retry</button>';
-      document.body.appendChild(ob);
-      NetBanner._offlineBanner = ob;
-
-      // Slow-network banner
-      var sb = document.createElement('div');
-      sb.id        = 'aq-slow-banner';
-      sb.className = 'aq-net-banner aq-slow hidden';
-      sb.innerHTML = '<span>🐢 Slow connection detected — loading may take longer</span>' +
-                     '<button onclick="NetBanner.dismissSlow()">OK</button>';
-      document.body.appendChild(sb);
-      NetBanner._slowBanner = sb;
-
-
-      // Online / offline events
-      window.addEventListener('offline', function () {
-        ob.classList.remove('hidden');
-        ob.classList.add('show');
-      });
-      window.addEventListener('online', function () {
-        ob.classList.remove('show');
-        setTimeout(function () { ob.classList.add('hidden'); }, 600);
-        _flushQueue();
-        });
-
-      if (!navigator.onLine) {
-        ob.classList.remove('hidden');
-        ob.classList.add('show');
-      }
-
-      // Show slow banner once per session
-      setTimeout(function () {
-        if (NetQ.isSlow() && !sessionStorage.getItem('aq_slow_dismissed')) {
-          sb.classList.remove('hidden');
-          sb.classList.add('show');
-        }
-      }, 3000);
-
-    },
-
-    retry: function () {
-      if (navigator.onLine) {
-        NetBanner._offlineBanner.classList.remove('show');
-        setTimeout(function () { NetBanner._offlineBanner.classList.add('hidden'); }, 600);
-        _flushQueue();
-        // Trigger the appropriate page reload function
-        var reloaders = [
-          'loadProducts', 'loadDashboard', 'loadOrders',
-          'loadMyOrders', 'loadLeads', 'loadQuickStats',
-          'loadDeliveryBoys', 'loadSalesmen', 'loadLeaderboard',
-          'loadMyAreas', 'retryLoadProducts'
-        ];
-        reloaders.forEach(function(fn) {
-          if (typeof window[fn] === 'function') {
-            try { window[fn](); } catch(e) {}
-          }
-        });
-      }
-    },
-
-    dismissSlow: function () {
-      sessionStorage.setItem('aq_slow_dismissed', '1');
-      NetBanner._slowBanner.classList.remove('show');
-      setTimeout(function () { NetBanner._slowBanner.classList.add('hidden'); }, 600);
-    }
+    init:           function () {},
+    retry:          function () { if (navigator.onLine) _flushQueue(); },
+    dismissSlow:    function () {}
   };
 
   /* ══════════════════════════════════════════════════════════════
@@ -411,69 +342,15 @@ console.log("✅ NEW network.js LOADED");
   }
 
   /* ══════════════════════════════════════════════════════════════
-     5. PAGE-LOAD PROGRESS BAR
-     Thin bar at the top — shows loading activity on slow networks
+     5. PAGE-LOAD PROGRESS BAR — REMOVED (no-op stubs)
   ══════════════════════════════════════════════════════════════ */
   var Progress = {
-    _bar: null,
-    _val: 0,
-    _tid: null,
-
-    init: function () {
-      var bar = document.createElement('div');
-      bar.id = 'aq-progress-bar';
-      bar.className = 'aq-progress-bar';
-      bar.innerHTML = '<div class="aq-progress-fill" id="aq-progress-fill"></div>';
-      if (document.body.firstChild) {
-        document.body.insertBefore(bar, document.body.firstChild);
-      } else {
-        document.body.appendChild(bar);
-      }
-      Progress._bar = document.getElementById('aq-progress-fill');
-    },
-
-    start: function () {
-      Progress._val = 5;
-      Progress._update();
-      clearInterval(Progress._tid);
-      Progress._tid = setInterval(function () {
-        if (Progress._val < 85) {
-          // Slow increment — faster at start, slower as it approaches completion
-          Progress._val += (85 - Progress._val) * 0.08;
-          Progress._update();
-        }
-      }, 200);
-    },
-
-    done: function () {
-      clearInterval(Progress._tid);
-      Progress._val = 100;
-      Progress._update();
-      setTimeout(function () {
-        Progress._val = 0;
-        Progress._update();
-      }, 400);
-    },
-
-    error: function () {
-      clearInterval(Progress._tid);
-      if (Progress._bar) {
-        Progress._bar.style.background = 'var(--danger, #e53e3e)';
-        Progress._val = 100;
-        Progress._update();
-        setTimeout(function () {
-          Progress._val = 0;
-          Progress._update();
-          if (Progress._bar) Progress._bar.style.background = '';
-        }, 800);
-      }
-    },
-
-    _update: function () {
-      if (Progress._bar) {
-        Progress._bar.style.width = Progress._val + '%';
-      }
-    }
+    _bar: null, _val: 0, _tid: null,
+    init:    function () {},
+    start:   function () {},
+    done:    function () {},
+    error:   function () {},
+    _update: function () {}
   };
 
   /* ══════════════════════════════════════════════════════════════
