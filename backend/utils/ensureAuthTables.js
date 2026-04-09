@@ -323,6 +323,12 @@ async function ensureAuthTables() {
     ['images',     "TEXT DEFAULT NULL",                                    null],
     ['unit',       "VARCHAR(50) NOT NULL DEFAULT 'piece'",                 null],
     ['updated_at', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', null],
+    // ── Bundle product columns ──
+    ['base_quantity', 'DECIMAL(10,2) DEFAULT NULL'],
+    ['base_unit',     "VARCHAR(10)  DEFAULT NULL"],
+    ['pack_size',     'INT          DEFAULT NULL'],
+    ['is_bundle',     'TINYINT(1)   NOT NULL DEFAULT 0'],
+    ['display_name',  'VARCHAR(255) DEFAULT NULL'],
   ];
   for (const [col, def] of productColumns) {
     try {
