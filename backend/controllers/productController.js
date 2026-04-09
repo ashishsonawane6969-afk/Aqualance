@@ -42,10 +42,15 @@ exports.getAll = async (req, res) => {
     // Only select columns that actually exist in the table
     const selectCols = [
       'id', 'name', 'description', 'price', 'category', 'stock', 'is_active', 'created_at',
-      ...(cols.has('mrp')    ? ['mrp']    : []),
-      ...(cols.has('image')  ? ['image']  : []),
-      ...(cols.has('images') ? ['images'] : []),
-      ...(cols.has('unit')   ? ['unit']   : []),
+      ...(cols.has('mrp')           ? ['mrp']           : []),
+      ...(cols.has('image')         ? ['image']         : []),
+      ...(cols.has('images')        ? ['images']        : []),
+      ...(cols.has('unit')          ? ['unit']          : []),
+      ...(cols.has('base_quantity') ? ['base_quantity'] : []),
+      ...(cols.has('base_unit')     ? ['base_unit']     : []),
+      ...(cols.has('pack_size')     ? ['pack_size']     : []),
+      ...(cols.has('is_bundle')     ? ['is_bundle']     : []),
+      ...(cols.has('display_name')  ? ['display_name']  : []),
     ].join(', ');
 
     let sql    = `SELECT ${selectCols} FROM products WHERE is_active = 1`;
@@ -104,7 +109,8 @@ exports.getOne = async (req, res) => {
 /* ── POST /api/products  (admin only) ─────────────────────── */
 exports.create = async (req, res) => {
   try {
-    const { name, description, price, mrp, image, images, category, stock, unit } = req.body;
+    const { name, description, price, mrp, image, images, category, stock, unit,
+            base_quantity, base_unit, pack_size, is_bundle, display_name } = req.body;
 
     // Fields validated by productWriteSchema middleware — no re-check needed
     // images: optional JSON array of extra image URLs
@@ -116,20 +122,38 @@ exports.create = async (req, res) => {
       } catch { /* ignore invalid JSON */ }
     }
 
+    // ── Detect which optional columns exist ──────────────────────────────────
+    const cols = await _getProductCols();
+
+    // Build INSERT dynamically based on available columns
+    const insertCols = ['name', 'description', 'price', 'image', 'category', 'stock'];
+    const insertVals = [
+      name.trim(), description || '', parseFloat(price),
+      image || '', category || 'General', parseInt(stock) || 100,
+    ];
+
+    // Optional columns — only include if they exist in the schema
+    const optionalInsert = {
+      mrp:           () => mrp ? parseFloat(mrp) : null,
+      images:        () => imagesVal,
+      unit:          () => unit || 'piece',
+      base_quantity: () => base_quantity != null ? parseFloat(base_quantity) : null,
+      base_unit:     () => base_unit || null,
+      pack_size:     () => pack_size != null ? parseInt(pack_size, 10) : null,
+      is_bundle:     () => is_bundle ? 1 : 0,
+      display_name:  () => display_name || null,
+    };
+    for (const [col, valFn] of Object.entries(optionalInsert)) {
+      if (cols.has(col)) {
+        insertCols.push(col);
+        insertVals.push(valFn());
+      }
+    }
+
+    const placeholders = insertCols.map(() => '?').join(', ');
     const [result] = await db.query(
-      `INSERT INTO products (name, description, price, mrp, image, images, category, stock, unit)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name.trim(),
-        description || '',
-        parseFloat(price),
-        mrp  ? parseFloat(mrp)  : null,
-        image || '',
-        imagesVal,
-        category || 'General',
-        parseInt(stock) || 100,
-        unit    || 'piece',
-      ]
+      `INSERT INTO products (${insertCols.join(', ')}) VALUES (${placeholders})`,
+      insertVals
     );
 
     res.status(201).json({ success: true, id: result.insertId, message: 'Product created' });
@@ -147,7 +171,8 @@ exports.update = async (req, res) => {
   if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
 
   // ── 2. Validate required fields ───────────────────────────────────────────
-  const { name, description, price, mrp, image, images, category, stock, unit, is_active } = req.body;
+  const { name, description, price, mrp, image, images, category, stock, unit, is_active,
+          base_quantity, base_unit, pack_size, is_bundle, display_name } = req.body;
 
   if (!name || typeof name !== 'string' || !name.trim()) {
     return sendError(res, 400, 'Validation error: name is required');
@@ -192,22 +217,27 @@ exports.update = async (req, res) => {
     // whitelist can appear in the SET clause — no dynamic injection possible.
     const COLUMN_WHITELIST = {
       // column name → { clause, value }
-      name:        { clause: 'name=?',        value: () => name.trim() },
-      description: { clause: 'description=?', value: () => description || '' },
-      price:       { clause: 'price=?',       value: () => parseFloat(price) },
-      image:       { clause: 'image=?',        value: () => image || '' },
-      category:    { clause: 'category=?',    value: () => category || 'General' },
-      stock:       { clause: 'stock=?',        value: () => parseInt(stock, 10) >= 0 ? parseInt(stock, 10) : 0 },
-      is_active:   { clause: 'is_active=?',   value: () => is_active !== undefined ? (is_active ? 1 : 0) : 1 },
-      mrp:         { clause: 'mrp=?',          value: () => (mrp !== undefined && mrp !== null && !isNaN(parseFloat(mrp))) ? parseFloat(mrp) : null },
-      images:      { clause: 'images=?',       value: () => imagesVal },
-      unit:        { clause: 'unit=?',         value: () => unit || 'piece' },
+      name:          { clause: 'name=?',          value: () => name.trim() },
+      description:   { clause: 'description=?',   value: () => description || '' },
+      price:         { clause: 'price=?',         value: () => parseFloat(price) },
+      image:         { clause: 'image=?',         value: () => image || '' },
+      category:      { clause: 'category=?',      value: () => category || 'General' },
+      stock:         { clause: 'stock=?',         value: () => parseInt(stock, 10) >= 0 ? parseInt(stock, 10) : 0 },
+      is_active:     { clause: 'is_active=?',     value: () => is_active !== undefined ? (is_active ? 1 : 0) : 1 },
+      mrp:           { clause: 'mrp=?',           value: () => (mrp !== undefined && mrp !== null && !isNaN(parseFloat(mrp))) ? parseFloat(mrp) : null },
+      images:        { clause: 'images=?',        value: () => imagesVal },
+      unit:          { clause: 'unit=?',          value: () => unit || 'piece' },
+      base_quantity: { clause: 'base_quantity=?', value: () => base_quantity != null ? parseFloat(base_quantity) : null },
+      base_unit:     { clause: 'base_unit=?',     value: () => base_unit || null },
+      pack_size:     { clause: 'pack_size=?',     value: () => pack_size != null ? parseInt(pack_size, 10) : null },
+      is_bundle:     { clause: 'is_bundle=?',     value: () => is_bundle ? 1 : 0 },
+      display_name:  { clause: 'display_name=?',  value: () => display_name || null },
     };
 
     // Always-included columns (guaranteed to exist in schema)
     const ALWAYS = ['name', 'description', 'price', 'image', 'category', 'stock', 'is_active'];
     // Optional columns — only included if the column exists in the live schema
-    const OPTIONAL = ['mrp', 'images', 'unit'];
+    const OPTIONAL = ['mrp', 'images', 'unit', 'base_quantity', 'base_unit', 'pack_size', 'is_bundle', 'display_name'];
 
     const setClauses = [];
     const params     = [];
