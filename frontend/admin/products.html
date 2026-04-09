@@ -113,6 +113,72 @@
     @media (max-width: 480px) {
       #productModal .form-row { grid-template-columns: 1fr; }
     }
+
+    /* ── Bundle Product Styles ── */
+    .bundle-toggle-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; margin: 4px 0 12px;
+      background: linear-gradient(135deg, rgba(21,101,168,.06), rgba(76,175,80,.06));
+      border-radius: var(--r-md); border: 1px solid rgba(21,101,168,.12);
+      cursor: pointer; transition: all .2s;
+    }
+    .bundle-toggle-row:hover { border-color: var(--brand); }
+    .bundle-toggle-row input[type=checkbox] { display: none; }
+    .bundle-switch {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+      background: #ccc; border-radius: 12px; transition: background .25s;
+    }
+    .bundle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s;
+    }
+    .bundle-toggle-row input:checked ~ .bundle-switch {
+      background: linear-gradient(135deg, #1565a8, #43a047);
+    }
+    .bundle-toggle-row input:checked ~ .bundle-switch::after {
+      transform: translateX(20px);
+    }
+    .bundle-label { font-size: .82rem; font-weight: 600; color: var(--ink); user-select: none; }
+    .bundle-label small { font-weight: 400; color: var(--ink-soft); display: block; font-size: .72rem; margin-top: 1px; }
+
+    .bundle-fields {
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
+      margin: 0;
+    }
+    .bundle-fields.open {
+      max-height: 600px; opacity: 1; margin-bottom: 12px;
+    }
+
+    .bundle-preview {
+      padding: 12px 16px; border-radius: 12px; margin-top: 8px;
+      background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
+      border: 1px solid rgba(21,101,168,.15);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      min-height: 44px; transition: all .3s;
+    }
+    .bundle-preview .bp-title {
+      font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+      font-weight: 700; color: var(--ink-soft); margin-bottom: 6px;
+    }
+    .bundle-preview .bp-name {
+      font-size: 1rem; font-weight: 700; color: var(--ink);
+      letter-spacing: .01em; line-height: 1.4;
+    }
+    .bundle-preview .bp-total {
+      font-size: .78rem; color: var(--sage); font-weight: 600; margin-top: 4px;
+    }
+    .bundle-preview .bp-empty {
+      font-size: .78rem; color: var(--ink-faint); font-style: italic;
+    }
+
+    .bundle-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: 6px; font-size: .65rem; font-weight: 700;
+      background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
+      letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
+    }
   </style>
 </head>
 <body class="admin-layout">
@@ -240,6 +306,49 @@
           </select>
         </div>
       </div>
+
+      <!-- ── Bundle Product Section ── -->
+      <label class="bundle-toggle-row" for="pIsBundle">
+        <input type="checkbox" id="pIsBundle" onchange="toggleBundleFields(this.checked)" />
+        <span class="bundle-switch"></span>
+        <span class="bundle-label">Bundle Product<small>Enable pack/combo configuration</small></span>
+      </label>
+
+      <div class="bundle-fields" id="bundleFields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pBaseQty">Base Quantity *
+              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" oninput="updateBundlePreview()" />
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="pBaseUnit">Unit *
+              <select id="pBaseUnit" onchange="updateBundlePreview()">
+                <option value="GM">GM</option>
+                <option value="KG">KG</option>
+                <option value="L">L</option>
+                <option value="ML">ML</option>
+                <option value="PCS">PCS</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="pPackSize">Pack Size *
+            <input type="number" id="pPackSize" min="1" step="1" placeholder="5" oninput="updateBundlePreview()" />
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="pDisplayName">Display Name
+            <input type="text" id="pDisplayName" placeholder="Auto-generated (editable)" oninput="_bundleNameOverride=true" />
+          </label>
+        </div>
+        <div class="bundle-preview" id="bundlePreview">
+          <div class="bp-title">📦 Live Preview</div>
+          <div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="pImage">Product Image</label>
         <div class="img-upload-wrap">
@@ -366,6 +475,75 @@ function closeSidebar(){
     };
   }
 })();
+</script>
+
+<script>
+/* ── Bundle Product Logic ─────────────────────────────────────── */
+var _bundleNameOverride = false;
+
+function toggleBundleFields(checked) {
+  var bf = document.getElementById('bundleFields');
+  if (checked) {
+    bf.classList.add('open');
+  } else {
+    bf.classList.remove('open');
+  }
+}
+
+function updateBundlePreview() {
+  var qty      = parseFloat(document.getElementById('pBaseQty').value) || 0;
+  var unit     = document.getElementById('pBaseUnit').value || 'GM';
+  var packSize = parseInt(document.getElementById('pPackSize').value, 10) || 0;
+  var preview  = document.getElementById('bundlePreview');
+  var nameEl   = document.getElementById('pDisplayName');
+
+  if (qty > 0 && packSize > 0) {
+    var displayName = qty + ' ' + unit + ' × ' + packSize + ' Pack';
+    var totalQty    = qty * packSize;
+
+    // Only auto-fill if user hasn't manually edited
+    if (!_bundleNameOverride) {
+      nameEl.value = displayName;
+    }
+
+    preview.innerHTML =
+      '<div class="bp-title">📦 Live Preview</div>' +
+      '<div class="bp-name">' + _esc(nameEl.value || displayName) + '</div>' +
+      '<div class="bp-total">Total: ' + totalQty + ' ' + unit + '</div>';
+  } else {
+    preview.innerHTML =
+      '<div class="bp-title">📦 Live Preview</div>' +
+      '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
+  }
+}
+
+function resetBundleFields() {
+  _bundleNameOverride = false;
+  document.getElementById('pIsBundle').checked = false;
+  document.getElementById('pBaseQty').value = '';
+  document.getElementById('pBaseUnit').value = 'GM';
+  document.getElementById('pPackSize').value = '';
+  document.getElementById('pDisplayName').value = '';
+  toggleBundleFields(false);
+  document.getElementById('bundlePreview').innerHTML =
+    '<div class="bp-title">📦 Live Preview</div>' +
+    '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
+}
+
+function prefillBundleFields(product) {
+  if (product.is_bundle) {
+    document.getElementById('pIsBundle').checked = true;
+    document.getElementById('pBaseQty').value = product.base_quantity || '';
+    document.getElementById('pBaseUnit').value = product.base_unit || 'GM';
+    document.getElementById('pPackSize').value = product.pack_size || '';
+    document.getElementById('pDisplayName').value = product.display_name || '';
+    if (product.display_name) _bundleNameOverride = true;
+    toggleBundleFields(true);
+    updateBundlePreview();
+  } else {
+    resetBundleFields();
+  }
+}
 </script>
 
 <script src="/js/network.js"></script>
