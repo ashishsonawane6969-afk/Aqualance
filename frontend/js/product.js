@@ -155,6 +155,16 @@ function _renderSpecs(p) {
 
   const rows = [];
   if (p.category) rows.push(['Category', p.category]);
+
+  // Bundle info in specs
+  if (p.is_bundle && p.display_name) {
+    rows.push(['Pack Config', p.display_name]);
+    if (p.base_quantity && p.pack_size && p.base_unit) {
+      var total = parseFloat(p.base_quantity) * parseInt(p.pack_size, 10);
+      rows.push(['Total Quantity', total + ' ' + p.base_unit]);
+    }
+  }
+
   if (p.unit)     rows.push(['Unit / Pack', p.unit]);
   if (typeof p.stock !== 'undefined') {
     rows.push(['Availability',
@@ -348,6 +358,11 @@ function _renderProduct(p) {
       </div>
 
       <h1 class="pd-name">${_esc(p.name)}</h1>
+      ${p.is_bundle ? `<div class="pd-bundle-row">
+        <span class="pd-bundle-badge">📦 Bundle Pack</span>
+        ${p.display_name ? `<span class="pd-bundle-name">${_esc(p.display_name)}</span>` : ''}
+        ${(p.base_quantity && p.pack_size && p.base_unit) ? `<span class="pd-bundle-total">Total: ${parseFloat(p.base_quantity) * parseInt(p.pack_size,10)} ${_esc(p.base_unit)}</span>` : ''}
+      </div>` : ''}
 
       <div class="pd-price-row">${priceHTML}</div>
 
@@ -401,6 +416,26 @@ function _injectGalleryArrowStyles() {
     .pd-gallery-next { right: 10px; }
     @media (max-width: 480px) {
       .pd-gallery-arrow { width: 32px; height: 32px; font-size: 1.1rem; }
+    }
+    /* Bundle badge on product detail page */
+    .pd-bundle-row {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin: 6px 0 10px;
+    }
+    .pd-bundle-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 12px; border-radius: 8px; font-size: .75rem; font-weight: 700;
+      background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
+      letter-spacing: .03em; text-transform: uppercase;
+    }
+    .pd-bundle-name {
+      font-size: .88rem; font-weight: 600; color: #333;
+      background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
+      padding: 4px 12px; border-radius: 8px;
+      border: 1px solid rgba(21,101,168,.12);
+    }
+    .pd-bundle-total {
+      font-size: .78rem; font-weight: 600; color: #43a047;
     }
   `;
   document.head.appendChild(style);
