@@ -4568,10 +4568,10 @@ footer {
   position: fixed;
   bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
   right: 14px;
-  z-index: 150;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  z-index: 100;
+  width: 20px;
+  height: 20px;
+  border-radius: 15%;
   background: var(--brand);
   color: #fff;
   font-size: 1.2rem;
@@ -5162,7 +5162,7 @@ button,
 
 @media (min-width: 900px) {
   .back-to-top {
-    bottom: 24px;
+    bottom: 15px;
   }
 }
 
