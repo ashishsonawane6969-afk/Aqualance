@@ -313,6 +313,43 @@ async function ensureAuthTables() {
     console.warn('[ensureAuthTables] salesman_areas:', e.message);
   }
 
+  // ── 4b. Ensure product_variants table exists ────────────────────────────────
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS product_variants (
+        id            INT           NOT NULL AUTO_INCREMENT,
+        product_id    INT           NOT NULL,
+        variant_name  VARCHAR(100)  NOT NULL,
+        size_value    DECIMAL(10,2) NOT NULL DEFAULT 0,
+        size_unit     VARCHAR(10)   NOT NULL DEFAULT 'GM',
+        pack_quantity INT           NOT NULL DEFAULT 1,
+        price         DECIMAL(10,2) NOT NULL,
+        mrp           DECIMAL(10,2) DEFAULT NULL,
+        stock         INT           NOT NULL DEFAULT 0,
+        sku           VARCHAR(80)   NOT NULL,
+        sort_order    INT           NOT NULL DEFAULT 0,
+        is_active     TINYINT(1)    NOT NULL DEFAULT 1,
+        created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_variant_sku (sku),
+        INDEX idx_pv_product (product_id),
+        CONSTRAINT fk_pv_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } catch (e) { console.warn('[ensureAuthTables] product_variants:', e.message); }
+
+  // ── 4c. Ensure order_items has variant_id column ──────────────────────────
+  try {
+    const [viRows] = await db.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_items' AND COLUMN_NAME = 'variant_id'`
+    );
+    if (viRows.length === 0) {
+      await db.query('ALTER TABLE order_items ADD COLUMN variant_id INT DEFAULT NULL AFTER product_id');
+    }
+  } catch (e) { console.warn('[ensureAuthTables] order_items.variant_id:', e.message); }
+
   // ── 5. Ensure all products columns exist (existing DB migration) ─────────────
   // CREATE TABLE IF NOT EXISTS above only fires on fresh installs.
   // Existing databases may be missing mrp, images, unit, or updated_at if they
@@ -329,6 +366,7 @@ async function ensureAuthTables() {
     ['pack_size',     'INT          DEFAULT NULL'],
     ['is_bundle',     'TINYINT(1)   NOT NULL DEFAULT 0'],
     ['display_name',  'VARCHAR(255) DEFAULT NULL'],
+    ['product_type',  "VARCHAR(20) NOT NULL DEFAULT 'single'"],
   ];
   for (const [col, def] of productColumns) {
     try {
