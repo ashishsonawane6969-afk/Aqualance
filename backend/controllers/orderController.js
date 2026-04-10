@@ -29,31 +29,20 @@ exports.create = async (req, res) => {
   try {
     await conn.beginTransaction();
 
+    // All fields already validated + stripped by validate(orderCreateSchema) middleware
     const { customer_name, shop_name, phone, address, city, pincode,
             latitude, longitude, notes, products } = req.body;
 
     // Fetch product prices + stock from DB (never trust client price)
-    const productIds   = [...new Set(products.map(p => p.id))];
-    const [dbProducts] = await conn.query(
+    const productIds    = products.map(p => p.id);
+    const [dbProducts]  = await conn.query(
       `SELECT id, name, price, stock, is_active FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`,
       productIds
     );
+
     const dbMap = {};
     for (const p of dbProducts) dbMap[p.id] = p;
 
-    // Fetch variants where variant_id is provided
-    const variantIds = products.filter(p => p.variant_id).map(p => p.variant_id);
-    const variantMap = {};
-    if (variantIds.length > 0) {
-      const [dbVariants] = await conn.query(
-        `SELECT id, product_id, variant_name, price, stock, is_active
-         FROM product_variants WHERE id IN (${variantIds.map(() => '?').join(',')}) AND is_active = 1`,
-        variantIds
-      );
-      for (const v of dbVariants) variantMap[v.id] = v;
-    }
-
-    // Validate stock for each line item
     for (const item of products) {
       const dbP = dbMap[item.id];
       if (!dbP) {
@@ -64,40 +53,21 @@ exports.create = async (req, res) => {
         await conn.rollback();
         return res.status(400).json({ success: false, message: `Product "${dbP.name}" is no longer available` });
       }
-      if (item.variant_id) {
-        const v = variantMap[item.variant_id];
-        if (!v || v.product_id !== item.id) {
-          await conn.rollback();
-          return res.status(400).json({ success: false, message: `Variant not found for "${dbP.name}"` });
-        }
-        if (v.stock < item.quantity) {
-          await conn.rollback();
-          return res.status(400).json({
-            success: false,
-            message: `Insufficient stock for "${dbP.name}" (${v.variant_name}). Available: ${v.stock}, Requested: ${item.quantity}`,
-          });
-        }
-      } else {
-        if (dbP.stock < item.quantity) {
-          await conn.rollback();
-          return res.status(400).json({
-            success: false,
-            message: `Insufficient stock for "${dbP.name}". Available: ${dbP.stock}, Requested: ${item.quantity}`,
-          });
-        }
+      if (dbP.stock < item.quantity) {
+        await conn.rollback();
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${dbP.name}". Available: ${dbP.stock}, Requested: ${item.quantity}`,
+        });
       }
     }
 
-    // Calculate total using variant price when available
     let total = 0;
     for (const item of products) {
-      const price = item.variant_id && variantMap[item.variant_id]
-        ? parseFloat(variantMap[item.variant_id].price)
-        : parseFloat(dbMap[item.id].price);
-      total += price * item.quantity;
+      total += parseFloat(dbMap[item.id].price) * item.quantity;
     }
 
-    const orderNumber   = genOrderNumber();
+    const orderNumber  = genOrderNumber();
     const [orderResult] = await conn.query(
       `INSERT INTO orders (order_number,customer_name,shop_name,phone,address,city,pincode,latitude,longitude,total_price,notes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -109,29 +79,15 @@ exports.create = async (req, res) => {
 
     const orderId = orderResult.insertId;
     for (const item of products) {
-      const dbP    = dbMap[item.id];
-      const v      = item.variant_id ? variantMap[item.variant_id] : null;
-      const price  = v ? parseFloat(v.price) : parseFloat(dbP.price);
-      const pName  = v ? `${dbP.name} (${v.variant_name})` : dbP.name;
-
+      const dbP = dbMap[item.id];
       await conn.query(
-        'INSERT INTO order_items (order_id,product_id,variant_id,product_name,quantity,price) VALUES (?,?,?,?,?,?)',
-        [orderId, item.id, item.variant_id || null, pName, item.quantity, price]
+        'INSERT INTO order_items (order_id,product_id,product_name,quantity,price) VALUES (?,?,?,?,?)',
+        [orderId, item.id, dbP.name, item.quantity, dbP.price]
       );
-
-      if (v) {
-        // Deduct variant stock
-        await conn.query(
-          'UPDATE product_variants SET stock = GREATEST(0, stock - ?) WHERE id = ?',
-          [item.quantity, v.id]
-        );
-      } else {
-        // Deduct product stock
-        await conn.query(
-          'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
-          [item.quantity, item.id]
-        );
-      }
+      await conn.query(
+        'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+        [item.quantity, item.id]
+      );
     }
 
     await conn.commit();
