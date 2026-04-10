@@ -4568,14 +4568,14 @@ footer {
   position: fixed;
   bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 14px);
   right: 14px;
-  z-index: 100;
+  z-index: 10;
   width: 20px;
   height: 20px;
   border-radius: 15%;
   background: var(--brand);
   color: #fff;
   font-size: 1.2rem;
-  font-weight: 700;
+  font-weight: 70;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4600,7 +4600,7 @@ footer {
 @media (min-width: 540px) {
   .products-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 5px;
   }
 
   .hero-text h1 {
