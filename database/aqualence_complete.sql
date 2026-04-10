@@ -94,13 +94,13 @@ CREATE TABLE `products` (
   `description`   TEXT,
   `price`         DECIMAL(10,2)   NOT NULL,
   `mrp`           DECIMAL(10,2)   DEFAULT NULL,
-  `image`         LONGTEXT        NOT NULL,
+  `image`         LONGTEXT        NOT NULL DEFAULT '',
   `images`        TEXT            DEFAULT NULL,
   `category`      VARCHAR(100)    NOT NULL DEFAULT 'General',
-  `stock`         INT             NOT NULL DEFAULT 100,
+  `stock`         INT             NOT NULL DEFAULT 0,
   `unit`          VARCHAR(50)     NOT NULL DEFAULT 'piece',
+  `product_type`  VARCHAR(20)     NOT NULL DEFAULT 'single',
   `is_active`     TINYINT(1)      NOT NULL DEFAULT 1,
-  -- Bundle product fields
   `is_bundle`     TINYINT(1)      NOT NULL DEFAULT 0,
   `base_quantity` DECIMAL(10,2)   DEFAULT NULL,
   `base_unit`     VARCHAR(10)     DEFAULT NULL,
@@ -111,6 +111,30 @@ CREATE TABLE `products` (
   PRIMARY KEY (`id`),
   INDEX `idx_products_cat`    (`category`),
   INDEX `idx_products_bundle` (`is_bundle`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABLE: product_variants
+-- ============================================================
+CREATE TABLE `product_variants` (
+  `id`            INT           NOT NULL AUTO_INCREMENT,
+  `product_id`    INT           NOT NULL,
+  `variant_name`  VARCHAR(100)  NOT NULL,
+  `size_value`    DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `size_unit`     VARCHAR(10)   NOT NULL DEFAULT 'GM',
+  `pack_quantity` INT           NOT NULL DEFAULT 1,
+  `price`         DECIMAL(10,2) NOT NULL,
+  `mrp`           DECIMAL(10,2) DEFAULT NULL,
+  `stock`         INT           NOT NULL DEFAULT 0,
+  `sku`           VARCHAR(80)   NOT NULL,
+  `sort_order`    INT           NOT NULL DEFAULT 0,
+  `is_active`     TINYINT(1)    NOT NULL DEFAULT 1,
+  `created_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_variant_sku` (`sku`),
+  INDEX `idx_pv_product` (`product_id`),
+  CONSTRAINT `fk_pv_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -149,11 +173,13 @@ CREATE TABLE `order_items` (
   `id`           INT             NOT NULL AUTO_INCREMENT,
   `order_id`     INT             NOT NULL,
   `product_id`   INT             NOT NULL,
+  `variant_id`   INT             DEFAULT NULL,
   `product_name` VARCHAR(150)    NOT NULL,
   `quantity`     INT             NOT NULL,
   `price`        DECIMAL(10,2)   NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `idx_order_items` (`order_id`),
+  INDEX `idx_order_items`   (`order_id`),
+  INDEX `idx_oi_variant`    (`variant_id`),
   CONSTRAINT `fk_items_order`
     FOREIGN KEY (`order_id`)   REFERENCES `orders`   (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_items_product`
