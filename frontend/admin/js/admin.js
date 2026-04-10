@@ -657,6 +657,7 @@ async function editProduct(id) {
     document.getElementById('pPrice').value          = p.price;
     document.getElementById('pMrp').value            = p.mrp || '';
     document.getElementById('pStock').value          = p.stock;
+    document.getElementById('pUnit').value           = p.unit || 'piece';
     document.getElementById('pProductType').value    = p.product_type || 'single';
 
     // Load images — p.images is already parsed array from controller
@@ -723,6 +724,7 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     price,
     mrp:          parseFloat(document.getElementById('pMrp').value) || null,
     stock:        parseInt(document.getElementById('pStock').value) || 0,
+    unit:         document.getElementById('pUnit').value,
     product_type: document.getElementById('pProductType').value || 'single',
     is_active:    true,
     ...imgPayload,
@@ -735,6 +737,20 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
     const data   = await res.json();
     if (!data.success) throw new Error(data.message);
+
+    const productId = id ? parseInt(id, 10) : data.id;
+
+    // Save variants if any
+    if (productId && variantsPayload.length >= 0) {
+      try {
+        await apiFetch(`${API}/products/${productId}/variants`, {
+          method:  'POST',
+          body:    JSON.stringify({ variants: variantsPayload }),
+        });
+      } catch (vErr) {
+        showToast('Product saved, but variants failed: ' + vErr.message, 'error');
+      }
+    }
 
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
