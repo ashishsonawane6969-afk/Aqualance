@@ -324,10 +324,7 @@ const API_URL = `${API}/ai/chat`;
     const container = document.createElement('div');
     container.innerHTML = `
       <!-- FAB button -->
-      <button id="aq-chat-fab" aria-label="Chat with Aria, our AI wellness assistant" aria-expanded="false">
-        <div id="aq-chat-dot"></div>
-        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      </button>
+     
 
       <!-- Chat panel -->
       <div id="aq-chat-panel" role="dialog" aria-label="Aria — iKrish Product Assistant" aria-modal="true">
