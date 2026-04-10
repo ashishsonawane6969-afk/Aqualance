@@ -531,7 +531,7 @@ document.getElementById('searchOrders')?.addEventListener('input', function() {
 
 if (page === 'orders') adminAuthRehydrate().then(function(ok) { if (ok) loadOrders(); });
 
-/* ─────────────────────────────────────────────────────────────
+
 /* ─────────────────────────────────────────────────────────────
    PRODUCTS PAGE
 ───────────────────────────────────────────────────────────── */
@@ -559,30 +559,31 @@ function filterProducts() {
 function renderProductsTable(products) {
   const tbody = document.getElementById('productsTableBody');
   const cards = document.getElementById('productCards');
-
   if (!tbody) return;
+
   if (!products.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--ink-soft)">No products found</td></tr>';
     if (cards) cards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-soft);font-size:.85rem">No products found</div>';
     return;
   }
 
-  // ── Desktop table ──────────────────────────────────────────────
   tbody.innerHTML = products.map(p => {
     const safeName   = p.name.replace(/'/g, "\\'");
     const imgHtml    = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-thumb-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-thumb-placeholder">🌿</div>`;
-    const bundleBadge = p.is_bundle ? `<div class="bundle-badge">📦 Bundle</div>` : '';
-    const displaySub  = p.is_bundle && p.display_name
-      ? `<span style="font-size:.72rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>` : '';
+    const bundleBadge  = p.is_bundle ? `<span class="bundle-badge">📦 Bundle</span>` : '';
+    const variantBadge = p.variant_count > 0 ? `<span class="variant-badge">${p.variant_count} variant${p.variant_count > 1 ? 's' : ''}</span>` : '';
+    const displaySub   = p.is_bundle && p.display_name
+      ? `<span style="font-size:.7rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>` : '';
     return `<tr>
       <td>
         <div class="prod-name-cell" style="flex-wrap:wrap">
           ${imgHtml}
           <div style="min-width:0">
             <span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>
-            ${bundleBadge}${displaySub}
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${bundleBadge}${variantBadge}</div>
+            ${displaySub}
           </div>
         </div>
       </td>
@@ -598,7 +599,6 @@ function renderProductsTable(products) {
     </tr>`;
   }).join('');
 
-  // ── Mobile cards ───────────────────────────────────────────────
   if (!cards) return;
   cards.innerHTML = products.map(p => {
     const safeName   = p.name.replace(/'/g, "\\'");
@@ -610,11 +610,13 @@ function renderProductsTable(products) {
       : '<span class="tag tag-red" style="font-size:.65rem;padding:2px 8px">Inactive</span>';
     const bundleLine = p.is_bundle && p.display_name
       ? `<span class="bundle-badge" style="font-size:.6rem">📦 ${_esc(p.display_name)}</span>` : '';
+    const variantLine = p.variant_count > 0
+      ? `<span class="variant-badge" style="font-size:.6rem">${p.variant_count} variant${p.variant_count > 1 ? 's' : ''}</span>` : '';
     return `<div class="prod-card">
       ${imgHtml}
       <div class="prod-card-body">
         <div class="prod-card-name">${_esc(p.name)}</div>
-        ${bundleLine}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${bundleLine}${variantLine}</div>
         <div class="prod-card-meta">
           <span><b>${fmtCurrency(p.price)}</b>${p.mrp ? ` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>` : ''}</span>
           <span>Stock: <b>${p.stock}</b></span>
@@ -635,12 +637,9 @@ function openProductModal(productId) {
   document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
   document.getElementById('productForm').reset();
   document.getElementById('productFormError').classList.add('hidden');
-
-  // Reset bundle state — function is defined in products.html inline script
   if (typeof resetBundleFields === 'function') resetBundleFields();
-  // Reset image widget — function exposed by image widget IIFE in products.html
-  if (typeof window._resetProductImageWidget === 'function') window._resetProductImageWidget();
-
+  if (typeof resetImageSlots === 'function') resetImageSlots();
+  if (typeof resetVariants === 'function') resetVariants();
   if (!productId) openModal('productModal');
 }
 
@@ -651,24 +650,28 @@ async function editProduct(id) {
     const p   = (await res.json()).data;
     if (!p) throw new Error('Product not found');
 
-    document.getElementById('productId').value    = p.id;
-    document.getElementById('pName').value        = p.name;
-    document.getElementById('pCategory').value    = p.category;
-    document.getElementById('pDescription').value = p.description || '';
-    document.getElementById('pPrice').value       = p.price;
-    document.getElementById('pMrp').value         = p.mrp || '';
-    document.getElementById('pStock').value       = p.stock;
-    document.getElementById('pUnit').value        = p.unit || 'piece';
-    document.getElementById('pImage').value       = p.image || '';
+    document.getElementById('productId').value       = p.id;
+    document.getElementById('pName').value           = p.name;
+    document.getElementById('pCategory').value       = p.category;
+    document.getElementById('pDescription').value    = p.description || '';
+    document.getElementById('pPrice').value          = p.price;
+    document.getElementById('pMrp').value            = p.mrp || '';
+    document.getElementById('pStock').value          = p.stock;
+    document.getElementById('pUnit').value           = p.unit || 'piece';
+    document.getElementById('pProductType').value    = p.product_type || 'single';
 
-    // Update image preview widget with existing image
-    if (typeof window._setProductImagePreview === 'function') {
-      window._setProductImagePreview(p.image || null);
+    // Load images — p.images is already parsed array from controller
+    const imgs = Array.isArray(p.images) ? p.images : [];
+    if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
+    if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
+
+    // Pre-fill variants
+    if (typeof resetVariants === 'function') resetVariants();
+    if (Array.isArray(p.variants)) {
+      p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
     }
 
-    // Pre-fill bundle fields if applicable
     if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
-
     openModal('productModal');
   } catch (err) {
     showToast('Could not load product: ' + err.message, 'error');
@@ -681,13 +684,12 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
   errDiv.classList.add('hidden');
 
   const id       = document.getElementById('productId').value;
+  const name     = document.getElementById('pName').value.trim();
+  const price    = parseFloat(document.getElementById('pPrice').value);
   const isBundle = document.getElementById('pIsBundle')?.checked || false;
   const baseQty  = parseFloat(document.getElementById('pBaseQty')?.value) || null;
   const packSize = parseInt(document.getElementById('pPackSize')?.value, 10) || null;
-  const name     = document.getElementById('pName').value.trim();
-  const price    = parseFloat(document.getElementById('pPrice').value);
 
-  // ── Validation ──────────────────────────────────────────────────
   if (!name) {
     errDiv.textContent = 'Product name is required.';
     errDiv.classList.remove('hidden');
@@ -705,28 +707,28 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
       return;
     }
     if (!packSize || packSize <= 0) {
-      errDiv.textContent = 'Pack Size is required and must be greater than 0 for bundle products.';
+      errDiv.textContent = 'Pack Size is required for bundle products.';
       errDiv.classList.remove('hidden');
       return;
     }
   }
 
+  const imgPayload      = typeof getImagePayload === 'function' ? getImagePayload() : { image: '', images: [] };
+  const bundlePayload   = typeof getBundlePayload === 'function' ? getBundlePayload() : { is_bundle: false };
+  const variantsPayload = typeof getVariantsPayload === 'function' ? getVariantsPayload() : [];
+
   const body = {
     name,
-    category:      document.getElementById('pCategory').value,
-    description:   document.getElementById('pDescription').value.trim(),
+    category:     document.getElementById('pCategory').value,
+    description:  document.getElementById('pDescription').value.trim(),
     price,
-    mrp:           parseFloat(document.getElementById('pMrp').value) || null,
-    stock:         parseInt(document.getElementById('pStock').value) || 0,
-    unit:          document.getElementById('pUnit').value,
-    image:         (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) ||
-                   document.getElementById('pImage').value.trim(),
-    is_active:     true,
-    is_bundle:     isBundle,
-    base_quantity: isBundle ? baseQty : null,
-    base_unit:     isBundle ? (document.getElementById('pBaseUnit')?.value || null) : null,
-    pack_size:     isBundle ? packSize : null,
-    display_name:  isBundle ? (document.getElementById('pDisplayName')?.value.trim() || null) : null,
+    mrp:          parseFloat(document.getElementById('pMrp').value) || null,
+    stock:        parseInt(document.getElementById('pStock').value) || 0,
+    unit:         document.getElementById('pUnit').value,
+    product_type: document.getElementById('pProductType').value || 'single',
+    is_active:    true,
+    ...imgPayload,
+    ...bundlePayload,
   };
 
   try {
@@ -735,6 +737,21 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
     const data   = await res.json();
     if (!data.success) throw new Error(data.message);
+
+    const productId = id ? parseInt(id, 10) : data.id;
+
+    // Save variants if any
+    if (productId && variantsPayload.length >= 0) {
+      try {
+        await apiFetch(`${API}/products/${productId}/variants`, {
+          method:  'POST',
+          body:    JSON.stringify({ variants: variantsPayload }),
+        });
+      } catch (vErr) {
+        showToast('Product saved, but variants failed: ' + vErr.message, 'error');
+      }
+    }
+
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
     loadProducts();
@@ -757,6 +774,7 @@ async function deleteProduct(id, name) {
 }
 
 if (page === 'products') adminAuthRehydrate().then(function (ok) { if (ok) loadProducts(); });
+
 
 /* ─────────────────────────────────────────────────────────────
    DELIVERY BOYS PAGE
