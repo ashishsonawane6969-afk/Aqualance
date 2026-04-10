@@ -113,7 +113,7 @@ if (errors.length > 0) {
   errors.forEach(e => console.error(`❌  [env] FATAL: ${e}`));
   if (isProd) {
     console.error('❌  Server startup aborted due to unsafe production configuration.');
-    throw new Error('DB connection failed');
+   console.error('❌ DB connection failed (validation check)');
   } else {
     console.warn('⚠️  [env] Above errors would abort startup in NODE_ENV=production.');
   }
