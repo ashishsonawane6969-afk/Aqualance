@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v2';  // ✅ bumped from v1 — forces SW update & clears stale auth cache
+const CACHE_NAME    = 'aqualence-v4';  // bumped — forces SW update, clears all stale JS/CSS/API cache
 const OFFLINE_URL   = '/offline.html';
 
 // Static assets to pre-cache on install
@@ -89,11 +89,17 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests for everything else
   if (url.origin !== location.origin) return;
 
-  // Static assets (CSS/JS/images/fonts) → Cache-First
+  // JS files that contain app logic → Network-First (they change on deploy)
+  // CSS and images → Cache-First (fast loads, versioned by CACHE_NAME bump)
+  if (request.destination === 'script') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Static assets (CSS/images/fonts) → Cache-First
   if (
-    request.destination === 'script'  ||
-    request.destination === 'style'   ||
-    request.destination === 'image'   ||
+    request.destination === 'style'  ||
+    request.destination === 'image'  ||
     request.destination === 'font'
   ) {
     event.respondWith(cacheFirst(request));
