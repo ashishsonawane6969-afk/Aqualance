@@ -281,8 +281,8 @@ if (document.getElementById('loginForm')) {
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone:    document.getElementById('phone').value.trim(),
-          password: document.getElementById('password').value,
+          phone:    (document.getElementById('phone')?.value || '').trim(),
+          password: document.getElementById('password')?.value || '',
         }),
       });
       const data = await res.json();
@@ -658,10 +658,13 @@ async function editProduct(id) {
 
     document.getElementById('productId').value    = p.id;
     document.getElementById('pName').value        = p.name;
-    document.getElementById('pCategory').value    = p.category;
-    document.getElementById('pDescription').value = p.description || '';
+    const pCat = document.getElementById('pCategory');
+    if (pCat) pCat.value = p.category;
+    const pDesc = document.getElementById('pDescription');
+    if (pDesc) pDesc.value = p.description || '';
     document.getElementById('pPrice').value       = p.price;
-    document.getElementById('pMrp').value         = p.mrp || '';
+    const pMrp = document.getElementById('pMrp');
+    if (pMrp) pMrp.value = p.mrp || '';
     document.getElementById('pStock').value       = p.stock;
 
     // Set product type dropdown and sync hidden fields
@@ -697,9 +700,9 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
   const errDiv = document.getElementById('productFormError');
   errDiv.classList.add('hidden');
 
-  const id       = document.getElementById('productId').value;
-  const name     = document.getElementById('pName').value.trim();
-  const price    = parseFloat(document.getElementById('pPrice').value);
+  const id       = document.getElementById('productId')?.value || '';
+  const name     = (document.getElementById('pName')?.value || '').trim();
+  const price    = parseFloat(document.getElementById('pPrice')?.value || '0');
   const isBundle = typeof _isBundleChecked === 'function' ? _isBundleChecked() : false;
 
   if (!name) {
@@ -718,11 +721,11 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
 
   const body = {
     name,
-    category:     document.getElementById('pCategory').value,
-    description:  document.getElementById('pDescription').value.trim(),
+    category:     document.getElementById('pCategory')?.value || '',
+    description:  (document.getElementById('pDescription')?.value || '').trim(),
     price,
-    mrp:          parseFloat(document.getElementById('pMrp').value) || null,
-    stock:        parseInt(document.getElementById('pStock').value, 10) || 0,
+    mrp:          parseFloat(document.getElementById('pMrp')?.value || '') || null,
+    stock:        parseInt(document.getElementById('pStock')?.value || '0', 10) || 0,
     unit:         document.getElementById('pUnitVal')?.value || 'piece',
     product_type: document.getElementById('pProductTypeVal')?.value || 'single',
     is_active:    true,
@@ -815,9 +818,9 @@ document.getElementById('addDeliveryForm')?.addEventListener('submit', async e =
   e.preventDefault();
   const errDiv = document.getElementById('addDeliveryError');
   errDiv.classList.add('hidden');
-  const name     = document.getElementById('dbName').value.trim();
-  const phone    = document.getElementById('dbPhone').value.trim();
-  const password = document.getElementById('dbPassword').value;
+  const name     = (document.getElementById('dbName')?.value || '').trim();
+  const phone    = (document.getElementById('dbPhone')?.value || '').trim();
+  const password = document.getElementById('dbPassword')?.value || '';
   if (!name || !phone || !password) { errDiv.textContent = 'All fields required.'; errDiv.classList.remove('hidden'); return; }
   try {
     const res  = await apiFetch(`${API}/delivery/boys`, { method:'POST', body: JSON.stringify({ name, phone, password }) });
