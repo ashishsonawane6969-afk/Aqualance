@@ -218,7 +218,7 @@
           <textarea id="pDescription" rows="2" placeholder="Product description..."></textarea>
         </div>
 
-        <!-- Price + MRP -->
+        <!-- Price + MRP + Distributor Price -->
         <div class="form-row">
           <div class="form-group">
             <label for="pPrice">Price (₹) *</label>
@@ -227,6 +227,12 @@
           <div class="form-group">
             <label for="pMrp">MRP (₹)</label>
             <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pDistributorPrice">Distributor Price (₹)</label>
+            <input type="number" id="pDistributorPrice" min="0" step="0.01" placeholder="Optional" />
           </div>
         </div>
 
