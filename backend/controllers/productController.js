@@ -127,11 +127,16 @@ exports.getOne = async (req, res) => {
       try {
         const [bundleItems] = await db.query(
           `SELECT bi.id, bi.product_id, bi.variant_id, bi.quantity,
-                  p.name AS product_name, p.price AS product_price,
-                  pv.variant_name, pv.price AS variant_price,
-                  pv.size_value, pv.size_unit, pv.sku
+                  COALESCE(p.name, '')          AS product_name,
+                  COALESCE(p.price, 0)          AS product_price,
+                  COALESCE(pv.variant_name, '') AS variant_name,
+                  COALESCE(pv.price, 0)         AS variant_price,
+                  COALESCE(pv.size_value, '')   AS size_value,
+                  COALESCE(pv.size_unit, '')    AS size_unit,
+                  COALESCE(pv.sku, '')          AS sku,
+                  CASE WHEN bi.variant_id IS NOT NULL AND pv.id IS NOT NULL THEN 1 ELSE 0 END AS has_variant
            FROM bundle_items bi
-           JOIN products p ON p.id = bi.product_id
+           LEFT JOIN products p ON p.id = bi.product_id
            LEFT JOIN product_variants pv ON pv.id = bi.variant_id AND pv.is_active = 1
            WHERE bi.bundle_product_id = ?
            ORDER BY bi.id`,
