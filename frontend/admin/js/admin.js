@@ -592,7 +592,10 @@ function renderProductsTable(products) {
       </td>
       <td><span class="tag tag-sage">${_esc(p.category)}</span></td>
       <td style="white-space:nowrap">${typeBadge || `<span style="font-size:.78rem;color:var(--ink-soft)">${_esc(p.unit||'piece')}</span>`}</td>
-      <td style="white-space:nowrap">${fmtCurrency(p.price)}</td>
+      <td style="white-space:nowrap">
+        <div><b>${fmtCurrency(p.price)}</b></div>
+        ${p.distributor_price ? `<div style="font-size:.72rem;color:#7b1fa2;margin-top:2px">Dist: ${fmtCurrency(p.distributor_price)}</div>` : ''}
+      </td>
       <td style="white-space:nowrap">${p.mrp ? fmtCurrency(p.mrp) : '—'}</td>
       <td style="font-weight:600">${p.stock}</td>
       <td>${p.is_active ? '<span class="tag tag-green">Active</span>' : '<span class="tag tag-red">Inactive</span>'}</td>
@@ -620,7 +623,10 @@ function renderProductsTable(products) {
         <div class="prod-card-name">${_esc(p.name)}</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${bundgeLine}${variantLine}</div>
         <div class="prod-card-meta">
-          <span><b>${fmtCurrency(p.price)}</b>${p.mrp?` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>`:''}</span>
+          <span>
+            <b>${fmtCurrency(p.price)}</b>${p.mrp?` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>`:''}
+            ${p.distributor_price ? `<div style="font-size:.68rem;color:#7b1fa2;margin-top:1px">Dist: ${fmtCurrency(p.distributor_price)}</div>` : ''}
+          </span>
           <span>Stock: <b>${p.stock}</b></span>
           <span>${_esc(p.category)}</span>
           <span style="text-transform:capitalize">${_esc(p.product_type||p.unit||'piece')}</span>
@@ -665,6 +671,8 @@ async function editProduct(id) {
     document.getElementById('pPrice').value       = p.price;
     const pMrp = document.getElementById('pMrp');
     if (pMrp) pMrp.value = p.mrp || '';
+    const pDistributorPrice = document.getElementById('pDistributorPrice');
+    if (pDistributorPrice) pDistributorPrice.value = p.distributor_price || '';
     document.getElementById('pStock').value       = p.stock;
 
     // Set product type dropdown and sync hidden fields
@@ -721,14 +729,15 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
 
   const body = {
     name,
-    category:     document.getElementById('pCategory')?.value || '',
-    description:  (document.getElementById('pDescription')?.value || '').trim(),
+    category:          document.getElementById('pCategory')?.value || '',
+    description:       (document.getElementById('pDescription')?.value || '').trim(),
     price,
-    mrp:          parseFloat(document.getElementById('pMrp')?.value || '') || null,
-    stock:        parseInt(document.getElementById('pStock')?.value || '0', 10) || 0,
-    unit:         document.getElementById('pUnitVal')?.value || 'piece',
-    product_type: document.getElementById('pProductTypeVal')?.value || 'single',
-    is_active:    true,
+    mrp:               parseFloat(document.getElementById('pMrp')?.value || '') || null,
+    distributor_price: parseFloat(document.getElementById('pDistributorPrice')?.value || '') || null,
+    stock:             parseInt(document.getElementById('pStock')?.value || '0', 10) || 0,
+    unit:              document.getElementById('pUnitVal')?.value || 'piece',
+    product_type:      document.getElementById('pProductTypeVal')?.value || 'single',
+    is_active:         true,
     ...imgPayload,
     ...bundlePayload,
   };
