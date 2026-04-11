@@ -12,186 +12,107 @@
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
   <style>
-    .main-area { min-width: 0; overflow-x: hidden; }
-    .content-area { min-width: 0; overflow-x: hidden; max-width: 100%; }
-    .card { min-width: 0; }
-    .table-wrap { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
-    .table-wrap table { min-width: 560px; border-collapse: collapse; width: 100%; }
-    .table-wrap thead th { white-space: nowrap; }
-    .filter-bar { flex-wrap: wrap; }
-    .search-input { min-width: 0; flex: 1 1 140px; }
-    select.filter-select { max-width: 130px; }
+    .main-area{min-width:0;overflow-x:hidden}
+    .content-area{min-width:0;overflow-x:hidden;max-width:100%}
+    .card{min-width:0}
+    .table-wrap{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+    .table-wrap table{min-width:580px;border-collapse:collapse;width:100%}
+    .table-wrap thead th{white-space:nowrap}
+    .filter-bar{flex-wrap:wrap}
+    .search-input{min-width:0;flex:1 1 140px}
+    select.filter-select{max-width:130px}
+    .prod-thumb{width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--border);display:block;flex-shrink:0;background:#f5f5f5}
+    .prod-thumb-placeholder{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;border:1px solid var(--border)}
+    .prod-name-cell{display:flex;align-items:center;gap:10px;min-width:0}
+    .prod-name-text{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+    @media(max-width:640px){
+      .table-wrap{display:none!important}
+      #productCards{display:flex;flex-direction:column;gap:10px;padding:12px}
+      .prod-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+      .prod-card-img{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;background:#f5f5f5}
+      .prod-card-img-placeholder{width:52px;height:52px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid var(--border)}
+      .prod-card-body{flex:1;min-width:0}
+      .prod-card-name{font-weight:700;font-size:.88rem;color:var(--ink);line-height:1.3;margin-bottom:4px}
+      .prod-card-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:.75rem;color:var(--ink-soft);margin-bottom:8px}
+      .prod-card-meta b{color:var(--ink)}
+      .prod-card-actions{display:flex;gap:6px}
+      .prod-card-actions .btn{padding:5px 14px;font-size:.75rem}
+    }
+    @media(min-width:641px){#productCards{display:none}}
 
-    /* Product image thumbnail in table */
-    .prod-thumb {
-      width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
-      border: 1px solid var(--border); display: block; flex-shrink: 0;
-      background: #f5f5f5;
-    }
-    .prod-thumb-placeholder {
-      width: 40px; height: 40px; border-radius: 8px;
-      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0; border: 1px solid var(--border);
-    }
-    .prod-name-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .prod-name-text { font-weight: 600; color: var(--ink); white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-
-    /* Mobile: card layout instead of table */
-    @media (max-width: 640px) {
-      .table-wrap { display: none !important; }
-      #productCards { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-      .prod-card {
-        background: #fff; border-radius: 14px; border: 1px solid var(--border);
-        padding: 12px; display: flex; gap: 12px; align-items: flex-start;
-        box-shadow: 0 1px 4px rgba(0,0,0,.06);
-      }
-      .prod-card-img {
-        width: 52px; height: 52px; border-radius: 10px; object-fit: cover;
-        border: 1px solid var(--border); flex-shrink: 0; background: #f5f5f5;
-      }
-      .prod-card-img-placeholder {
-        width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
-        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-        display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
-        border: 1px solid var(--border);
-      }
-      .prod-card-body { flex: 1; min-width: 0; }
-      .prod-card-name { font-weight: 700; font-size: .88rem; color: var(--ink); line-height: 1.3; margin-bottom: 4px; }
-      .prod-card-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .75rem; color: var(--ink-soft); margin-bottom: 8px; }
-      .prod-card-meta b { color: var(--ink); }
-      .prod-card-actions { display: flex; gap: 6px; }
-      .prod-card-actions .btn { padding: 5px 14px; font-size: .75rem; }
-    }
-    @media (min-width: 641px) {
-      #productCards { display: none; }
-    }
-
-    /* ── Modal form alignment ── */
-    #productModal .modal { max-width: 520px; }
-    #productModal form { padding: 14px 18px 4px; }
-    #productModal .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    #productModal .form-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
-    #productModal .form-group label {
-      font-size: .78rem; font-weight: 600; color: var(--ink-soft);
-      text-transform: uppercase; letter-spacing: .03em;
-    }
+    /* Modal */
+    #productModal .modal{max-width:580px}
+    #productModal .modal-body{max-height:85vh;overflow-y:auto;padding:14px 18px 10px}
+    #productModal .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    #productModal .form-group{margin-bottom:12px;display:flex;flex-direction:column;gap:4px}
+    #productModal .form-group label{font-size:.75rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em}
     #productModal .form-group input,
     #productModal .form-group select,
-    #productModal .form-group textarea {
-      width: 100%; box-sizing: border-box;
-      padding: 9px 12px; border-radius: var(--r-md);
-      border: 1.5px solid var(--border); font-size: .9rem;
-      background: var(--surface); color: var(--ink);
-      transition: border-color .15s;
-    }
+    #productModal .form-group textarea{width:100%;box-sizing:border-box;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border);font-size:.9rem;background:var(--surface);color:var(--ink);transition:border-color .15s}
     #productModal .form-group input:focus,
     #productModal .form-group select:focus,
-    #productModal .form-group textarea:focus {
-      outline: none; border-color: var(--brand);
-    }
-    /* ── Image upload widget ── */
-    .img-upload-wrap {
-      display: flex; gap: 14px; align-items: flex-start;
-    }
-    .img-preview-box {
-      width: 88px; height: 88px; flex-shrink: 0;
-      border-radius: 12px; border: 1.5px dashed var(--border-dark);
-      background: var(--surface-2);
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .img-upload-controls {
-      flex: 1; display: flex; flex-direction: column; gap: 6px;
-    }
-    .img-file-label {
-      cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-      white-space: nowrap; align-self: flex-start;
-    }
-    @media (max-width: 480px) {
-      #productModal .form-row { grid-template-columns: 1fr; }
-    }
+    #productModal .form-group textarea:focus{outline:none;border-color:var(--brand)}
+    .form-section-title{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);padding:10px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:12px}
+    @media(max-width:480px){#productModal .form-row{grid-template-columns:1fr}}
 
-    /* ── Bundle Product Styles ── */
-    .bundle-toggle-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px; margin: 4px 0 12px;
-      background: linear-gradient(135deg, rgba(21,101,168,.06), rgba(76,175,80,.06));
-      border-radius: var(--r-md); border: 1px solid rgba(21,101,168,.12);
-      cursor: pointer; transition: all .2s;
-    }
-    .bundle-toggle-row:hover { border-color: var(--brand); }
-    .bundle-toggle-row input[type=checkbox] { display: none; }
-    .bundle-switch {
-      position: relative; width: 44px; height: 24px; flex-shrink: 0;
-      background: #ccc; border-radius: 12px; transition: background .25s;
-    }
-    .bundle-switch::after {
-      content: ''; position: absolute; top: 2px; left: 2px;
-      width: 20px; height: 20px; border-radius: 50%; background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .25s;
-    }
-    .bundle-toggle-row input:checked ~ .bundle-switch {
-      background: linear-gradient(135deg, #1565a8, #43a047);
-    }
-    .bundle-toggle-row input:checked ~ .bundle-switch::after {
-      transform: translateX(20px);
-    }
-    .bundle-label { font-size: .82rem; font-weight: 600; color: var(--ink); user-select: none; }
-    .bundle-label small { font-weight: 400; color: var(--ink-soft); display: block; font-size: .72rem; margin-top: 1px; }
+    /* ── 3-Image grid with URL option ─────────────────────────── */
+    .img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+    .img-slot-wrap{display:flex;flex-direction:column;gap:4px}
+    .img-slot{position:relative;aspect-ratio:1;border-radius:10px;border:1.5px dashed var(--border-dark);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:border-color .15s}
+    .img-slot:hover{border-color:var(--brand)}
+    .img-slot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none}
+    .img-slot .slot-icon{font-size:1.4rem;opacity:.3;pointer-events:none}
+    .img-slot .slot-label{font-size:.55rem;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;pointer-events:none}
+    .img-slot .slot-remove{position:absolute;top:4px;right:4px;background:rgba(192,57,43,.92);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.6rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:4;line-height:1}
+    .img-slot.has-image .slot-remove{display:flex}
+    .img-slot.has-image img{display:block}
+    .img-slot.has-image .slot-icon,.img-slot.has-image .slot-label{opacity:0;pointer-events:none}
+    .img-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:2}
+    /* URL input per slot */
+    .slot-url-row{display:flex;gap:4px;align-items:center}
+    .slot-url-row input{flex:1;padding:5px 8px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:.72rem;background:var(--surface);color:var(--ink);min-width:0}
+    .slot-url-row input:focus{outline:none;border-color:var(--brand)}
+    .slot-url-row .slot-url-go{padding:5px 8px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface-2);font-size:.7rem;cursor:pointer;white-space:nowrap;color:var(--ink-soft)}
+    .slot-url-row .slot-url-go:hover{border-color:var(--brand);color:var(--brand)}
+    .img-hint{font-size:.68rem;color:var(--ink-faint);margin-bottom:12px}
 
-    .bundle-fields {
-      max-height: 0; overflow: hidden; opacity: 0;
-      transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
-      margin: 0;
-    }
-    .bundle-fields.open {
-      max-height: 620px; opacity: 1; margin-bottom: 12px;
-    }
+    /* ── Variants ─────────────────────────────────────────────── */
+    .variants-wrap{margin-bottom:12px}
+    .variant-header{display:grid;grid-template-columns:1.6fr .7fr .65fr 1fr .65fr 28px;gap:6px;padding:0 10px;margin-bottom:4px}
+    .variant-header span{font-size:.6rem;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em}
+    .variant-row{display:grid;grid-template-columns:1.6fr .7fr .65fr 1fr .65fr 28px;gap:6px;align-items:center;padding:7px 10px;background:var(--surface-2);border-radius:var(--r-md);border:1px solid var(--border);margin-bottom:6px}
+    .variant-row input,.variant-row select{padding:6px 7px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:.8rem;width:100%;box-sizing:border-box;background:var(--surface);color:var(--ink)}
+    .variant-row input:focus,.variant-row select:focus{outline:none;border-color:var(--brand)}
+    .variant-remove-btn{background:none;border:none;color:var(--error);font-size:1rem;cursor:pointer;padding:2px;border-radius:4px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .variant-remove-btn:hover{background:var(--error-pale)}
+    @media(max-width:520px){.variant-row{grid-template-columns:1fr 1fr;row-gap:6px}.variant-header{display:none}.variant-remove-btn{grid-column:2;justify-self:end}}
 
-    .bundle-preview {
-      padding: 12px 16px; border-radius: 12px; margin-top: 8px;
-      background: linear-gradient(135deg, rgba(21,101,168,.08), rgba(76,175,80,.06));
-      border: 1px solid rgba(21,101,168,.15);
-      min-height: 44px; transition: all .3s;
-    }
-    .bundle-preview .bp-title {
-      font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
-      font-weight: 700; color: var(--ink-soft); margin-bottom: 6px;
-    }
-    .bundle-preview .bp-name {
-      font-size: 1rem; font-weight: 700; color: var(--ink);
-      letter-spacing: .01em; line-height: 1.4;
-    }
-    .bundle-preview .bp-total {
-      font-size: .78rem; color: var(--sage); font-weight: 600; margin-top: 4px;
-    }
-    .bundle-preview .bp-empty {
-      font-size: .78rem; color: var(--ink-faint); font-style: italic;
-    }
+    /* ── Bundle toggle ─────────────────────────────────────────── */
+    .bundle-toggle-row{display:flex;align-items:center;gap:12px;padding:10px 14px;margin:4px 0 12px;background:linear-gradient(135deg,rgba(21,101,168,.06),rgba(76,175,80,.06));border-radius:var(--r-md);border:1px solid rgba(21,101,168,.12);cursor:pointer;transition:all .2s}
+    .bundle-toggle-row:hover{border-color:var(--brand)}
+    .bundle-toggle-row input[type=checkbox]{display:none}
+    .bundle-switch{position:relative;width:44px;height:24px;flex-shrink:0;background:#ccc;border-radius:12px;transition:background .25s}
+    .bundle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s}
+    .bundle-toggle-row input:checked~.bundle-switch{background:linear-gradient(135deg,#1565a8,#43a047)}
+    .bundle-toggle-row input:checked~.bundle-switch::after{transform:translateX(20px)}
+    .bundle-label{font-size:.82rem;font-weight:600;color:var(--ink);user-select:none}
+    .bundle-label small{font-weight:400;color:var(--ink-soft);display:block;font-size:.72rem;margin-top:1px}
+    .bundle-fields{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease,opacity .25s ease;margin:0}
+    .bundle-fields.open{max-height:1400px;opacity:1;margin-bottom:12px}
 
-    .bundle-badge {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 8px; border-radius: 6px; font-size: .65rem; font-weight: 700;
-      background: linear-gradient(135deg, #1565a8, #43a047); color: #fff;
-      letter-spacing: .03em; text-transform: uppercase; white-space: nowrap;
-    }
+    /* ── Bundle component rows ─────────────────────────────────── */
+    .bundle-comp-header{display:grid;grid-template-columns:1fr 130px 60px 28px;gap:6px;padding:0 10px;margin-bottom:4px}
+    .bundle-comp-header span{font-size:.6rem;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em}
+    .bundle-comp-row{display:grid;grid-template-columns:1fr 130px 60px 28px;gap:6px;align-items:center;padding:7px 10px;background:var(--surface-2);border-radius:var(--r-md);border:1px solid var(--border);margin-bottom:6px}
+    .bundle-comp-row select,.bundle-comp-row input{padding:6px 7px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:.8rem;background:var(--surface);color:var(--ink);width:100%;box-sizing:border-box}
+    .bundle-comp-row select:focus,.bundle-comp-row input:focus{outline:none;border-color:var(--brand)}
+    .bundle-price-note{font-size:.72rem;color:var(--ink-soft);padding:6px 10px;background:rgba(21,101,168,.06);border-radius:var(--r-sm);margin-bottom:10px;line-height:1.5}
+    @media(max-width:480px){.bundle-comp-row{grid-template-columns:1fr 1fr;row-gap:6px}.bundle-comp-header{display:none}.bundle-comp-row>*:last-child{grid-column:2;justify-self:end}}
 
-    /* Pack size disabled state */
-    #pPackSize:disabled {
-      opacity: 0.45; cursor: not-allowed; background: var(--surface-2);
-    }
-
-    /* Field hint text inside labels */
-    .field-hint {
-      font-weight: 400; text-transform: none; font-size: .68rem;
-      color: var(--ink-faint); letter-spacing: 0;
-    }
+    /* Badges */
+    .bundle-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:.63rem;font-weight:700;background:linear-gradient(135deg,#1565a8,#43a047);color:#fff;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+    .variant-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:.63rem;font-weight:700;background:#1565a8;color:#fff;letter-spacing:.03em;white-space:nowrap}
+    .type-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:5px;font-size:.6rem;font-weight:700;background:rgba(21,101,168,.12);color:#1565a8;white-space:nowrap;text-transform:capitalize}
   </style>
 </head>
 <body class="admin-layout">
@@ -202,23 +123,14 @@
     <div class="sidebar-user"><div class="name" id="sidebarName">Admin</div><div class="role">Administrator</div></div>
     <nav class="sidebar-nav">
       <a href="/admin/dashboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard</a>
-      <a href="/admin/overview.html" class="nav-item" data-page="overview">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-        Overview
-      </a>
-      <a href="/admin/leaderboard.html" class="nav-item" data-page="leaderboard">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>
-        Leaderboard
-      </a>
+      <a href="/admin/overview.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>Overview</a>
+      <a href="/admin/leaderboard.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>Leaderboard</a>
       <a href="/admin/orders.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders</a>
       <a href="/admin/products.html" class="nav-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products</a>
       <a href="/admin/salesmen.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
       <a href="/admin/geo-map.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map</a>
-      <a href="/admin/delivery-boys.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys
-      </a>
-      <a href="/admin/mfa-settings.html" class="nav-item">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
-      </a>
+      <a href="/admin/delivery-boys.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys</a>
+      <a href="/admin/mfa-settings.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security</a>
     </nav>
     <div class="sidebar-footer"><button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button></div>
   </aside>
@@ -236,11 +148,8 @@
             <input type="text" class="search-input" id="searchProducts" placeholder="🔍 Search products..." oninput="filterProducts()" />
             <select class="filter-select" id="catFilter" onchange="filterProducts()">
               <option value="">All Categories</option>
-              <option>New Launches</option>
-              <option>Face Care</option>
-              <option>Hair Care</option>
-              <option>Body Care</option>
-              <option>Essentials</option>
+              <option>New Launches</option><option>Face Care</option><option>Hair Care</option>
+              <option>Body Care</option><option>Essentials</option>
             </select>
           </div>
         </div>
@@ -248,14 +157,13 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Product</th><th>Category</th><th>Price</th><th>MRP</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>Product</th><th>Category</th><th>Type</th><th>Price</th><th>MRP</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody id="productsTableBody">
-                <tr><td colspan="7" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
+                <tr><td colspan="8" class="text-center" style="padding:40px"><div class="spinner"></div></td></tr>
               </tbody>
             </table>
           </div>
-          <!-- Mobile card view (shown on screens < 640px) -->
           <div id="productCards"></div>
         </div>
       </div>
@@ -263,134 +171,180 @@
   </div>
 </div>
 
-<!-- ADD/EDIT PRODUCT MODAL -->
+<!-- ══ ADD/EDIT PRODUCT MODAL ══════════════════════════════════ -->
 <div class="modal-overlay" id="productModal">
   <div class="modal">
     <div class="modal-header">
       <h3 id="productModalTitle">Add Product</h3>
       <button class="modal-close" onclick="closeModal('productModal')">✕</button>
     </div>
-    <form id="productForm" novalidate>
-      <input type="hidden" id="productId" />
+    <div class="modal-body">
+      <form id="productForm" novalidate>
+        <input type="hidden" id="productId" />
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pName">Product Name *</label>
-          <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
-        </div>
-        <div class="form-group">
-          <label for="pCategory">Category</label>
-          <select id="pCategory">
-            <option>Face Care</option><option>Hair Care</option><option>Body Care</option>
-            <option>Essentials</option><option>New Launches</option><option>General</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="pDescription">Description</label>
-        <textarea id="pDescription" rows="3" placeholder="Product description..."></textarea>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pPrice">Price (₹) *</label>
-          <input type="number" id="pPrice" required min="0" step="0.01" placeholder="120.00" />
-        </div>
-        <div class="form-group">
-          <label for="pMrp">MRP (₹)</label>
-          <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pStock">Stock</label>
-          <input type="number" id="pStock" min="0" placeholder="100" />
-        </div>
-        <div class="form-group">
-          <label for="pUnit">Unit</label>
-          <select id="pUnit">
-            <option>piece</option><option>bottle</option><option>pack</option><option>box</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- ── Bundle Product Section ── -->
-      <label class="bundle-toggle-row" for="pIsBundle">
-        <input type="checkbox" id="pIsBundle" />
-        <span class="bundle-switch"></span>
-        <span class="bundle-label">Bundle Product<small>Enable pack/combo configuration</small></span>
-      </label>
-
-      <div class="bundle-fields" id="bundleFields">
+        <!-- Name + Category -->
         <div class="form-row">
           <div class="form-group">
-            <label for="pBaseQty">Base Quantity *</label>
-            <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
+            <label for="pName">Product Name *</label>
+            <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
           </div>
           <div class="form-group">
-            <label for="pBaseUnit">Measurement Unit *</label>
-            <select id="pBaseUnit">
-              <option value="GM">GM</option>
-              <option value="KG">KG</option>
-              <option value="L">L</option>
-              <option value="ML">ML</option>
-              <option value="PCS">PCS</option>
+            <label for="pCategory">Category</label>
+            <select id="pCategory">
+              <option>Face Care</option><option>Hair Care</option><option>Body Care</option>
+              <option>Essentials</option><option>New Launches</option><option>General</option>
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label for="pPackSize">
-            Pack Size *
-            <span class="field-hint">(units per pack — enabled when bundle is checked)</span>
-          </label>
-          <input type="number" id="pPackSize" min="1" step="1" placeholder="5" disabled />
-        </div>
-        <div class="form-group">
-          <label for="pDisplayName">
-            Display Name
-            <span class="field-hint">(auto-generated — edit to override)</span>
-          </label>
-          <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
-        </div>
-        <div class="bundle-preview" id="bundlePreview">
-          <div class="bp-title">📦 Live Preview</div>
-          <div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>
-        </div>
-      </div>
 
-      <div class="form-group">
-        <label for="pImage">Product Image</label>
-        <div class="img-upload-wrap">
-          <div class="img-preview-box" id="imgPreviewBox">
-            <img id="imgPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;" />
-            <span id="imgPreviewPlaceholder" style="font-size:2rem;">🖼️</span>
+        <!-- Product Type (auto-sets unit) -->
+        <div class="form-group">
+          <label for="pProductType">Product Type &amp; Unit <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0;color:var(--ink-faint)">(auto-sets unit)</span></label>
+          <select id="pProductType" onchange="onProductTypeChange()">
+            <option value="single|piece">Single — Piece</option>
+            <option value="jar|piece">Jar — Piece</option>
+            <option value="strip|strip">Strip — Strip</option>
+            <option value="single|bottle">Bottle</option>
+            <option value="single|pack">Pack</option>
+            <option value="single|box">Box</option>
+          </select>
+        </div>
+        <!-- Hidden fields auto-set by dropdown -->
+        <input type="hidden" id="pProductTypeVal" value="single" />
+        <input type="hidden" id="pUnitVal" value="piece" />
+
+        <div class="form-group">
+          <label for="pDescription">Description</label>
+          <textarea id="pDescription" rows="2" placeholder="Product description..."></textarea>
+        </div>
+
+        <!-- Price + MRP -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pPrice">Price (₹) *</label>
+            <input type="number" id="pPrice" required min="0.01" step="0.01" placeholder="120.00" />
           </div>
-          <div class="img-upload-controls">
-            <label class="btn btn-outline btn-sm img-file-label" for="pImageFile">
-              📁 Upload Image
-              <input type="file" id="pImageFile" accept="image/*" style="display:none" />
-            </label>
-            <span style="font-size:.75rem;color:var(--ink-soft);text-align:center;">or paste a URL below</span>
-            <input type="url" id="pImage" placeholder="https://example.com/image.jpg" style="font-size:.82rem;" />
+          <div class="form-group">
+            <label for="pMrp">MRP (₹)</label>
+            <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
           </div>
         </div>
-      </div>
 
-      <div id="productFormError" class="login-error hidden"></div>
-      <button type="submit" class="btn btn-primary btn-full">Save Product</button>
-    </form>
+        <!-- Stock -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pStock">Stock</label>
+            <input type="number" id="pStock" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <!-- ── 3 Images with URL option ─────────────────────── -->
+        <div class="form-section-title">📸 Product Images (up to 3)</div>
+        <div class="img-grid">
+          <div class="img-slot-wrap">
+            <div class="img-slot" id="imgSlot0">
+              <img id="imgPreview0" alt="" />
+              <span class="slot-icon">🖼️</span>
+              <span class="slot-label">Main</span>
+              <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
+              <input type="file" id="imgFile0" accept="image/*" />
+            </div>
+            <div class="slot-url-row">
+              <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
+              <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
+            </div>
+          </div>
+          <div class="img-slot-wrap">
+            <div class="img-slot" id="imgSlot1">
+              <img id="imgPreview1" alt="" />
+              <span class="slot-icon">🖼️</span>
+              <span class="slot-label">2nd</span>
+              <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
+              <input type="file" id="imgFile1" accept="image/*" />
+            </div>
+            <div class="slot-url-row">
+              <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
+              <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
+            </div>
+          </div>
+          <div class="img-slot-wrap">
+            <div class="img-slot" id="imgSlot2">
+              <img id="imgPreview2" alt="" />
+              <span class="slot-icon">🖼️</span>
+              <span class="slot-label">3rd</span>
+              <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
+              <input type="file" id="imgFile2" accept="image/*" />
+            </div>
+            <div class="slot-url-row">
+              <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
+              <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
+            </div>
+          </div>
+        </div>
+        <p class="img-hint">📁 Click slot to upload file &nbsp;|&nbsp; 🔗 Paste a URL and press → &nbsp;|&nbsp; Slot 1 = main listing image</p>
+
+        <!-- ── Variants ──────────────────────────────────────── -->
+        <div class="form-section-title">🔢 Product Variants <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0">(optional — e.g. 100GM, 50GM)</span></div>
+        <div class="variants-wrap">
+          <div class="variant-header">
+            <span>Name *</span><span>Size</span><span>Unit</span><span>Price (₹) *</span><span>Stock</span><span></span>
+          </div>
+          <div id="variantRows"></div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addVariantRow()">+ Add Variant</button>
+        </div>
+
+        <!-- ── Bundle toggle ─────────────────────────────────── -->
+        <label class="bundle-toggle-row" for="pIsBundle">
+          <input type="checkbox" id="pIsBundle" />
+          <span class="bundle-switch"></span>
+          <span class="bundle-label">Bundle Product<small>Pack / combo with multiple component products</small></span>
+        </label>
+        <div class="bundle-fields" id="bundleFields">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pBaseQty">Base Quantity</label>
+              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
+            </div>
+            <div class="form-group">
+              <label for="pBaseUnit">Measurement Unit</label>
+              <select id="pBaseUnit">
+                <option value="GM">GM</option><option value="KG">KG</option>
+                <option value="L">L</option><option value="ML">ML</option><option value="PCS">PCS</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pPackSize">Pack Size</label>
+              <input type="number" id="pPackSize" min="1" step="1" placeholder="5" />
+            </div>
+            <div class="form-group">
+              <label for="pDisplayName">Display Name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.68rem">(auto)</span></label>
+              <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
+            </div>
+          </div>
+
+          <!-- Bundle components -->
+          <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
+          <p class="bundle-price-note">ℹ️ Add the products that form this bundle. Stock is deducted from each component when ordered. Set the bundle sale price in the Price field above.</p>
+          <div class="bundle-comp-header">
+            <span>Product</span><span>Variant</span><span>Qty</span><span></span>
+          </div>
+          <div id="bundleCompRows"></div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
+        </div>
+
+        <div id="productFormError" class="login-error hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full" style="margin-top:10px">Save Product</button>
+      </form>
+    </div>
   </div>
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
 <script src="/admin/js/admin.js"></script>
-
-<!-- SIDEBAR OVERLAY -->
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- ADMIN BOTTOM NAV (mobile) -->
 <nav id="adminBottomNav">
   <div class="bottom-nav-inner">
     <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
@@ -402,246 +356,311 @@
 </nav>
 
 <script>
-/* ── Sidebar toggle ─────────────────────────────────────────── */
-(function () {
-  'use strict';
-  function toggleSidebar() {
-    var s = document.getElementById('sidebar');
-    var o = document.getElementById('sidebarOverlay');
-    var isOpen = s.classList.toggle('open');
-    o.classList.toggle('show', isOpen);
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    document.getElementById('mobMenuBtn').setAttribute('aria-expanded', String(isOpen));
+/* ── Sidebar ─────────────────────────────────────────────────── */
+(function(){
+  function toggleSidebar(){
+    var s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');
+    var open=s.classList.toggle('open');
+    o.classList.toggle('show',open);
+    document.body.style.overflow=open?'hidden':'';
+    document.getElementById('mobMenuBtn').setAttribute('aria-expanded',String(open));
   }
-  function closeSidebar() {
+  function closeSidebar(){
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('show');
-    document.body.style.overflow = '';
-    document.getElementById('mobMenuBtn').setAttribute('aria-expanded', 'false');
+    document.body.style.overflow='';
+    document.getElementById('mobMenuBtn').setAttribute('aria-expanded','false');
   }
-  window.toggleSidebar = toggleSidebar;
-  window.closeSidebar  = closeSidebar;
-
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSidebar(); });
-
-  // Mark active nav items
-  var path = window.location.pathname.split('/').pop();
-  document.querySelectorAll('#adminBottomNav .bnav-item').forEach(function (a) {
-    a.classList.toggle('active', a.getAttribute('href') === path);
-  });
-  document.querySelectorAll('.sidebar .nav-item').forEach(function (a) {
-    a.classList.toggle('active', a.getAttribute('href') === path);
+  window.toggleSidebar=toggleSidebar;window.closeSidebar=closeSidebar;
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSidebar();});
+  var path=window.location.pathname.split('/').pop();
+  document.querySelectorAll('#adminBottomNav .bnav-item,.sidebar .nav-item').forEach(function(a){
+    a.classList.toggle('active',a.getAttribute('href')===path||a.getAttribute('href').endsWith('/'+path));
   });
 })();
-</script>
 
-<script>
-/* ── Image upload widget ────────────────────────────────────── */
-(function () {
-  'use strict';
+/* ── Product Type → Unit auto-mapping ────────────────────────── */
+/* Value format: "product_type|unit" e.g. "jar|piece" */
+function onProductTypeChange(){
+  var sel=document.getElementById('pProductType');
+  var parts=(sel.value||'single|piece').split('|');
+  document.getElementById('pProductTypeVal').value=parts[0]||'single';
+  document.getElementById('pUnitVal').value=parts[1]||'piece';
+}
 
-  var fileInput    = document.getElementById('pImageFile');
-  var urlInput     = document.getElementById('pImage');
-  var preview      = document.getElementById('imgPreview');
-  var placeholder  = document.getElementById('imgPreviewPlaceholder');
-  var _b64         = null;
+function _setProductTypeDropdown(productType,unit){
+  var sel=document.getElementById('pProductType');
+  var target=productType+'|'+unit;
+  // Try exact match first
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value===target){sel.selectedIndex=i;onProductTypeChange();return;}
+  }
+  // Fallback: match product_type only
+  for(var j=0;j<sel.options.length;j++){
+    if(sel.options[j].value.startsWith(productType+'|')){sel.selectedIndex=j;onProductTypeChange();return;}
+  }
+  // Default
+  sel.selectedIndex=0;onProductTypeChange();
+}
 
-  function showImagePreview(src) {
-    if (src) {
-      preview.src = src;
-      preview.style.display = 'block';
-      placeholder.style.display = 'none';
-    } else {
-      preview.src = '';
-      preview.style.display = 'none';
-      placeholder.style.display = '';
+/* ── 3-Image slots ───────────────────────────────────────────── */
+var _imgSlotData=[null,null,null]; // {b64, url} or null
+
+(function(){
+  for(var i=0;i<3;i++){
+    (function(idx){
+      document.getElementById('imgFile'+idx).addEventListener('change',function(){
+        var file=this.files[0];if(!file)return;
+        var r=new FileReader();
+        r.onload=function(e){
+          _imgSlotData[idx]={b64:e.target.result,url:null};
+          _applySlot(idx,e.target.result);
+          document.getElementById('imgUrl'+idx).value='';
+        };
+        r.readAsDataURL(file);
+        this.value='';
+      });
+    })(i);
+  }
+})();
+
+function _applySlot(idx,src){
+  var slot=document.getElementById('imgSlot'+idx);
+  var img=document.getElementById('imgPreview'+idx);
+  if(src){img.src=src;slot.classList.add('has-image');}
+  else{img.src='';slot.classList.remove('has-image');}
+}
+
+function onSlotUrlInput(idx){
+  var val=document.getElementById('imgUrl'+idx).value.trim();
+  if(val&&(val.startsWith('http://')||val.startsWith('https://'))){
+    _imgSlotData[idx]={b64:null,url:val};
+    _applySlot(idx,val);
+  }
+}
+
+function applySlotUrl(idx){
+  var val=document.getElementById('imgUrl'+idx).value.trim();
+  if(!val){removeSlotImage(idx);return;}
+  _imgSlotData[idx]={b64:null,url:val};
+  _applySlot(idx,val);
+}
+
+function removeSlotImage(idx){
+  _imgSlotData[idx]=null;
+  _applySlot(idx,null);
+  document.getElementById('imgUrl'+idx).value='';
+}
+
+function resetImageSlots(){
+  _imgSlotData=[null,null,null];
+  for(var i=0;i<3;i++){_applySlot(i,null);document.getElementById('imgUrl'+i).value='';}
+}
+
+function loadImageSlots(arr){
+  resetImageSlots();
+  for(var i=0;i<Math.min((arr||[]).length,3);i++){
+    if(arr[i]){
+      _imgSlotData[i]={b64:null,url:arr[i]};
+      _applySlot(i,arr[i]);
+      document.getElementById('imgUrl'+i).value=arr[i];
     }
   }
+}
 
-  fileInput.addEventListener('change', function () {
-    var file = fileInput.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      _b64 = e.target.result;
-      urlInput.value = '';
-      showImagePreview(_b64);
+function getImagePayload(){
+  var all=_imgSlotData.map(function(d){
+    if(!d)return '';
+    return d.b64||d.url||'';
+  });
+  var filled=all.filter(Boolean);
+  return{image:filled[0]||'',images:filled};
+}
+
+/* ── Variant rows ────────────────────────────────────────────── */
+function _ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function addVariantRow(d){
+  d=d||{};
+  var wrap=document.getElementById('variantRows');
+  var row=document.createElement('div');
+  row.className='variant-row';
+  if(d.id)row.dataset.variantId=d.id;
+  if(d.sku)row.dataset.sku=d.sku;
+  row.innerHTML=
+    '<input type="text" class="vname" placeholder="100 GM x 5" value="'+_ea(d.variant_name||'')+'" />'+
+    '<input type="number" class="vsize" placeholder="100" min="0" step="0.01" value="'+(d.size_value||'')+'" />'+
+    '<select class="vunit">'+['GM','ML','KG','L','PCS'].map(function(u){
+      return'<option'+(d.size_unit===u?' selected':'')+'>'+u+'</option>';
+    }).join('')+'</select>'+
+    '<input type="number" class="vprice" placeholder="₹" min="0.01" step="0.01" value="'+(d.price||'')+'" />'+
+    '<input type="number" class="vstock" placeholder="0" min="0" step="1" value="'+(d.stock!=null?d.stock:'')+'" />'+
+    '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.variant-row\').remove()">✕</button>';
+  wrap.appendChild(row);
+}
+
+function resetVariants(){document.getElementById('variantRows').innerHTML='';}
+
+function getVariantsPayload(){
+  var out=[];
+  document.querySelectorAll('#variantRows .variant-row').forEach(function(row){
+    var name=row.querySelector('.vname').value.trim();
+    var price=parseFloat(row.querySelector('.vprice').value);
+    if(!name||!price)return;
+    var obj={
+      variant_name:name,
+      size_value:parseFloat(row.querySelector('.vsize').value)||0,
+      size_unit:row.querySelector('.vunit').value,
+      pack_quantity:1,price:price,
+      stock:parseInt(row.querySelector('.vstock').value,10)||0,
     };
-    reader.readAsDataURL(file);
+    if(row.dataset.variantId)obj.id=parseInt(row.dataset.variantId,10);
+    if(row.dataset.sku)obj.sku=row.dataset.sku;
+    out.push(obj);
   });
+  return out;
+}
 
-  urlInput.addEventListener('input', function () {
-    _b64 = null;
-    fileInput.value = '';
-    showImagePreview(urlInput.value.trim() || null);
-  });
+/* ── Bundle toggle logic ─────────────────────────────────────── */
+(function(){
+  var _override=false;
+  var elCb=document.getElementById('pIsBundle');
+  var elF=document.getElementById('bundleFields');
+  var elQ=document.getElementById('pBaseQty');
+  var elU=document.getElementById('pBaseUnit');
+  var elP=document.getElementById('pPackSize');
+  var elD=document.getElementById('pDisplayName');
 
-  /* Public API used by admin.js */
-  window._getProductImageB64      = function () { return _b64; };
-  window._resetProductImageWidget = function () {
-    _b64 = null;
-    fileInput.value = '';
-    showImagePreview(null);
+  function toggleBundle(on){elF.classList.toggle('open',on);}
+  function autoName(){
+    var q=parseFloat(elQ.value)||0,u=elU.value||'GM',p=parseInt(elP.value,10)||0;
+    if(q>0&&p>0&&!_override)elD.value=q+' '+u+' \u00d7 '+p+' Pack';
+  }
+  elCb.addEventListener('change',function(){toggleBundle(this.checked);});
+  elQ.addEventListener('input',autoName);
+  elU.addEventListener('change',autoName);
+  elP.addEventListener('input',autoName);
+  elD.addEventListener('input',function(){_override=this.value.trim()!=='';});
+
+  window.resetBundleFields=function(){
+    _override=false;elCb.checked=false;
+    elQ.value='';elU.value='GM';elP.value='';elD.value='';
+    elF.classList.remove('open');
+    document.getElementById('bundleCompRows').innerHTML='';
+    _compProductsCache=null;
   };
-  window._setProductImagePreview  = function (url) {
-    _b64 = null;
-    fileInput.value = '';
-    showImagePreview(url || null);
+  window.prefillBundleFields=function(p){
+    if(p&&p.is_bundle){
+      elCb.checked=true;
+      elQ.value=p.base_quantity||'';elU.value=p.base_unit||'GM';elP.value=p.pack_size||'';
+      var saved=(p.display_name||'').trim();
+      var auto='';
+      if(p.base_quantity&&p.pack_size)auto=p.base_quantity+' '+(p.base_unit||'GM')+' \u00d7 '+p.pack_size+' Pack';
+      _override=saved!==''&&saved!==auto;elD.value=saved;
+      elF.classList.add('open');
+    }else{window.resetBundleFields();}
   };
+  window.getBundlePayload=function(){
+    if(!elCb.checked)return{is_bundle:false,base_quantity:null,base_unit:null,pack_size:null,display_name:null};
+    return{
+      is_bundle:true,
+      base_quantity:parseFloat(elQ.value)||null,
+      base_unit:elU.value||null,
+      pack_size:parseInt(elP.value,10)||null,
+      display_name:elD.value.trim()||null,
+    };
+  };
+  window._isBundleChecked=function(){return elCb.checked;};
 })();
-</script>
 
-<script>
-/* ── Bundle Product Logic ───────────────────────────────────── */
-(function () {
-  'use strict';
+/* ── Bundle component rows ───────────────────────────────────── */
+var _compProductsCache=null;
 
-  // Tracks whether the user has manually typed in the display name field.
-  // When true, auto-generation will NOT overwrite their value.
-  // Resets to false when: modal opens fresh, bundle is disabled, or user clears the field.
-  var _nameOverride = false;
+async function _getCompProducts(){
+  if(_compProductsCache)return _compProductsCache;
+  try{
+    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products');
+    var data=await res.json();
+    _compProductsCache=(data.data||[]).filter(function(p){return !p.is_bundle;});
+  }catch(e){_compProductsCache=[];}
+  return _compProductsCache;
+}
 
-  // Element references — resolved once, reused everywhere
-  var elIsBundle     = document.getElementById('pIsBundle');
-  var elBundleFields = document.getElementById('bundleFields');
-  var elBaseQty      = document.getElementById('pBaseQty');
-  var elBaseUnit     = document.getElementById('pBaseUnit');
-  var elPackSize     = document.getElementById('pPackSize');
-  var elDisplayName  = document.getElementById('pDisplayName');
-  var elPreview      = document.getElementById('bundlePreview');
+async function addBundleCompRow(d){
+  d=d||{};
+  var products=await _getCompProducts();
+  var wrap=document.getElementById('bundleCompRows');
+  var row=document.createElement('div');
+  row.className='bundle-comp-row';
+  if(d.id)row.dataset.itemId=d.id;
 
-  /* ── Helpers ── */
-  function renderEmptyPreview() {
-    elPreview.innerHTML =
-      '<div class="bp-title">📦 Live Preview</div>' +
-      '<div class="bp-empty">Fill in base quantity, unit, and pack size to see preview</div>';
+  var opts=products.map(function(p){
+    return '<option value="'+p.id+'"'+(p.id===d.product_id?' selected':'')+'>'+_ea(p.name)+'</option>';
+  }).join('');
+
+  row.innerHTML=
+    '<select class="bc-product" onchange="loadCompVariants(this)">'+
+      '<option value="">— Pick product —</option>'+opts+
+    '</select>'+
+    '<select class="bc-variant"><option value="">No variant</option></select>'+
+    '<input type="number" class="bc-qty" min="1" step="1" value="'+(d.quantity||1)+'" />'+
+    '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.bundle-comp-row\').remove()">✕</button>';
+  wrap.appendChild(row);
+
+  if(d.product_id){
+    row.querySelector('.bc-product').value=d.product_id;
+    await loadCompVariants(row.querySelector('.bc-product'),d.variant_id||null);
   }
+}
 
-  function buildAutoName(qty, unit, packSize) {
-    return qty + ' ' + unit + ' \u00d7 ' + packSize + ' Pack';
-  }
+async function loadCompVariants(sel,preselect){
+  var pid=parseInt(sel.value,10);
+  var row=sel.closest('.bundle-comp-row');
+  var varSel=row.querySelector('.bc-variant');
+  varSel.innerHTML='<option value="">No variant</option>';
+  if(!pid)return;
+  try{
+    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products/'+pid+'/variants');
+    var data=await res.json();
+    (data.data||[]).forEach(function(v){
+      var o=document.createElement('option');
+      o.value=v.id;
+      o.textContent=v.variant_name+' — \u20b9'+parseFloat(v.price).toFixed(2);
+      if(v.id===preselect)o.selected=true;
+      varSel.appendChild(o);
+    });
+  }catch(e){}
+}
 
-  /* ── Toggle bundle section open/closed ── */
-  function toggleBundleFields(isChecked) {
-    elBundleFields.classList.toggle('open', isChecked);
-    elPackSize.disabled = !isChecked;
-    if (!isChecked) {
-      renderEmptyPreview();
-    } else {
-      updateBundlePreview();
+function getBundleItemsPayload(){
+  var out=[];
+  document.querySelectorAll('#bundleCompRows .bundle-comp-row').forEach(function(row){
+    var pid=parseInt(row.querySelector('.bc-product').value,10);
+    if(!pid)return;
+    var vid=parseInt(row.querySelector('.bc-variant').value,10)||null;
+    var qty=parseInt(row.querySelector('.bc-qty').value,10)||1;
+    out.push({product_id:pid,variant_id:vid,quantity:qty});
+  });
+  return out;
+}
+
+async function loadBundleItems(productId){
+  document.getElementById('bundleCompRows').innerHTML='';
+  _compProductsCache=null;
+  try{
+    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products/'+productId+'/bundle-items');
+    var data=await res.json();
+    for(var i=0;i<(data.data||[]).length;i++){
+      await addBundleCompRow(data.data[i]);
     }
-  }
-
-  /* ── Refresh the live preview panel ── */
-  function updateBundlePreview() {
-    var qty      = parseFloat(elBaseQty.value) || 0;
-    var unit     = elBaseUnit.value || 'GM';
-    var packSize = parseInt(elPackSize.value, 10) || 0;
-
-    if (qty > 0 && packSize > 0) {
-      var autoName = buildAutoName(qty, unit, packSize);
-      var totalQty = +(qty * packSize).toFixed(4);
-
-      // Auto-fill display name only when user has NOT manually set it
-      if (!_nameOverride) {
-        elDisplayName.value = autoName;
-      }
-
-      var previewName = elDisplayName.value.trim() || autoName;
-      elPreview.innerHTML =
-        '<div class="bp-title">📦 Live Preview</div>' +
-        '<div class="bp-name">' + _esc(previewName) + '</div>' +
-        '<div class="bp-total">Total quantity: ' + totalQty + '\u00a0' + unit + '</div>';
-    } else {
-      renderEmptyPreview();
-    }
-  }
-
-  /* ── Reset all bundle fields to defaults ── */
-  function resetBundleFields() {
-    _nameOverride          = false;
-    elIsBundle.checked     = false;
-    elBaseQty.value        = '';
-    elBaseUnit.value       = 'GM';
-    elPackSize.value       = '';
-    elPackSize.disabled    = true;
-    elDisplayName.value    = '';
-    elBundleFields.classList.remove('open');
-    renderEmptyPreview();
-  }
-
-  /* ── Pre-fill when editing an existing product ── */
-  function prefillBundleFields(product) {
-    if (product && product.is_bundle) {
-      elIsBundle.checked = true;
-
-      var qty      = product.base_quantity != null ? product.base_quantity : '';
-      var unit     = product.base_unit || 'GM';
-      var packSize = product.pack_size  != null ? product.pack_size  : '';
-
-      elBaseQty.value     = qty;
-      elBaseUnit.value    = unit;
-      elPackSize.value    = packSize;
-      elPackSize.disabled = false;
-
-      // Determine if the saved display_name was manually set or auto-generated.
-      // If it matches what auto-generation would produce → not an override.
-      var savedName = (product.display_name || '').trim();
-      var autoName  = (qty && packSize)
-        ? buildAutoName(qty, unit, packSize)
-        : '';
-
-      _nameOverride       = savedName !== '' && savedName !== autoName;
-      elDisplayName.value = savedName;
-
-      elBundleFields.classList.add('open');
-      updateBundlePreview();
-    } else {
-      resetBundleFields();
-    }
-  }
-
-  /* ── Event listeners ── */
-
-  // Checkbox toggle
-  elIsBundle.addEventListener('change', function () {
-    toggleBundleFields(this.checked);
-  });
-
-  // Bundle metric inputs → refresh preview
-  elBaseQty.addEventListener('input', function () {
-    if (elIsBundle.checked) updateBundlePreview();
-  });
-  elBaseUnit.addEventListener('change', function () {
-    if (elIsBundle.checked) updateBundlePreview();
-  });
-  elPackSize.addEventListener('input', function () {
-    if (elIsBundle.checked) updateBundlePreview();
-  });
-
-  // Manual display name edit:
-  //   - typing sets override so auto-gen stops overwriting
-  //   - clearing the field removes the override so auto-gen resumes
-  elDisplayName.addEventListener('input', function () {
-    _nameOverride = this.value.trim() !== '';
-    if (elIsBundle.checked) updateBundlePreview();
-  });
-
-  /* ── Expose on window for admin.js lifecycle hooks ── */
-  window.resetBundleFields   = resetBundleFields;
-  window.prefillBundleFields = prefillBundleFields;
-  window.updateBundlePreview = updateBundlePreview;
-})();
+  }catch(e){}
+}
 </script>
 
 <script src="/js/network.js"></script>
-
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/sw.js')
-      .catch(function (err) { console.warn('SW registration failed:', err); });
-  });
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});
 }
 </script>
 </body>
