@@ -186,7 +186,7 @@ exports.getOne = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const {
-      name, description, price, mrp, image, images, category, stock, unit,
+      name, description, price, mrp, distributor_price, image, images, category, stock, unit,
       product_type, base_quantity, base_unit, pack_size, is_bundle, display_name,
     } = req.body;
 
@@ -206,15 +206,16 @@ exports.create = async (req, res) => {
     ];
 
     const optional = {
-      mrp:           () => mrp ? parseFloat(mrp) : null,
-      images:        () => imagesVal,
-      unit:          () => unit || 'piece',
-      product_type:  () => ['jar', 'strip', 'single'].includes(product_type) ? product_type : 'single',
-      base_quantity: () => base_quantity != null ? parseFloat(base_quantity) : null,
-      base_unit:     () => base_unit || null,
-      pack_size:     () => pack_size != null ? parseInt(pack_size, 10) : null,
-      is_bundle:     () => is_bundle ? 1 : 0,
-      display_name:  () => display_name || null,
+      mrp:               () => mrp ? parseFloat(mrp) : null,
+      distributor_price: () => distributor_price != null && !isNaN(parseFloat(distributor_price)) ? parseFloat(distributor_price) : null,
+      images:            () => imagesVal,
+      unit:              () => unit || 'piece',
+      product_type:      () => ['jar', 'strip', 'single'].includes(product_type) ? product_type : 'single',
+      base_quantity:     () => base_quantity != null ? parseFloat(base_quantity) : null,
+      base_unit:         () => base_unit || null,
+      pack_size:         () => pack_size != null ? parseInt(pack_size, 10) : null,
+      is_bundle:         () => is_bundle ? 1 : 0,
+      display_name:      () => display_name || null,
     };
 
     for (const [col, fn] of Object.entries(optional)) {
@@ -238,7 +239,7 @@ exports.update = async (req, res) => {
   if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
 
   const {
-    name, description, price, mrp, image, images, category, stock, unit, is_active,
+    name, description, price, mrp, distributor_price, image, images, category, stock, unit, is_active,
     product_type, base_quantity, base_unit, pack_size, is_bundle, display_name,
   } = req.body;
 
@@ -271,19 +272,20 @@ exports.update = async (req, res) => {
       category:      { c: 'category=?',      v: () => category || 'General' },
       stock:         { c: 'stock=?',         v: () => Math.max(0, parseInt(stock, 10) || 0) },
       is_active:     { c: 'is_active=?',     v: () => is_active !== undefined ? (is_active ? 1 : 0) : 1 },
-      mrp:           { c: 'mrp=?',           v: () => mrp != null && !isNaN(parseFloat(mrp)) ? parseFloat(mrp) : null },
-      images:        { c: 'images=?',        v: () => imagesVal },
-      unit:          { c: 'unit=?',          v: () => unit || 'piece' },
-      product_type:  { c: 'product_type=?',  v: () => ['jar','strip','single'].includes(product_type) ? product_type : 'single' },
-      base_quantity: { c: 'base_quantity=?', v: () => base_quantity != null ? parseFloat(base_quantity) : null },
-      base_unit:     { c: 'base_unit=?',     v: () => base_unit || null },
-      pack_size:     { c: 'pack_size=?',     v: () => pack_size != null ? parseInt(pack_size, 10) : null },
-      is_bundle:     { c: 'is_bundle=?',     v: () => is_bundle ? 1 : 0 },
-      display_name:  { c: 'display_name=?',  v: () => display_name || null },
+      mrp:               { c: 'mrp=?',               v: () => mrp != null && !isNaN(parseFloat(mrp)) ? parseFloat(mrp) : null },
+      distributor_price: { c: 'distributor_price=?',  v: () => distributor_price != null && !isNaN(parseFloat(distributor_price)) ? parseFloat(distributor_price) : null },
+      images:            { c: 'images=?',             v: () => imagesVal },
+      unit:              { c: 'unit=?',               v: () => unit || 'piece' },
+      product_type:      { c: 'product_type=?',       v: () => ['jar','strip','single'].includes(product_type) ? product_type : 'single' },
+      base_quantity:     { c: 'base_quantity=?',      v: () => base_quantity != null ? parseFloat(base_quantity) : null },
+      base_unit:         { c: 'base_unit=?',          v: () => base_unit || null },
+      pack_size:         { c: 'pack_size=?',          v: () => pack_size != null ? parseInt(pack_size, 10) : null },
+      is_bundle:         { c: 'is_bundle=?',          v: () => is_bundle ? 1 : 0 },
+      display_name:      { c: 'display_name=?',       v: () => display_name || null },
     };
 
     const ALWAYS   = ['name','description','price','image','category','stock','is_active'];
-    const OPTIONAL = ['mrp','images','unit','product_type','base_quantity','base_unit','pack_size','is_bundle','display_name'];
+    const OPTIONAL = ['mrp','distributor_price','images','unit','product_type','base_quantity','base_unit','pack_size','is_bundle','display_name'];
 
     const setClauses = [];
     const params     = [];
