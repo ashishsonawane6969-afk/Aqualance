@@ -535,6 +535,10 @@ if (page === 'orders') adminAuthRehydrate().then(function(ok) { if (ok) loadOrde
 /* ─────────────────────────────────────────────────────────────
    PRODUCTS PAGE
 ───────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────
+   PRODUCTS PAGE
+───────────────────────────────────────────────────────────── */
 let allProductsList = [];
 
 async function loadProducts() {
@@ -559,71 +563,72 @@ function filterProducts() {
 function renderProductsTable(products) {
   const tbody = document.getElementById('productsTableBody');
   const cards = document.getElementById('productCards');
-
   if (!tbody) return;
+
   if (!products.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--ink-soft)">No products found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center" style="padding:40px;color:var(--ink-soft)">No products found</td></tr>';
     if (cards) cards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink-soft);font-size:.85rem">No products found</div>';
     return;
   }
 
-  // ── Desktop table ──────────────────────────────────────────────
   tbody.innerHTML = products.map(p => {
-    const safeName   = p.name.replace(/'/g, "\\'");
-    const imgHtml    = p.image
+    const safeName     = p.name.replace(/'/g, "\\'");
+    const imgHtml      = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-thumb-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-thumb-placeholder">🌿</div>`;
-    const bundleBadge = p.is_bundle ? `<div class="bundle-badge">📦 Bundle</div>` : '';
-    const displaySub  = p.is_bundle && p.display_name
-      ? `<span style="font-size:.72rem;color:var(--ink-soft);display:block;margin-top:2px">${_esc(p.display_name)}</span>` : '';
+    const bundgeBadge  = p.is_bundle ? `<span class="bundle-badge">📦 Bundle</span>` : '';
+    const variantBadge = p.variant_count > 0 ? `<span class="variant-badge">${p.variant_count} var</span>` : '';
+    const typeBadge    = p.product_type && p.product_type !== 'single'
+      ? `<span class="type-badge">${_esc(p.product_type)}</span>` : '';
     return `<tr>
       <td>
-        <div class="prod-name-cell" style="flex-wrap:wrap">
+        <div class="prod-name-cell">
           ${imgHtml}
           <div style="min-width:0">
             <span class="prod-name-text" title="${_esc(p.name)}">${_esc(p.name)}</span>
-            ${bundleBadge}${displaySub}
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${bundgeBadge}${variantBadge}</div>
           </div>
         </div>
       </td>
       <td><span class="tag tag-sage">${_esc(p.category)}</span></td>
+      <td style="white-space:nowrap">${typeBadge || `<span style="font-size:.78rem;color:var(--ink-soft)">${_esc(p.unit||'piece')}</span>`}</td>
       <td style="white-space:nowrap">${fmtCurrency(p.price)}</td>
       <td style="white-space:nowrap">${p.mrp ? fmtCurrency(p.mrp) : '—'}</td>
-      <td style="white-space:nowrap;font-weight:600">${p.stock}</td>
+      <td style="font-weight:600">${p.stock}</td>
       <td>${p.is_active ? '<span class="tag tag-green">Active</span>' : '<span class="tag tag-red">Inactive</span>'}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="editProduct(${p.id})">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id}, '${safeName}')">Delete</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${safeName}')">Delete</button>
       </td>
     </tr>`;
   }).join('');
 
-  // ── Mobile cards ───────────────────────────────────────────────
   if (!cards) return;
   cards.innerHTML = products.map(p => {
-    const safeName   = p.name.replace(/'/g, "\\'");
-    const imgHtml    = p.image
+    const safeName    = p.name.replace(/'/g, "\\'");
+    const imgHtml     = p.image
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-card-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-card-img-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-card-img-placeholder">🌿</div>`;
-    const status     = p.is_active
+    const status      = p.is_active
       ? '<span class="tag tag-green" style="font-size:.65rem;padding:2px 8px">Active</span>'
       : '<span class="tag tag-red" style="font-size:.65rem;padding:2px 8px">Inactive</span>';
-    const bundleLine = p.is_bundle && p.display_name
-      ? `<span class="bundle-badge" style="font-size:.6rem">📦 ${_esc(p.display_name)}</span>` : '';
+    const bundgeLine  = p.is_bundle ? `<span class="bundle-badge" style="font-size:.6rem">📦 Bundle</span>` : '';
+    const variantLine = p.variant_count > 0 ? `<span class="variant-badge" style="font-size:.6rem">${p.variant_count} var</span>` : '';
     return `<div class="prod-card">
       ${imgHtml}
       <div class="prod-card-body">
         <div class="prod-card-name">${_esc(p.name)}</div>
-        ${bundleLine}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">${bundgeLine}${variantLine}</div>
         <div class="prod-card-meta">
-          <span><b>${fmtCurrency(p.price)}</b>${p.mrp ? ` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>` : ''}</span>
+          <span><b>${fmtCurrency(p.price)}</b>${p.mrp?` <span style="text-decoration:line-through;color:var(--ink-faint)">${fmtCurrency(p.mrp)}</span>`:''}</span>
           <span>Stock: <b>${p.stock}</b></span>
           <span>${_esc(p.category)}</span>
+          <span style="text-transform:capitalize">${_esc(p.product_type||p.unit||'piece')}</span>
           ${status}
         </div>
         <div class="prod-card-actions">
           <button class="btn btn-outline btn-sm" onclick="editProduct(${p.id})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id}, '${safeName}')">Del</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${safeName}')">Del</button>
         </div>
       </div>
     </div>`;
@@ -635,12 +640,12 @@ function openProductModal(productId) {
   document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
   document.getElementById('productForm').reset();
   document.getElementById('productFormError').classList.add('hidden');
-
-  // Reset bundle state — function is defined in products.html inline script
-  if (typeof resetBundleFields === 'function') resetBundleFields();
-  // Reset image widget — function exposed by image widget IIFE in products.html
-  if (typeof window._resetProductImageWidget === 'function') window._resetProductImageWidget();
-
+  if (typeof resetBundleFields  === 'function') resetBundleFields();
+  if (typeof resetImageSlots    === 'function') resetImageSlots();
+  if (typeof resetVariants      === 'function') resetVariants();
+  // Reset product type dropdown to default
+  const ptSel = document.getElementById('pProductType');
+  if (ptSel) { ptSel.selectedIndex = 0; if (typeof onProductTypeChange === 'function') onProductTypeChange(); }
   if (!productId) openModal('productModal');
 }
 
@@ -658,16 +663,28 @@ async function editProduct(id) {
     document.getElementById('pPrice').value       = p.price;
     document.getElementById('pMrp').value         = p.mrp || '';
     document.getElementById('pStock').value       = p.stock;
-    document.getElementById('pUnit').value        = p.unit || 'piece';
-    document.getElementById('pImage').value       = p.image || '';
 
-    // Update image preview widget with existing image
-    if (typeof window._setProductImagePreview === 'function') {
-      window._setProductImagePreview(p.image || null);
+    // Set product type dropdown and sync hidden fields
+    if (typeof _setProductTypeDropdown === 'function') {
+      _setProductTypeDropdown(p.product_type || 'single', p.unit || 'piece');
     }
 
-    // Pre-fill bundle fields if applicable
+    // Images: merge image + images array deduplicated
+    const imgs = Array.isArray(p.images) ? [...p.images] : [];
+    if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
+    if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
+
+    // Variants
+    if (typeof resetVariants === 'function') resetVariants();
+    if (Array.isArray(p.variants)) {
+      p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
+    }
+
+    // Bundle
     if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
+    if (p.is_bundle && typeof loadBundleItems === 'function') {
+      await loadBundleItems(p.id);
+    }
 
     openModal('productModal');
   } catch (err) {
@@ -675,58 +692,42 @@ async function editProduct(id) {
   }
 }
 
-document.getElementById('productForm')?.addEventListener('submit', async function (e) {
+document.getElementById('productForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   const errDiv = document.getElementById('productFormError');
   errDiv.classList.add('hidden');
 
   const id       = document.getElementById('productId').value;
-  const isBundle = document.getElementById('pIsBundle')?.checked || false;
-  const baseQty  = parseFloat(document.getElementById('pBaseQty')?.value) || null;
-  const packSize = parseInt(document.getElementById('pPackSize')?.value, 10) || null;
   const name     = document.getElementById('pName').value.trim();
   const price    = parseFloat(document.getElementById('pPrice').value);
+  const isBundle = typeof _isBundleChecked === 'function' ? _isBundleChecked() : false;
 
-  // ── Validation ──────────────────────────────────────────────────
   if (!name) {
     errDiv.textContent = 'Product name is required.';
-    errDiv.classList.remove('hidden');
-    return;
+    errDiv.classList.remove('hidden'); return;
   }
   if (!price || price <= 0) {
     errDiv.textContent = 'A valid price greater than 0 is required.';
-    errDiv.classList.remove('hidden');
-    return;
+    errDiv.classList.remove('hidden'); return;
   }
-  if (isBundle) {
-    if (!baseQty || baseQty <= 0) {
-      errDiv.textContent = 'Base Quantity must be greater than 0 for bundle products.';
-      errDiv.classList.remove('hidden');
-      return;
-    }
-    if (!packSize || packSize <= 0) {
-      errDiv.textContent = 'Pack Size is required and must be greater than 0 for bundle products.';
-      errDiv.classList.remove('hidden');
-      return;
-    }
-  }
+
+  const imgPayload      = typeof getImagePayload    === 'function' ? getImagePayload()    : { image: '', images: [] };
+  const bundlePayload   = typeof getBundlePayload   === 'function' ? getBundlePayload()   : { is_bundle: false };
+  const variantsPayload = typeof getVariantsPayload === 'function' ? getVariantsPayload() : [];
+  const bundleItems     = isBundle && typeof getBundleItemsPayload === 'function' ? getBundleItemsPayload() : [];
 
   const body = {
     name,
-    category:      document.getElementById('pCategory').value,
-    description:   document.getElementById('pDescription').value.trim(),
+    category:     document.getElementById('pCategory').value,
+    description:  document.getElementById('pDescription').value.trim(),
     price,
-    mrp:           parseFloat(document.getElementById('pMrp').value) || null,
-    stock:         parseInt(document.getElementById('pStock').value) || 0,
-    unit:          document.getElementById('pUnit').value,
-    image:         (typeof window._getProductImageB64 === 'function' && window._getProductImageB64()) ||
-                   document.getElementById('pImage').value.trim(),
-    is_active:     true,
-    is_bundle:     isBundle,
-    base_quantity: isBundle ? baseQty : null,
-    base_unit:     isBundle ? (document.getElementById('pBaseUnit')?.value || null) : null,
-    pack_size:     isBundle ? packSize : null,
-    display_name:  isBundle ? (document.getElementById('pDisplayName')?.value.trim() || null) : null,
+    mrp:          parseFloat(document.getElementById('pMrp').value) || null,
+    stock:        parseInt(document.getElementById('pStock').value, 10) || 0,
+    unit:         document.getElementById('pUnitVal')?.value || 'piece',
+    product_type: document.getElementById('pProductTypeVal')?.value || 'single',
+    is_active:    true,
+    ...imgPayload,
+    ...bundlePayload,
   };
 
   try {
@@ -735,6 +736,27 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     const res    = await apiFetch(url, { method, body: JSON.stringify(body) });
     const data   = await res.json();
     if (!data.success) throw new Error(data.message);
+
+    const productId = id ? parseInt(id, 10) : data.id;
+
+    // Save variants (empty array = clear all)
+    try {
+      await apiFetch(`${API}/products/${productId}/variants`, {
+        method: 'POST',
+        body:   JSON.stringify({ variants: variantsPayload }),
+      });
+    } catch (vErr) { showToast('Saved, but variants failed: ' + vErr.message, 'error'); }
+
+    // Save bundle components
+    if (isBundle && productId) {
+      try {
+        await apiFetch(`${API}/products/${productId}/bundle-items`, {
+          method: 'POST',
+          body:   JSON.stringify({ items: bundleItems }),
+        });
+      } catch (bErr) { showToast('Saved, but bundle components failed: ' + bErr.message, 'error'); }
+    }
+
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
     loadProducts();
@@ -756,7 +778,8 @@ async function deleteProduct(id, name) {
   } catch (err) { showToast(err.message, 'error'); }
 }
 
-if (page === 'products') adminAuthRehydrate().then(function (ok) { if (ok) loadProducts(); });
+if (page === 'products') adminAuthRehydrate().then(function(ok) { if (ok) loadProducts(); });
+
 
 /* ─────────────────────────────────────────────────────────────
    DELIVERY BOYS PAGE
