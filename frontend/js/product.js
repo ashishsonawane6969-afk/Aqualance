@@ -690,9 +690,9 @@
   showSkeleton();
 
   // Use plain fetch — no custom fetcher wrappers that may buffer or alter responses
-  fetch(API + '/products/' + encodeURIComponent(id), {
+  fetch(API + '/products/' + encodeURIComponent(id) + '?_t=' + Date.now(), {
     headers: { 'Accept': 'application/json' },
-    cache: 'no-store'   // IMPORTANT: prevents stale cached responses on mobile
+    cache: 'no-store'
   })
   .then(function (res) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
