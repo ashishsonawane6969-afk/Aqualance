@@ -48,48 +48,72 @@ function _buildGallery(p) {
 
 /* ── Set active gallery image with fade transition ─────────── */
 function _setActiveImage(idx) {
-  _activeIdx = Math.max(0, Math.min(_imgs.length - 1, idx));
+  if (!_imgs.length) return;
+  _activeIdx = ((idx % _imgs.length) + _imgs.length) % _imgs.length;
+
   const mainImg = document.getElementById('pdMainImg');
   const emoji   = document.getElementById('pdMainEmoji');
+  if (!mainImg) return;
 
-  if (!_imgs.length) {
-    if (mainImg) mainImg.style.display = 'none';
-    if (emoji)   emoji.style.display   = 'flex';
-    return;
-  }
+  const newSrc = _imgs[_activeIdx];
 
-  if (mainImg) {
-    mainImg.style.opacity    = '0';
-    mainImg.style.transition = 'opacity .2s ease';
-    setTimeout(() => {
-      mainImg.src           = _imgs[_activeIdx];
-      mainImg.style.display = 'block';
-      if (emoji) emoji.style.display = 'none';
-      /* Use two rAFs so the browser registers the src change before
-         fading back in — this is the key fix for images not updating */
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => { mainImg.style.opacity = '1'; });
-      });
-    }, 160);
-  }
+  /* Fade out, swap, fade back in — with onload fallback so it
+     never gets stuck invisible */
+  mainImg.style.transition = 'opacity .18s ease';
+  mainImg.style.opacity    = '0';
 
+  setTimeout(() => {
+    mainImg.src           = newSrc;
+    mainImg.style.display = 'block';
+    if (emoji) emoji.style.display = 'none';
+
+    const fadeIn = () => {
+      mainImg.style.opacity = '1';
+      mainImg.onload = null;
+      mainImg.onerror = null;
+    };
+    /* Fire as soon as image is decoded, or after 600ms worst case */
+    if (mainImg.complete) {
+      fadeIn();
+    } else {
+      mainImg.onload  = fadeIn;
+      mainImg.onerror = fadeIn;
+      setTimeout(fadeIn, 600);
+    }
+  }, 180);
+
+  /* Update thumbnail active ring */
   document.querySelectorAll('.pd-thumb').forEach((el, i) => {
     el.classList.toggle('active', i === _activeIdx);
     el.setAttribute('aria-pressed', String(i === _activeIdx));
   });
+  /* Update dot indicators */
   document.querySelectorAll('.pd-dot').forEach((el, i) => {
     el.classList.toggle('active', i === _activeIdx);
   });
 }
 
 /* ── Navigate prev/next ────────────────────────────────────── */
-function _prevImage() {
-  if (!_imgs.length) return;
-  _setActiveImage((_activeIdx - 1 + _imgs.length) % _imgs.length);
+function _prevImage() { _setActiveImage(_activeIdx - 1); }
+function _nextImage() { _setActiveImage(_activeIdx + 1); }
+
+/* ── Auto-slide ─────────────────────────────────────────────── */
+let _autoSlideTimer = null;
+
+function _startAutoSlide(intervalMs) {
+  _stopAutoSlide();
+  if (_imgs.length <= 1) return;
+  _autoSlideTimer = setInterval(() => _nextImage(), intervalMs || 3000);
 }
-function _nextImage() {
-  if (!_imgs.length) return;
-  _setActiveImage((_activeIdx + 1) % _imgs.length);
+
+function _stopAutoSlide() {
+  if (_autoSlideTimer) { clearInterval(_autoSlideTimer); _autoSlideTimer = null; }
+}
+
+/* Pause auto-slide on user interaction, resume 6s later */
+function _pauseAutoSlide() {
+  _stopAutoSlide();
+  setTimeout(() => _startAutoSlide(3000), 6000);
 }
 
 /* ── Render thumbnails ─────────────────────────────────────── */
@@ -99,22 +123,38 @@ function _renderThumbs() {
   if (_imgs.length <= 1) { wrap.style.display = 'none'; return; }
 
   wrap.style.display = '';
+  /* pointer-events:none on inner <img> so clicks always hit the <button> */
   wrap.innerHTML = _imgs.map((src, i) =>
     `<button class="pd-thumb${i === 0 ? ' active' : ''}"
       onclick="_setActiveImage(${i})"
       aria-label="View image ${i + 1}"
       aria-pressed="${i === 0 ? 'true' : 'false'}">
       <img src="${_esc(src)}" alt="Product view ${i + 1}" loading="lazy"
+        style="pointer-events:none"
         onerror="this.closest('.pd-thumb').style.display='none'">
     </button>`
   ).join('');
+
+  /* Also attach event listeners directly so onclick strings are a backup */
+  wrap.querySelectorAll('.pd-thumb').forEach((btn, i) => {
+    btn.addEventListener('click', () => _setActiveImage(i));
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      _setActiveImage(i);
+    }, { passive: false });
+  });
 }
 
 /* ── Swipe / touch gesture for gallery ────────────────────── */
 function _initGallerySwipe() {
   const wrap = document.getElementById('pdMainImgWrap');
-  if (!wrap || _imgs.length <= 1) return;
+  if (!wrap) return;
 
+  /* Make the <img> pass pointer-events through to the wrap */
+  const img = document.getElementById('pdMainImg');
+  if (img) img.style.pointerEvents = 'none';
+
+  /* Touch swipe */
   wrap.addEventListener('touchstart', e => {
     _touchStartX = e.changedTouches[0].screenX;
   }, { passive: true });
@@ -123,20 +163,40 @@ function _initGallerySwipe() {
     _touchEndX = e.changedTouches[0].screenX;
     const diff = _touchStartX - _touchEndX;
     if (Math.abs(diff) > 40) {
+      _pauseAutoSlide();
       diff > 0 ? _nextImage() : _prevImage();
     }
   }, { passive: true });
 
+  /* Keyboard navigation */
   wrap.setAttribute('tabindex', '0');
   wrap.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft')  _prevImage();
-    if (e.key === 'ArrowRight') _nextImage();
+    if (e.key === 'ArrowLeft')  { _pauseAutoSlide(); _prevImage(); }
+    if (e.key === 'ArrowRight') { _pauseAutoSlide(); _nextImage(); }
   });
 
-  const arrowHTML = `
-    <button class="pd-gallery-arrow pd-gallery-prev" onclick="_prevImage()" aria-label="Previous image">&#8249;</button>
-    <button class="pd-gallery-arrow pd-gallery-next" onclick="_nextImage()" aria-label="Next image">&#8250;</button>`;
-  wrap.insertAdjacentHTML('beforeend', arrowHTML);
+  /* Arrow buttons — only shown when multiple images */
+  if (_imgs.length > 1) {
+    const arrowHTML = `
+      <button class="pd-gallery-arrow pd-gallery-prev" onclick="_pauseAutoSlide();_prevImage()" aria-label="Previous image">&#8249;</button>
+      <button class="pd-gallery-arrow pd-gallery-next" onclick="_pauseAutoSlide();_nextImage()" aria-label="Next image">&#8250;</button>`;
+    wrap.insertAdjacentHTML('beforeend', arrowHTML);
+  }
+
+  /* Dot indicators below main image */
+  if (_imgs.length > 1) {
+    const dotsWrap = document.getElementById('pdDots');
+    if (dotsWrap) {
+      dotsWrap.style.display = 'flex';
+      dotsWrap.innerHTML = _imgs.map((_, i) =>
+        `<button class="pd-dot${i === 0 ? ' active' : ''}" onclick="_pauseAutoSlide();_setActiveImage(${i})"
+          aria-label="Image ${i+1}"></button>`
+      ).join('');
+    }
+  }
+
+  /* Start auto-slide */
+  _startAutoSlide(3000);
 }
 
 /* ── Qty picker ────────────────────────────────────────────── */
@@ -480,6 +540,8 @@ function _renderProduct(p) {
         ${discBadge}
       </div>
       <div class="pd-thumbs" id="pdThumbs" role="tablist" aria-label="Product images"></div>
+      <!-- Dot indicators for auto-slide (shown only when >1 image) -->
+      <div id="pdDots" class="pd-dots" style="display:none" role="tablist" aria-label="Image indicators"></div>
     </div>
 
     <!-- Info column -->
@@ -641,6 +703,26 @@ function _injectProductStyles() {
       .pd-variant-chip { padding: 7px 10px; min-width: 60px; }
       .pd-vc-name { font-size: .72rem; }
     }
+
+    /* ══ DOT INDICATORS ══════════════════════════════════ */
+    .pd-dots {
+      justify-content: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 2px 0;
+    }
+    .pd-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border-dark); border: none; padding: 0;
+      cursor: pointer; transition: background .2s, transform .2s;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+    .pd-dot.active {
+      background: var(--brand);
+      transform: scale(1.35);
+    }
+    .pd-dot:not(.active):hover { background: var(--brand-light); }
   `;
   document.head.appendChild(style);
 }
