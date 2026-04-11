@@ -396,8 +396,14 @@
     if (!wrap) return;
     var rows = [];
     if (p.category) rows.push(['Category', p.category]);
-    if (p.is_bundle && p.display_name) {
-      rows.push(['Pack Config', p.display_name]);
+    if (p.is_bundle) {
+      var packLabel = p.display_name;
+      if (!packLabel && p.pack_size) {
+        packLabel = p.base_quantity && p.base_unit
+          ? parseFloat(p.base_quantity) + ' ' + p.base_unit + ' × ' + p.pack_size + ' Pack'
+          : p.pack_size + ' Pack';
+      }
+      if (packLabel) rows.push(['Pack Config', packLabel]);
       if (p.base_quantity && p.pack_size && p.base_unit) {
         rows.push(['Total Quantity', parseFloat(p.base_quantity) * parseInt(p.pack_size, 10) + ' ' + p.base_unit]);
       }
@@ -411,6 +417,12 @@
       var d = disc(p.price, p.mrp);
       rows.push(['MRP', '₹' + parseFloat(p.mrp).toFixed(2)]);
       rows.push(['You Save', '₹' + (parseFloat(p.mrp) - parseFloat(p.price)).toFixed(2) + ' (' + d + '% off)']);
+    }
+    if (p.created_at) {
+      var dt = new Date(p.created_at);
+      if (!isNaN(dt.getTime())) {
+        rows.push(['Listed', dt.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })]);
+      }
     }
     if (!rows.length) { var s = wrap.closest('.pd-specs-section'); if (s) s.style.display = 'none'; return; }
     wrap.innerHTML = rows.map(function (r) {
@@ -485,8 +497,18 @@
         ? '<div class="pd-desc-section"><h3 class="pd-section-title">About this product</h3>'
           + '<p class="pd-desc">' + esc(p.description) + '</p></div>'
         : '')
-      +   (p.is_bundle && p.display_name
-        ? '<div class="pd-bundle-pill-wrap"><span class="pd-bundle-pill">' + esc(p.display_name) + '</span></div>'
+      +   (p.is_bundle
+        ? (function() {
+            var pillLabel = p.display_name;
+            if (!pillLabel && p.pack_size) {
+              pillLabel = p.base_quantity && p.base_unit
+                ? parseFloat(p.base_quantity) + ' ' + p.base_unit + ' × ' + p.pack_size + ' Pack'
+                : p.pack_size + ' Pack';
+            }
+            return pillLabel
+              ? '<div class="pd-bundle-pill-wrap"><span class="pd-bundle-pill">' + esc(pillLabel) + '</span></div>'
+              : '';
+          })()
         : '')
       +   '<div id="pdVariantsWrap" style="display:none"></div>'
       +   '<div class="pd-specs-section"><h3 class="pd-section-title">Product Details</h3>'
