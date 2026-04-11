@@ -38,6 +38,28 @@ async function _getVariantCols() {
   return _variantCols;
 }
 
+/* ── Auto-migrate: add distributor_price column if missing ───────────────── */
+async function _ensureDistributorPriceCol() {
+  try {
+    const cols = await _getProductCols();
+    if (!cols.has('distributor_price')) {
+      await db.query(
+        `ALTER TABLE products ADD COLUMN distributor_price DECIMAL(10,2) NULL DEFAULT NULL`
+      );
+      _cols = null; // bust cache so next call re-reads the real columns
+      console.log('[productController] distributor_price column added via auto-migration');
+    }
+  } catch (e) {
+    // Column may already exist in a concurrent request — safe to ignore
+    if (e.code !== 'ER_DUP_FIELDNAME') {
+      console.error('[productController] distributor_price migration error:', e.message);
+    }
+  }
+}
+
+// Run once at startup — non-blocking
+_ensureDistributorPriceCol();
+
 function _parseImages(raw) {
   if (!raw) return [];
   try {
@@ -69,16 +91,17 @@ exports.getAll = async (req, res) => {
 
     const selectCols = [
       'id', 'name', 'description', 'price', 'category', 'stock', 'is_active', 'created_at',
-      ...(cols.has('mrp')           ? ['mrp']           : []),
-      ...(cols.has('image')         ? ['image']         : []),
-      ...(cols.has('images')        ? ['images']        : []),
-      ...(cols.has('unit')          ? ['unit']          : []),
-      ...(cols.has('product_type')  ? ['product_type']  : []),
-      ...(cols.has('base_quantity') ? ['base_quantity'] : []),
-      ...(cols.has('base_unit')     ? ['base_unit']     : []),
-      ...(cols.has('pack_size')     ? ['pack_size']     : []),
-      ...(cols.has('is_bundle')     ? ['is_bundle']     : []),
-      ...(cols.has('display_name')  ? ['display_name']  : []),
+      ...(cols.has('mrp')                ? ['mrp']                : []),
+      ...(cols.has('distributor_price')  ? ['distributor_price']  : []),  // ← FIX
+      ...(cols.has('image')              ? ['image']              : []),
+      ...(cols.has('images')             ? ['images']             : []),
+      ...(cols.has('unit')               ? ['unit']               : []),
+      ...(cols.has('product_type')       ? ['product_type']       : []),
+      ...(cols.has('base_quantity')      ? ['base_quantity']      : []),
+      ...(cols.has('base_unit')          ? ['base_unit']          : []),
+      ...(cols.has('pack_size')          ? ['pack_size']          : []),
+      ...(cols.has('is_bundle')          ? ['is_bundle']          : []),
+      ...(cols.has('display_name')       ? ['display_name']       : []),
     ].join(', ');
 
     let sql    = `SELECT ${selectCols} FROM products WHERE is_active = 1`;
@@ -128,7 +151,7 @@ exports.getOne = async (req, res) => {
     product.images     = _parseImages(product.images);
     product.is_bundle  = Boolean(product.is_bundle);
 
-    // Attach variants — guard against missing sort_order column
+    // Attach variants
     try {
       const vCols     = await _getVariantCols();
       const orderBy   = vCols.has('sort_order') ? 'ORDER BY sort_order, id' : 'ORDER BY id';
