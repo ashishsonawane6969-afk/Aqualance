@@ -37,12 +37,17 @@ let _touchEndX   = 0;
 function _buildGallery(p) {
   _imgs = [];
   if (p.image && p.image.trim()) _imgs.push(p.image.trim());
-  try {
-    const extras = JSON.parse(p.images || '[]');
-    if (Array.isArray(extras)) {
-      extras.forEach(u => { if (u && !_imgs.includes(u)) _imgs.push(u); });
-    }
-  } catch (e) { /* skip bad JSON */ }
+
+  /* Backend returns p.images already parsed as an array (via _parseImages).
+     Guard against both array and JSON-string forms so it works either way. */
+  let extras = p.images;
+  if (typeof extras === 'string') {
+    try { extras = JSON.parse(extras); } catch (e) { extras = []; }
+  }
+  if (Array.isArray(extras)) {
+    extras.forEach(u => { if (u && u.trim() && !_imgs.includes(u.trim())) _imgs.push(u.trim()); });
+  }
+
   _activeIdx = 0;
 }
 
@@ -748,16 +753,10 @@ function _injectProductStyles() {
 
     const _fetcher = (window.AqNet && window.AqNet.fetch) ? window.AqNet.fetch : fetch;
 
-    /* Fetch product and variants in parallel */
-    const [res, varRes] = await Promise.all([
-      _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}`, {
-        signal: controller.signal,
-        headers: { 'Accept': 'application/json' }
-      }),
-      _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}/variants`, {
-        headers: { 'Accept': 'application/json' }
-      }).catch(() => null)   // variants are optional — don't crash if endpoint fails
-    ]);
+    const res = await _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
 
     clearTimeout(timeout);
 
@@ -766,15 +765,30 @@ function _injectProductStyles() {
     const json = await res.json();
     if (!json.success || !json.data) throw new Error(json.message || 'Product not found');
 
-    /* Render product first so DOM exists */
-    _renderProduct(json.data);
+    const product = json.data;
 
-    /* Then overlay variants */
-    if (varRes && varRes.ok) {
-      const varJson = await varRes.json();
-      if (varJson.success && Array.isArray(varJson.data) && varJson.data.length) {
-        _renderVariants(varJson.data, json.data);
-      }
+    /* Render product first so DOM exists */
+    _renderProduct(product);
+
+    /* Use variants already embedded in the product response (p.variants).
+       Fall back to a separate fetch only if the embedded array is missing. */
+    const embeddedVariants = Array.isArray(product.variants) ? product.variants.filter(v => v.is_active !== 0) : null;
+
+    if (embeddedVariants && embeddedVariants.length) {
+      _renderVariants(embeddedVariants, product);
+    } else {
+      /* Fallback: separate /variants request */
+      try {
+        const varRes  = await _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}/variants`, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (varRes.ok) {
+          const varJson = await varRes.json();
+          if (varJson.success && Array.isArray(varJson.data) && varJson.data.length) {
+            _renderVariants(varJson.data, product);
+          }
+        }
+      } catch (e) { /* variants are optional */ }
     }
 
   } catch (err) {
