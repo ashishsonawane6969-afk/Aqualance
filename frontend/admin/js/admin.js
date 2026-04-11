@@ -105,6 +105,70 @@ function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN', { day:'nume
 function fmtCurrency(v) { return `₹${parseFloat(v).toFixed(2)}`; }
 function statusBadge(s) { return `<span class="status status-${s}">${s.replace('_',' ')}</span>`; }
 
+/* ── Distributor Price toggle button ─────────────────────── */
+(function injectDistStyles() {
+  if (document.getElementById('distPriceStyle')) return;
+  const s = document.createElement('style');
+  s.id = 'distPriceStyle';
+  s.textContent = `
+    .dist-price-btn {
+      background: #f3e5f5; color: #7b1fa2;
+      border: 1.5px solid #ce93d8;
+      font-size: .75rem; font-weight: 700;
+      position: relative;
+    }
+    .dist-price-btn:hover { background: #e1bee7; }
+    .dist-price-btn.active { background: #7b1fa2; color: #fff; border-color: #7b1fa2; }
+    .dist-price-popover {
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: #7b1fa2; color: #fff;
+      padding: 5px 12px; border-radius: 6px;
+      font-size: .78rem; font-weight: 700;
+      white-space: nowrap; z-index: 9999;
+      box-shadow: 0 4px 14px rgba(123,31,162,.35);
+      pointer-events: none;
+    }
+    .dist-price-popover::after {
+      content: '';
+      position: absolute; top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #7b1fa2;
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+function toggleDistPrice(btn, priceStr) {
+  // Remove any other open popovers first
+  document.querySelectorAll('.dist-price-popover').forEach(p => p.remove());
+  document.querySelectorAll('.dist-price-btn.active').forEach(b => { if (b !== btn) b.classList.remove('active'); });
+
+  if (btn.classList.contains('active')) {
+    btn.classList.remove('active');
+    return;
+  }
+  btn.classList.add('active');
+
+  const pop = document.createElement('div');
+  pop.className = 'dist-price-popover';
+  pop.textContent = 'Dist: ' + priceStr;
+  btn.style.position = 'relative';
+  btn.appendChild(pop);
+
+  // Auto-dismiss on outside click
+  setTimeout(() => {
+    document.addEventListener('click', function dismiss(e) {
+      if (!btn.contains(e.target)) {
+        pop.remove();
+        btn.classList.remove('active');
+        document.removeEventListener('click', dismiss);
+      }
+    });
+  }, 0);
+}
+
 /* ── MFA OTP step (shown after password if MFA is enabled) ──── */
 function showMfaStep() {
   const form = document.getElementById('loginForm');
@@ -602,6 +666,7 @@ function renderProductsTable(products) {
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="editProduct(${p.id})">Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${safeName}')">Delete</button>
+        ${p.distributor_price ? `<button class="btn btn-sm dist-price-btn" onclick="toggleDistPrice(this,'${fmtCurrency(p.distributor_price)}')" title="Distributor Price">💜 Dist</button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -635,6 +700,7 @@ function renderProductsTable(products) {
         <div class="prod-card-actions">
           <button class="btn btn-outline btn-sm" onclick="editProduct(${p.id})">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id},'${safeName}')">Del</button>
+          ${p.distributor_price ? `<button class="btn btn-sm dist-price-btn" onclick="toggleDistPrice(this,'${fmtCurrency(p.distributor_price)}')" title="Distributor Price">💜 Dist</button>` : ''}
         </div>
       </div>
     </div>`;
