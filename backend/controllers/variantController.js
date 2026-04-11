@@ -18,10 +18,21 @@ exports.list = async (req, res) => {
     const productId = parseInt(req.params.id, 10);
     if (!productId) return sendError(res, 400, 'Invalid product ID');
 
-    const [rows] = await db.query(
-      'SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY sort_order, id',
-      [productId]
-    );
+    let rows;
+    try {
+      [rows] = await db.query(
+        'SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY sort_order, id',
+        [productId]
+      );
+    } catch (e) {
+      // sort_order column may not exist on older deployments — fall back safely
+      if (e.code === 'ER_BAD_FIELD_ERROR') {
+        [rows] = await db.query(
+          'SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY id',
+          [productId]
+        );
+      } else { throw e; }
+    }
     res.json({ success: true, data: rows });
   } catch (err) {
     serverError(res, err, '[variantController.list]');
@@ -65,28 +76,54 @@ exports.bulkUpsert = async (req, res) => {
         throw new Error(`Variant ${i + 1}: price must be positive`);
       }
 
-      const [result] = await conn.query(
-        `INSERT INTO product_variants
-          (product_id, variant_name, size_value, size_unit, pack_quantity, price, mrp, stock, sku, sort_order, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-         ON DUPLICATE KEY UPDATE
-          variant_name=VALUES(variant_name), size_value=VALUES(size_value),
-          size_unit=VALUES(size_unit), pack_quantity=VALUES(pack_quantity),
-          price=VALUES(price), mrp=VALUES(mrp), stock=VALUES(stock),
-          sort_order=VALUES(sort_order), is_active=1`,
-        [
-          productId,
-          v.variant_name.trim(),
-          parseFloat(v.size_value) || 0,
-          v.size_unit,
-          parseInt(v.pack_quantity, 10) || 1,
-          parseFloat(v.price),
-          v.mrp ? parseFloat(v.mrp) : null,
-          parseInt(v.stock, 10) || 0,
-          sku,
-          i,
-        ]
-      );
+      let result;
+      try {
+        [result] = await conn.query(
+          `INSERT INTO product_variants
+            (product_id, variant_name, size_value, size_unit, pack_quantity, price, mrp, stock, sku, sort_order, is_active)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+           ON DUPLICATE KEY UPDATE
+            variant_name=VALUES(variant_name), size_value=VALUES(size_value),
+            size_unit=VALUES(size_unit), pack_quantity=VALUES(pack_quantity),
+            price=VALUES(price), mrp=VALUES(mrp), stock=VALUES(stock),
+            sort_order=VALUES(sort_order), is_active=1`,
+          [
+            productId,
+            v.variant_name.trim(),
+            parseFloat(v.size_value) || 0,
+            v.size_unit,
+            parseInt(v.pack_quantity, 10) || 1,
+            parseFloat(v.price),
+            v.mrp ? parseFloat(v.mrp) : null,
+            parseInt(v.stock, 10) || 0,
+            sku,
+            i,
+          ]
+        );
+      } catch (colErr) {
+        // Fallback for deployments missing pack_quantity or sort_order columns
+        if (colErr.code === 'ER_BAD_FIELD_ERROR') {
+          [result] = await conn.query(
+            `INSERT INTO product_variants
+              (product_id, variant_name, size_value, size_unit, price, mrp, stock, sku, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+             ON DUPLICATE KEY UPDATE
+              variant_name=VALUES(variant_name), size_value=VALUES(size_value),
+              size_unit=VALUES(size_unit), price=VALUES(price),
+              mrp=VALUES(mrp), stock=VALUES(stock), is_active=1`,
+            [
+              productId,
+              v.variant_name.trim(),
+              parseFloat(v.size_value) || 0,
+              v.size_unit,
+              parseFloat(v.price),
+              v.mrp ? parseFloat(v.mrp) : null,
+              parseInt(v.stock, 10) || 0,
+              sku,
+            ]
+          );
+        } else { throw colErr; }
+      }
       inserted.push({ id: result.insertId || v.id, sku });
     }
 
