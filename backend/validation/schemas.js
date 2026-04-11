@@ -38,8 +38,9 @@ const orderCreateSchema = Joi.object({
   notes:         safeText(1000).optional().allow('', null),
   products: Joi.array().items(
     Joi.object({
-      id:       id.required(),
-      quantity: Joi.number().integer().min(1).max(9999).required(),
+      id:         id.required(),
+      variant_id: Joi.number().integer().positive().optional().allow(null),
+      quantity:   Joi.number().integer().min(1).max(9999).required(),
     }).options({ stripUnknown: true })
   ).min(1).max(50).required(),
 }).options({ stripUnknown: true });
@@ -57,29 +58,28 @@ const orderStatusSchema = Joi.object({
 }).options({ stripUnknown: true });
 
 /* ── PRODUCTS ─────────────────────────────────────────────────────────────── */
+const _imageField = Joi.alternatives()
+  .try(
+    Joi.string().uri().max(2048),
+    Joi.string()
+      .pattern(/^data:image\/[a-zA-Z0-9.+_-]+;base64,[A-Za-z0-9+\/\r\n]+=*$/)
+      .max(10_000_000)
+  )
+  .optional().allow('', null);
+
 const productWriteSchema = Joi.object({
-  name:        safeText(150).required(),
-  description: safeText(2000).optional().allow('', null),
-  price:       Joi.number().positive().precision(2).max(999_999).required(),
-  mrp:         Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-  image: Joi.alternatives()
-    .try(
-      Joi.string().uri().max(2048),
-      Joi.string()
-        .pattern(/^data:image\/[a-zA-Z0-9.+_-]+;base64,[A-Za-z0-9+\/\r\n]+=*$/)
-        .max(10_000_000)
-    )
-    .optional().allow('', null),
-  images:      Joi.alternatives()
-                 .try(
-                   Joi.array().items(Joi.string().max(2048)).max(10),
-                   Joi.string().max(5000)
-                 ).optional().allow(null),
-  category:    safeText(80).optional().allow('', null).default('General'),
-  stock:       Joi.number().integer().min(0).max(999_999).optional(),
-  unit:          safeText(50).optional().allow('', null).default('piece'),
-  is_active:     Joi.boolean().optional(),
-  // ── Bundle product fields ──
+  name:         safeText(150).required(),
+  description:  safeText(2000).optional().allow('', null),
+  price:        Joi.number().positive().precision(2).max(999_999).required(),
+  mrp:          Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+  image:        _imageField,
+  images:       Joi.array().items(_imageField).max(3).optional().allow(null),
+  category:     safeText(80).optional().allow('', null).default('General'),
+  stock:        Joi.number().integer().min(0).max(999_999).optional(),
+  unit:         safeText(50).optional().allow('', null).default('piece'),
+  is_active:    Joi.boolean().optional(),
+  product_type: Joi.string().valid('jar', 'strip', 'single').optional().default('single'),
+  // Bundle fields
   base_quantity: Joi.number().positive().precision(2).max(999_999).optional().allow(null),
   base_unit:     Joi.string().valid('GM','KG','L','ML','PCS').optional().allow(null, ''),
   pack_size:     Joi.number().integer().positive().max(9999).optional().allow(null),
@@ -90,6 +90,32 @@ const productWriteSchema = Joi.object({
 const productQuerySchema = Joi.object({
   category: safeText(80).optional().allow('', null),
   search:   safeText(200).optional().allow('', null),
+}).options({ stripUnknown: true });
+
+const variantBulkSchema = Joi.object({
+  variants: Joi.array().items(
+    Joi.object({
+      id:            Joi.number().integer().positive().optional(),
+      variant_name:  Joi.string().trim().max(100).required(),
+      size_value:    Joi.number().min(0).max(999_999).optional().default(0),
+      size_unit:     Joi.string().valid('GM','ML','KG','L','PCS').required(),
+      pack_quantity: Joi.number().integer().min(1).max(9999).optional().default(1),
+      price:         Joi.number().positive().precision(2).max(999_999).required(),
+      mrp:           Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+      stock:         Joi.number().integer().min(0).max(999_999).optional().default(0),
+      sku:           Joi.string().trim().max(80).optional().allow('', null),
+    }).options({ stripUnknown: true })
+  ).min(0).max(20).required(),
+}).options({ stripUnknown: true });
+
+const bundleItemsSchema = Joi.object({
+  items: Joi.array().items(
+    Joi.object({
+      product_id: id.required(),
+      variant_id: Joi.number().integer().positive().optional().allow(null),
+      quantity:   Joi.number().integer().min(1).max(9999).required(),
+    }).options({ stripUnknown: true })
+  ).min(0).max(50).required(),
 }).options({ stripUnknown: true });
 
 /* ── DELIVERY ─────────────────────────────────────────────────────────────── */
@@ -108,7 +134,6 @@ const salesmanCreateSchema = Joi.object({
               .messages({ 'string.min': 'Password must be at least 8 characters' }),
 }).options({ stripUnknown: true });
 
-/* ── Lead product item schema (reused inside lead schemas) ── */
 const leadProductSchema = Joi.object({
   product_id: Joi.number().integer().positive().max(2_147_483_647).required(),
   name:       Joi.string().trim().max(150).required(),
@@ -130,21 +155,13 @@ const leadCreateSchema = Joi.object({
     .pattern(/^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/)
     .max(200_000)
     .optional().allow('', null)
-    .messages({
-      'string.pattern.base': 'Photo must be a valid image (JPEG, PNG, WebP, or GIF)',
-    }),
+    .messages({ 'string.pattern.base': 'Photo must be a valid image (JPEG, PNG, WebP, or GIF)' }),
   notes:       safeText(1000).optional().allow('', null),
   visited_at:  Joi.string().isoDate().optional().allow('', null),
-  // ── NEW: products array ───────────────────────────────────
   products: Joi.array()
     .items(leadProductSchema)
-    .min(1)
-    .max(50)
-    .required()
-    .messages({
-      'array.min': 'At least one product must be selected.',
-      'any.required': 'Products are required.',
-    }),
+    .min(1).max(50).required()
+    .messages({ 'array.min': 'At least one product must be selected.', 'any.required': 'Products are required.' }),
 }).options({ stripUnknown: true });
 
 const leadUpdateSchema = leadCreateSchema.fork(
@@ -174,16 +191,16 @@ const leadsQuerySchema = Joi.object({
 
 /* ── GEO ──────────────────────────────────────────────────────────────────── */
 const geoLeadSchema = Joi.object({
-  shop_name:   safeText(150).required(),
-  shop_type:   safeText(80).optional().allow('', null),
-  owner_name:  safeText(100).required(),
-  mobile:      phone.required(),
-  village:     safeText(100).required(),
-  taluka:      safeText(100).required(),
-  district:    safeText(100).required(),
-  sale_status: Joi.string().valid('YES', 'NO').optional().default('NO'),
-  latitude:    latitude.optional().allow(null),
-  longitude:   longitude.optional().allow(null),
+  shop_name:    safeText(150).required(),
+  shop_type:    safeText(80).optional().allow('', null),
+  owner_name:   safeText(100).required(),
+  mobile:       phone.required(),
+  village:      safeText(100).required(),
+  taluka:       safeText(100).required(),
+  district:     safeText(100).required(),
+  sale_status:  Joi.string().valid('YES', 'NO').optional().default('NO'),
+  latitude:     latitude.optional().allow(null),
+  longitude:    longitude.optional().allow(null),
   gps_accuracy: Joi.number().min(0).max(99999).optional().allow(null),
   address_geo:  safeText(500).optional().allow('', null),
   photo_data: Joi.string()
@@ -192,12 +209,7 @@ const geoLeadSchema = Joi.object({
     .optional().allow('', null),
   notes:       safeText(1000).optional().allow('', null),
   visited_at:  Joi.string().isoDate().optional().allow('', null),
-  // ── Products selected by salesman (optional — geo leads may have no products) ──
-  products: Joi.array()
-    .items(leadProductSchema)
-    .max(50)
-    .optional()
-    .allow(null),
+  products:    Joi.array().items(leadProductSchema).max(50).optional().allow(null),
 }).options({ stripUnknown: true });
 
 const geoTrackSchema = Joi.object({
@@ -308,7 +320,7 @@ module.exports = {
   mfaOtpSchema, mfaVerifyLoginSchema, changePasswordSchema, resetPasswordSchema,
   aiChatSchema,
   orderCreateSchema, orderQuerySchema, orderAssignSchema, orderStatusSchema,
-  productWriteSchema, productQuerySchema,
+  productWriteSchema, productQuerySchema, variantBulkSchema, bundleItemsSchema,
   deliveryBoySchema,
   salesmanCreateSchema, leadCreateSchema, leadUpdateSchema,
   areaAssignSchema, reportQuerySchema, leadsQuerySchema,
