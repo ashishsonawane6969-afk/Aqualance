@@ -248,6 +248,7 @@ let httpServer = null;
   try {
     await connectDB();
     await require('./utils/ensureAuthTables').ensureAuthTables();
+    await require('./database/migrations').runMigrations();
 
     console.log('✅ Database ready');
 
