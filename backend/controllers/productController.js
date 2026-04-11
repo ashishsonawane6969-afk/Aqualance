@@ -7,7 +7,8 @@ function sendError(res, status, message) {
   return res.status(status).json({ success: false, message });
 }
 
-let _cols = null;
+let _cols         = null;
+let _variantCols  = null;
 
 async function _getProductCols() {
   if (_cols) return _cols;
@@ -21,6 +22,20 @@ async function _getProductCols() {
     _cols = new Set(['id','name','description','price','image','category','stock','is_active','created_at']);
   }
   return _cols;
+}
+
+async function _getVariantCols() {
+  if (_variantCols) return _variantCols;
+  try {
+    const [rows] = await db.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'product_variants'`
+    );
+    _variantCols = new Set(rows.map(r => r.COLUMN_NAME));
+  } catch (e) {
+    _variantCols = new Set(['id','product_id','variant_name','price','size_value','size_unit','sku','is_active']);
+  }
+  return _variantCols;
 }
 
 function _parseImages(raw) {
@@ -113,10 +128,12 @@ exports.getOne = async (req, res) => {
     product.images     = _parseImages(product.images);
     product.is_bundle  = Boolean(product.is_bundle);
 
-    // Attach variants
+    // Attach variants — guard against missing sort_order column
     try {
+      const vCols     = await _getVariantCols();
+      const orderBy   = vCols.has('sort_order') ? 'ORDER BY sort_order, id' : 'ORDER BY id';
       const [variants] = await db.query(
-        'SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY sort_order, id',
+        `SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ${orderBy}`,
         [id]
       );
       product.variants = variants;
@@ -298,7 +315,7 @@ exports.update = async (req, res) => {
   }
 };
 
-exports.resetProductColsCache = function () { _cols = null; };
+exports.resetProductColsCache = function () { _cols = null; _variantCols = null; };
 
 /* ── DELETE /api/v1/products/:id ───────────────────────────── */
 exports.remove = async (req, res) => {
