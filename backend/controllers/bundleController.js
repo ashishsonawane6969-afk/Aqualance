@@ -14,17 +14,45 @@ exports.list = async (req, res) => {
     if (!bundleId) return sendError(res, 400, 'Invalid product ID');
 
     const [rows] = await db.query(
-      `SELECT bi.id, bi.product_id, bi.variant_id, bi.quantity,
-              p.name AS product_name, p.price AS product_price,
-              pv.variant_name, pv.price AS variant_price, pv.size_value, pv.size_unit, pv.sku
+      `SELECT
+         bi.id,
+         bi.product_id,
+         bi.variant_id,
+         bi.quantity,
+         COALESCE(p.name, '')           AS product_name,
+         COALESCE(p.price, 0)           AS product_price,
+         COALESCE(pv.variant_name, '')  AS variant_name,
+         COALESCE(pv.price, 0)          AS variant_price,
+         COALESCE(pv.size_value, '')    AS size_value,
+         COALESCE(pv.size_unit, '')     AS size_unit,
+         COALESCE(pv.sku, '')           AS sku,
+         CASE WHEN bi.variant_id IS NOT NULL AND pv.id IS NOT NULL THEN 1 ELSE 0 END AS has_variant
        FROM bundle_items bi
-       JOIN products p ON p.id = bi.product_id
-       LEFT JOIN product_variants pv ON pv.id = bi.variant_id AND pv.is_active = 1
+       LEFT JOIN products p ON p.id = bi.product_id
+       LEFT JOIN product_variants pv
+         ON pv.id = bi.variant_id
+         AND pv.is_active = 1
        WHERE bi.bundle_product_id = ?
        ORDER BY bi.id`,
       [bundleId]
     );
-    res.json({ success: true, data: rows });
+
+    const data = rows.map(row => ({
+      id:            row.id,
+      product_id:    row.product_id,
+      variant_id:    row.variant_id ?? null,
+      quantity:      row.quantity,
+      product_name:  row.product_name,
+      product_price: Number(row.product_price),
+      variant_name:  row.variant_name  || null,
+      variant_price: row.has_variant   ? Number(row.variant_price) : null,
+      size_value:    row.size_value    || null,
+      size_unit:     row.size_unit     || null,
+      sku:           row.sku           || null,
+      has_variant:   Boolean(row.has_variant),
+    }));
+
+    res.json({ success: true, data });
   } catch (err) {
     serverError(res, err, '[bundleController.list]');
   }
