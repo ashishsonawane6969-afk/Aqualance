@@ -32,7 +32,7 @@
   var autoTimer     = null;
   var qty           = 1;
   var baseProduct   = null;
-  var selVariant    = null;
+  var selVariant    = null;  // null = base, 'dist' = distributor, object = variant
   var allVariants   = [];
   var touchX0       = 0;
 
@@ -44,7 +44,6 @@
     imgs = [];
     if (p.image && p.image.trim()) imgs.push(p.image.trim());
 
-    // Backend already parsed images into an array; guard both cases
     var extras = p.images;
     if (typeof extras === 'string') {
       try { extras = JSON.parse(extras); } catch (e) { extras = []; }
@@ -57,7 +56,6 @@
     activeIdx = 0;
   }
 
-  /* Show image at index — simple, no fade race conditions */
   function showImg(idx) {
     if (!imgs.length) return;
     activeIdx = ((idx % imgs.length) + imgs.length) % imgs.length;
@@ -72,14 +70,12 @@
     }
     if (emoji) emoji.style.display = 'none';
 
-    // Sync thumb active state
     var thumbs = document.querySelectorAll('.pd-thumb');
     thumbs.forEach(function (btn, i) {
       btn.classList.toggle('active', i === activeIdx);
       btn.setAttribute('aria-pressed', String(i === activeIdx));
     });
 
-    // Sync dot active state
     var dots = document.querySelectorAll('.pd-dot');
     dots.forEach(function (d, i) {
       d.classList.toggle('active', i === activeIdx);
@@ -89,7 +85,6 @@
   function prevImg() { stopAuto(); showImg(activeIdx - 1); resumeAuto(); }
   function nextImg() { stopAuto(); showImg(activeIdx + 1); resumeAuto(); }
 
-  /* ── Auto-slide ─────────────────────────────────────────── */
   function startAuto() {
     stopAuto();
     if (imgs.length <= 1) return;
@@ -104,7 +99,6 @@
     resumeHandle = setTimeout(startAuto, 5000);
   }
 
-  /* ── Render thumbnails + dots + attach ALL events via JS ── */
   function renderGallery() {
     var thumbWrap = el('pdThumbs');
     var dotWrap   = el('pdDots');
@@ -118,7 +112,6 @@
       return;
     }
 
-    /* Thumbnails */
     thumbWrap.style.display = 'flex';
     thumbWrap.innerHTML = imgs.map(function (src, i) {
       return '<button class="pd-thumb' + (i === 0 ? ' active' : '') + '"'
@@ -130,16 +123,14 @@
            + '</button>';
     }).join('');
 
-    // Attach click + touchend directly to every thumb button
     thumbWrap.querySelectorAll('.pd-thumb').forEach(function (btn, i) {
       btn.addEventListener('click', function () { stopAuto(); showImg(i); resumeAuto(); });
       btn.addEventListener('touchend', function (e) {
-        e.preventDefault(); // prevent ghost click
+        e.preventDefault();
         stopAuto(); showImg(i); resumeAuto();
       }, { passive: false });
     });
 
-    /* Dot indicators */
     if (dotWrap) {
       dotWrap.style.display = 'flex';
       dotWrap.innerHTML = imgs.map(function (_, i) {
@@ -156,7 +147,6 @@
       });
     }
 
-    /* Arrow buttons */
     var prevBtn = document.createElement('button');
     prevBtn.className   = 'pd-gallery-arrow pd-gallery-prev';
     prevBtn.type        = 'button';
@@ -176,9 +166,7 @@
     mainWrap.appendChild(prevBtn);
     mainWrap.appendChild(nextBtn);
 
-    /* Swipe on main image wrap */
     if (mainWrap) {
-      // Make the img itself not intercept touches
       var mainImg = el('pdMainImg');
       if (mainImg) mainImg.style.pointerEvents = 'none';
 
@@ -195,7 +183,6 @@
         }
       }, { passive: true });
 
-      /* Keyboard */
       mainWrap.setAttribute('tabindex', '0');
       mainWrap.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowLeft')  { stopAuto(); showImg(activeIdx - 1); resumeAuto(); }
@@ -207,7 +194,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     VARIANT SELECTOR
+     VARIANT SELECTOR  (includes Distributor Price chip)
   ══════════════════════════════════════════════════════════ */
 
   function renderVariants(variants) {
@@ -218,7 +205,9 @@
       return v.is_active !== 0 && v.is_active !== false;
     });
 
-    if (!allVariants.length) { wrap.style.display = 'none'; return; }
+    /* ── Show section if there are variants OR a distributor price ── */
+    var hasDistPrice = !!(baseProduct && baseProduct.distributor_price);
+    if (!allVariants.length && !hasDistPrice) { wrap.style.display = 'none'; return; }
 
     var baseLabel = baseProduct.unit ? 'Original (' + baseProduct.unit + ')' : 'Original';
 
@@ -243,6 +232,17 @@
       e.preventDefault(); selectVariant(null);
     }, { passive: false });
     chips.appendChild(baseChip);
+
+    /* ── Distributor price chip ── */
+    if (hasDistPrice) {
+      var distChip = makeChip('Distributor', baseProduct.distributor_price, false, 'dist');
+      distChip.classList.add('pd-vc-dist');
+      distChip.addEventListener('click', function () { selectVariant('dist'); });
+      distChip.addEventListener('touchend', function (e) {
+        e.preventDefault(); selectVariant('dist');
+      }, { passive: false });
+      chips.appendChild(distChip);
+    }
 
     /* Variant chips */
     allVariants.forEach(function (v) {
@@ -293,24 +293,36 @@
   }
 
   function selectVariant(vid) {
-    if (vid === null) {
+    /* vid === null or 'base' → retail base
+       vid === 'dist'         → distributor price (display only)
+       vid === number         → product variant                   */
+    if (vid === null || vid === 'base') {
       selVariant = null;
+    } else if (vid === 'dist') {
+      selVariant = 'dist';
     } else {
       selVariant = allVariants.find(function (v) { return v.id === vid; }) || null;
     }
 
-    /* Update active chip */
+    /* Sync active chip */
     document.querySelectorAll('.pd-variant-chip').forEach(function (c) {
-      if (vid === null) {
+      if (vid === null || vid === 'base') {
         c.classList.toggle('active', c.dataset.vid === 'base');
+      } else if (vid === 'dist') {
+        c.classList.toggle('active', c.dataset.vid === 'dist');
       } else {
         c.classList.toggle('active', parseInt(c.dataset.vid, 10) === vid);
       }
     });
 
-    /* Update price + stock bar */
-    var p = selVariant || baseProduct;
-    updatePriceDisplay(p.price, p.mrp, p.stock);
+    /* Update price display */
+    if (selVariant === 'dist') {
+      /* Show distributor price; keep MRP and stock from base */
+      updatePriceDisplay(baseProduct.distributor_price, baseProduct.mrp, baseProduct.stock);
+    } else {
+      var p = selVariant || baseProduct;
+      updatePriceDisplay(p.price, p.mrp, p.stock);
+    }
   }
 
   function updatePriceDisplay(price, mrp, stock) {
@@ -339,11 +351,12 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     CART
+     CART  — dist chip is display-only; cart always uses retail
   ══════════════════════════════════════════════════════════ */
 
   function addToCart() {
-    var v = selVariant;
+    /* 'dist' is a display-only price mode — cart always charges retail */
+    var v = (selVariant === 'dist') ? null : selVariant;
     var item;
 
     if (v) {
@@ -451,25 +464,21 @@
     var inCart  = getCart().find(function (c) { return c.id === p.id; });
     var cartQty = inCart ? inCart.quantity : 0;
 
-    /* Price HTML */
     var priceHTML = '<span class="pd-price">₹' + parseFloat(p.price).toFixed(2) + '</span>';
     if (p.mrp && p.mrp > p.price) {
       priceHTML += '<span class="pd-mrp">₹' + parseFloat(p.mrp).toFixed(2) + '</span>'
                 + '<span class="pd-save-badge">' + d + '% off</span>';
     }
 
-    /* Main image */
     var imgHTML = imgs.length
       ? '<img id="pdMainImg" src="' + esc(imgs[0]) + '" alt="' + esc(p.name) + '"'
         + ' style="width:100%;height:100%;object-fit:contain;padding:10px;display:block;pointer-events:none"'
         + ' onerror="this.style.display=\'none\';var em=document.getElementById(\'pdMainEmoji\');if(em)em.style.display=\'flex\'">'
       : '';
 
-    /* Build HTML */
     w.innerHTML =
       '<div class="pd-layout">'
 
-      /* Gallery */
       + '<div class="pd-gallery-col">'
       +   '<div class="pd-main-img-wrap" id="pdMainImgWrap">'
       +     imgHTML
@@ -483,7 +492,6 @@
       +   '<div class="pd-dots" id="pdDots" role="tablist" aria-label="Image indicators" style="display:none"></div>'
       + '</div>'
 
-      /* Info */
       + '<div class="pd-info-col">'
       +   '<div class="pd-category">' + emoji + ' ' + esc(p.category)
       +     (p.category === 'New Launches' ? '<span class="pd-new-badge">New Launch</span>' : '')
@@ -536,7 +544,6 @@
 
       + '</div>';
 
-    /* Attach qty buttons via JS — no onclick= strings */
     var minusBtn = el('pdQtyMinus');
     var plusBtn  = el('pdQtyPlus');
     var atcBtn   = el('pdAddToCartBtn');
@@ -560,7 +567,6 @@
       }, { passive: false });
     }
 
-    /* Post-render */
     renderSpecs(p);
     renderGallery();
     updateCartBadge();
@@ -661,6 +667,16 @@
       '.pd-vc-name{font-size:.78rem;font-weight:700;line-height:1.2;}',
       '.pd-vc-price{font-size:.72rem;color:var(--brand);font-weight:600;}',
       '.pd-vc-oos-tag{font-size:.62rem;color:var(--error);font-weight:600;margin-top:2px;}',
+
+      /* ── Distributor price chip ── */
+      '.pd-vc-dist{border-color:#ce93d8 !important;background:#f9f0fd;}',
+      '.pd-vc-dist .pd-vc-name{color:#7b1fa2;}',
+      '.pd-vc-dist .pd-vc-price{color:#9c27b0;}',
+      '.pd-vc-dist:hover{border-color:#9c27b0 !important;background:#ede7f6;}',
+      '.pd-vc-dist.active{background:#7b1fa2 !important;border-color:#7b1fa2 !important;',
+      'box-shadow:0 2px 10px rgba(123,31,162,.35);}',
+      '.pd-vc-dist.active .pd-vc-name,.pd-vc-dist.active .pd-vc-price{color:#fff;}',
+
       '@media(max-width:360px){.pd-variant-chip{padding:7px 10px;min-width:60px;}',
       '.pd-vc-name{font-size:.72rem;}}',
 
@@ -675,7 +691,7 @@
   }
 
   /* ══════════════════════════════════════════════════════════
-     MAIN — fetch once, render immediately, no extra requests
+     MAIN
   ══════════════════════════════════════════════════════════ */
 
   injectStyles();
@@ -684,12 +700,11 @@
   var id     = params.get('id');
 
   if (!id || isNaN(parseInt(id, 10))) {
-    showError('No product ID in URL.'); return;  // whole IIFE exits here
+    showError('No product ID in URL.'); return;
   }
 
   showSkeleton();
 
-  // Use plain fetch — no custom fetcher wrappers that may buffer or alter responses
   fetch(API + '/products/' + encodeURIComponent(id) + '?_t=' + Date.now(), {
     headers: { 'Accept': 'application/json' },
     cache: 'no-store'
@@ -703,17 +718,14 @@
 
     var p = json.data;
 
-    // Render product immediately
     renderProduct(p);
 
-    // Variants already embedded in response from backend getOne
     var v = Array.isArray(p.variants)
       ? p.variants.filter(function (x) { return x.is_active !== 0 && x.is_active !== false; })
       : [];
 
-    if (v.length) {
-      renderVariants(v);
-    }
+    // Always call renderVariants — it handles dist-only case too
+    renderVariants(v);
   })
   .catch(function (err) {
     console.error('[product.js]', err);
