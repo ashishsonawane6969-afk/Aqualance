@@ -342,6 +342,76 @@ VALUES
 (4,'New Maharashtra Store', 'Wholesale','Raju Deshpande','9845678903','Shrirampur','Shrirampur','Ahmednagar','NO', 'Already has a supplier, revisit next month',  NOW() - INTERVAL 4 DAY),
 (4,'Sainath Provisions',    'General',  'Vijay Kadam',   '9856789014','Savargaon', 'Sangamner', 'Ahmednagar','YES','Very interested, placed trial order',         NOW());
 
+
+-- ============================================================
+-- MIGRATION: Product Variants, Bundle Items, Product Type
+-- Run once on Railway MySQL → Data → Query
+-- Safe to re-run (uses IF NOT EXISTS / IF NOT EXISTS column checks)
+-- ============================================================
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ── Add product_type column if missing ──────────────────────
+ALTER TABLE `products`
+  ADD COLUMN IF NOT EXISTS `product_type` VARCHAR(20) NOT NULL DEFAULT 'single'
+  AFTER `unit`;
+
+-- ── Add display_name column if missing ──────────────────────
+ALTER TABLE `products`
+  ADD COLUMN IF NOT EXISTS `display_name` VARCHAR(255) DEFAULT NULL
+  AFTER `pack_size`;
+
+-- ── TABLE: product_variants ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS `product_variants` (
+  `id`            INT           NOT NULL AUTO_INCREMENT,
+  `product_id`    INT           NOT NULL,
+  `variant_name`  VARCHAR(100)  NOT NULL,
+  `size_value`    DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `size_unit`     VARCHAR(10)   NOT NULL DEFAULT 'GM',
+  `pack_quantity` INT           NOT NULL DEFAULT 1,
+  `price`         DECIMAL(10,2) NOT NULL,
+  `mrp`           DECIMAL(10,2) DEFAULT NULL,
+  `stock`         INT           NOT NULL DEFAULT 0,
+  `sku`           VARCHAR(80)   NOT NULL,
+  `sort_order`    INT           NOT NULL DEFAULT 0,
+  `is_active`     TINYINT(1)    NOT NULL DEFAULT 1,
+  `created_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_variant_sku` (`sku`),
+  INDEX `idx_pv_product` (`product_id`),
+  CONSTRAINT `fk_pv_product`
+    FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── TABLE: bundle_items ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `bundle_items` (
+  `id`                INT       NOT NULL AUTO_INCREMENT,
+  `bundle_product_id` INT       NOT NULL,
+  `product_id`        INT       NOT NULL,
+  `variant_id`        INT       DEFAULT NULL,
+  `quantity`          INT       NOT NULL DEFAULT 1,
+  `created_at`        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_bi_bundle`  (`bundle_product_id`),
+  INDEX `idx_bi_product` (`product_id`),
+  INDEX `idx_bi_variant` (`variant_id`),
+  CONSTRAINT `fk_bi_bundle`
+    FOREIGN KEY (`bundle_product_id`) REFERENCES `products`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bi_product`
+    FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Add variant_id to order_items if missing ────────────────
+ALTER TABLE `order_items`
+  ADD COLUMN IF NOT EXISTS `variant_id` INT DEFAULT NULL AFTER `product_id`;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+
+
+
 -- ============================================================
 -- SEED: SALESMAN AREA ASSIGNMENTS
 -- ============================================================
