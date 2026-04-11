@@ -2,7 +2,8 @@
    product.js — Product Detail Page
    Features: swipe gallery, smooth image transitions, sticky CTA,
    loading states, structured API response, touch-friendly controls,
-   bundle product display, full-width stock bar.
+   bundle product display, full-width stock bar,
+   VARIANT SELECTOR (size/pack picker → cart).
    Requires app.js to be loaded first.
    ═══════════════════════════════════════════════════════════════ */
 
@@ -61,10 +62,14 @@ function _setActiveImage(idx) {
     mainImg.style.opacity    = '0';
     mainImg.style.transition = 'opacity .2s ease';
     setTimeout(() => {
-      mainImg.src = _imgs[_activeIdx];
-      mainImg.style.display = '';
+      mainImg.src           = _imgs[_activeIdx];
+      mainImg.style.display = 'block';
       if (emoji) emoji.style.display = 'none';
-      requestAnimationFrame(() => { mainImg.style.opacity = '1'; });
+      /* Use two rAFs so the browser registers the src change before
+         fading back in — this is the key fix for images not updating */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { mainImg.style.opacity = '1'; });
+      });
     }, 160);
   }
 
@@ -93,6 +98,7 @@ function _renderThumbs() {
   if (!wrap) return;
   if (_imgs.length <= 1) { wrap.style.display = 'none'; return; }
 
+  wrap.style.display = '';
   wrap.innerHTML = _imgs.map((src, i) =>
     `<button class="pd-thumb${i === 0 ? ' active' : ''}"
       onclick="_setActiveImage(${i})"
@@ -150,7 +156,6 @@ function _renderSpecs(p) {
   const rows = [];
   if (p.category) rows.push(['Category', p.category]);
 
-  // Bundle pack config
   if (p.is_bundle && p.display_name) {
     rows.push(['Pack Config', p.display_name]);
     if (p.base_quantity && p.pack_size && p.base_unit) {
@@ -192,13 +197,135 @@ function _renderSpecs(p) {
   ).join('');
 }
 
-/* ── Add to cart ───────────────────────────────────────────── */
-function _pdAddToCart(product) {
-  if (!product || product.stock === 0) return;
+/* ══════════════════════════════════════════════════════════════
+   VARIANT SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+/* Currently selected variant (null = base product) */
+let _selectedVariant = null;
+let _baseProduct     = null;
+
+/* Called when user taps a variant chip */
+function _selectVariant(variantId) {
+  const chips = document.querySelectorAll('.pd-variant-chip');
+
+  if (variantId === null) {
+    /* Base / "original" selected */
+    _selectedVariant = null;
+    chips.forEach(c => c.classList.toggle('active', c.dataset.vid === 'base'));
+    _updateVariantPriceDisplay(_baseProduct.price, _baseProduct.mrp, _baseProduct.stock);
+    return;
+  }
+
+  /* Find variant from stored list */
+  const vList = window._pdVariants || [];
+  const v = vList.find(x => x.id === variantId);
+  if (!v) return;
+
+  _selectedVariant = v;
+  chips.forEach(c => c.classList.toggle('active', parseInt(c.dataset.vid, 10) === variantId));
+  _updateVariantPriceDisplay(v.price, v.mrp, v.stock);
+}
+
+/* Update the price row and stock bar without re-rendering everything */
+function _updateVariantPriceDisplay(price, mrp, stock) {
+  const priceRow  = document.getElementById('pdPriceRow');
+  const stockBar  = document.getElementById('pdStockBar');
+  const atcBtn    = document.getElementById('pdAddToCartBtn');
+  const oosBtn    = document.getElementById('pdOosBtn');
+
+  if (priceRow) {
+    const disc = _disc(price, mrp);
+    let html = `<span class="pd-price">₹${parseFloat(price).toFixed(2)}</span>`;
+    if (mrp && mrp > price) {
+      html += `<span class="pd-mrp">₹${parseFloat(mrp).toFixed(2)}</span>
+               <span class="pd-save-badge">${disc}% off</span>`;
+    }
+    priceRow.innerHTML = html;
+  }
+
+  if (stock === 0) {
+    if (stockBar) { stockBar.className = 'pd-stock-bar pd-stock-bar--oos'; stockBar.textContent = '❌ Out of Stock'; }
+    if (atcBtn)   atcBtn.style.display  = 'none';
+    if (oosBtn)   oosBtn.style.display  = '';
+  } else {
+    if (stockBar) { stockBar.className = 'pd-stock-bar pd-stock-bar--in'; stockBar.textContent = '✅ In Stock'; }
+    if (atcBtn)   atcBtn.style.display  = '';
+    if (oosBtn)   oosBtn.style.display  = 'none';
+  }
+}
+
+/* Render the variant chips section */
+function _renderVariants(variants, baseProduct) {
+  const wrap = document.getElementById('pdVariantsWrap');
+  if (!wrap) return;
+  if (!variants || !variants.length) { wrap.style.display = 'none'; return; }
+
+  window._pdVariants = variants;
+
+  /* "Base" chip label — use product unit or "Original" */
+  const baseLabel = baseProduct.unit
+    ? `Original (${baseProduct.unit})`
+    : 'Original';
+
+  const chipsHTML = [
+    /* Base product chip */
+    `<button class="pd-variant-chip active" data-vid="base"
+        onclick="_selectVariant(null)" type="button">
+        <span class="pd-vc-name">${_esc(baseLabel)}</span>
+        <span class="pd-vc-price">₹${parseFloat(baseProduct.price).toFixed(2)}</span>
+      </button>`
+  ].concat(variants.map(v => {
+    const label = v.variant_name ||
+      (v.size_value ? `${v.size_value} ${v.size_unit}` : v.size_unit);
+    const oos   = v.stock === 0;
+    return `<button class="pd-variant-chip${oos ? ' pd-vc-oos' : ''}" data-vid="${v.id}"
+        onclick="_selectVariant(${v.id})" type="button"
+        ${oos ? 'aria-label="' + _esc(label) + ' — out of stock"' : ''}>
+        <span class="pd-vc-name">${_esc(label)}</span>
+        <span class="pd-vc-price">₹${parseFloat(v.price).toFixed(2)}</span>
+        ${oos ? '<span class="pd-vc-oos-tag">Out of stock</span>' : ''}
+      </button>`;
+  })).join('');
+
+  wrap.innerHTML = `
+    <div class="pd-variants-section">
+      <h3 class="pd-section-title">Choose Size / Pack</h3>
+      <div class="pd-variant-chips" role="group" aria-label="Size options">
+        ${chipsHTML}
+      </div>
+    </div>`;
+  wrap.style.display = '';
+}
+
+/* ── Add to cart — respects selected variant ───────────────── */
+function _pdAddToCart(baseProduct) {
+  const v = _selectedVariant;
+
+  let cartItem;
+  if (v) {
+    /* Variant selected — give it a unique cart key via id encoding */
+    cartItem = {
+      id:       baseProduct.id * 10000 + v.id,   // unique key per variant
+      name:     baseProduct.name + ' — ' + (v.variant_name || v.size_value + ' ' + v.size_unit),
+      price:    parseFloat(v.price),
+      mrp:      v.mrp ? parseFloat(v.mrp) : null,
+      image:    baseProduct.image || '',
+      category: baseProduct.category,
+      unit:     v.size_value ? (v.size_value + ' ' + v.size_unit) : v.size_unit,
+      stock:    v.stock,
+    };
+  } else {
+    if (!baseProduct || baseProduct.stock === 0) return;
+    cartItem = Object.assign({}, baseProduct);
+  }
+
+  if (cartItem.stock === 0) return;
+
   const cart  = getCart();
-  const found = cart.find(i => i.id === product.id);
+  const found = cart.find(i => i.id === cartItem.id);
   if (found) found.quantity += _pdQty;
-  else cart.push(Object.assign({}, product, { quantity: _pdQty }));
+  else cart.push(Object.assign({}, cartItem, { quantity: _pdQty }));
   saveCart(cart);
   updateCartBadge();
 
@@ -210,7 +337,7 @@ function _pdAddToCart(product) {
     setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1800);
   }
 
-  showToast(`${product.name} × ${_pdQty} added to cart ✓`, 'success');
+  showToast(`${cartItem.name} × ${_pdQty} added to cart ✓`, 'success');
 }
 
 /* ── Skeleton while loading ────────────────────────────────── */
@@ -256,6 +383,8 @@ function _renderProduct(p) {
   const w = document.getElementById('pdWrap');
   if (!w) return;
 
+  _baseProduct = p;
+  _selectedVariant = null;
   _buildGallery(p);
 
   const disc   = _disc(p.price, p.mrp);
@@ -271,33 +400,31 @@ function _renderProduct(p) {
     .replace(/"/g, '&quot;').replace(/</g, '&#60;')
     .replace(/>/g, '&#62;').replace(/'/g, '&#39;');
 
-  // Main image HTML
+  // Main image HTML — set display:block explicitly so toggle works
   const mainImgHTML = _imgs.length
     ? `<img id="pdMainImg" src="${_esc(_imgs[0])}" alt="${_esc(p.name)}"
-        style="transition:opacity .2s ease"
+        style="display:block;transition:opacity .2s ease"
         onerror="this.style.display='none';document.getElementById('pdMainEmoji').style.display='flex'">`
     : '';
 
   const emojiDisplay = _imgs.length ? 'none' : 'flex';
 
-  // Discount badge (top-left corner of image)
   const discBadge = disc > 0
     ? `<span class="pd-discount-badge">-${disc}%</span>`
     : '';
 
-  // Price row
+  // Price row — given an id so _updateVariantPriceDisplay can patch it
   let priceHTML = `<span class="pd-price">₹${parseFloat(p.price).toFixed(2)}</span>`;
   if (p.mrp && p.mrp > p.price) {
     priceHTML += `<span class="pd-mrp">₹${parseFloat(p.mrp).toFixed(2)}</span>
                   <span class="pd-save-badge">${disc}% off</span>`;
   }
 
-  // Stock bar — full-width pill matching the screenshot
+  // Stock bar — given an id so _updateVariantPriceDisplay can patch it
   const stockBarHTML = oos
-    ? `<div class="pd-stock-bar pd-stock-bar--oos">❌ Out of Stock</div>`
-    : `<div class="pd-stock-bar pd-stock-bar--in">✅ In Stock</div>`;
+    ? `<div class="pd-stock-bar pd-stock-bar--oos" id="pdStockBar">❌ Out of Stock</div>`
+    : `<div class="pd-stock-bar pd-stock-bar--in"  id="pdStockBar">✅ In Stock</div>`;
 
-  // Description section
   const descSection = p.description
     ? `<div class="pd-desc-section">
          <h3 class="pd-section-title">About this product</h3>
@@ -305,40 +432,38 @@ function _renderProduct(p) {
        </div>`
     : '';
 
-  // Bundle display name pill (shown above specs if bundle product)
   const bundlePillHTML = (p.is_bundle && p.display_name)
     ? `<div class="pd-bundle-pill-wrap">
          <span class="pd-bundle-pill">${_esc(p.display_name)}</span>
        </div>`
     : '';
 
-  // Cart / CTA section
-  let cartSection;
-  if (oos) {
-    cartSection = `<button class="btn btn-ghost btn-lg btn-full pd-oos-btn" disabled>
-      ❌ Out of Stock</button>`;
-  } else {
-    const alreadyMsg = cartQty > 0
-      ? `<p class="pd-already-in-cart">Already in cart: <strong>${cartQty}</strong></p>`
-      : '';
-    cartSection = `
-      <div class="pd-cart-row">
-        <div class="pd-nav-btns">
-          <a href="/index.html" class="btn btn-outline btn-sm">← Continue</a>
-          <a href="/cart.html" class="btn btn-ghost btn-sm">🛒 View Cart</a>
-        </div>
-        <div class="pd-qty-atc">
-          <div class="pd-qty-control">
-            <button class="pd-qty-btn" onclick="_setQty(_pdQty-1)" aria-label="Decrease quantity">−</button>
-            <span class="pd-qty-val" id="pdQtyVal" aria-live="polite">1</span>
-            <button class="pd-qty-btn" onclick="_setQty(_pdQty+1)" aria-label="Increase quantity">+</button>
-          </div>
-          <button class="btn pd-atc-btn" id="pdAddToCartBtn"
-            onclick="_pdAddToCart(${pSafe})">🛒 Add to Cart</button>
-        </div>
+  // Cart / CTA section — ATC and OOS btns both rendered, one hidden
+  const alreadyMsg = cartQty > 0
+    ? `<p class="pd-already-in-cart">Already in cart: <strong>${cartQty}</strong></p>`
+    : '';
+
+  const cartSection = `
+    <div class="pd-cart-row">
+      <div class="pd-nav-btns">
+        <a href="/index.html" class="btn btn-outline btn-sm">← Continue</a>
+        <a href="/cart.html" class="btn btn-ghost btn-sm">🛒 View Cart</a>
       </div>
-      ${alreadyMsg}`;
-  }
+      <div class="pd-qty-atc">
+        <div class="pd-qty-control">
+          <button class="pd-qty-btn" onclick="_setQty(_pdQty-1)" aria-label="Decrease quantity">−</button>
+          <span class="pd-qty-val" id="pdQtyVal" aria-live="polite">1</span>
+          <button class="pd-qty-btn" onclick="_setQty(_pdQty+1)" aria-label="Increase quantity">+</button>
+        </div>
+        <button class="btn pd-atc-btn" id="pdAddToCartBtn"
+          style="${oos ? 'display:none' : ''}"
+          onclick="_pdAddToCart(${pSafe})">🛒 Add to Cart</button>
+        <button class="btn btn-ghost btn-lg pd-oos-btn" id="pdOosBtn"
+          style="${oos ? '' : 'display:none'}" disabled>
+          ❌ Out of Stock</button>
+      </div>
+    </div>
+    ${alreadyMsg}`;
 
   // Full render
   w.innerHTML = `<div class="pd-layout">
@@ -367,13 +492,16 @@ function _renderProduct(p) {
 
       <h1 class="pd-name">${_esc(p.name)}</h1>
 
-      <div class="pd-price-row">${priceHTML}</div>
+      <div class="pd-price-row" id="pdPriceRow">${priceHTML}</div>
 
       ${stockBarHTML}
 
       ${descSection}
 
       ${bundlePillHTML}
+
+      <!-- Variant chips injected here after API call -->
+      <div id="pdVariantsWrap" style="display:none"></div>
 
       <div class="pd-specs-section">
         <h3 class="pd-section-title">Product Details</h3>
@@ -422,80 +550,96 @@ function _injectProductStyles() {
       .pd-gallery-arrow { width:32px; height:32px; font-size:1.1rem; }
     }
 
-    /* ── Full-width stock bar (replaces pill badge) ──────── */
+    /* ── Full-width stock bar ────────────────────────────── */
     .pd-stock-bar {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      padding: 8px 14px;
-      border-radius: var(--r-sm);
-      font-size: .8rem;
-      font-weight: 700;
-      margin-bottom: 18px;
+      display: flex; align-items: center; width: 100%;
+      padding: 8px 14px; border-radius: var(--r-sm);
+      font-size: .8rem; font-weight: 700; margin-bottom: 18px;
       letter-spacing: .01em;
     }
     .pd-stock-bar--in {
-      background: var(--success-pale);
-      color: var(--success);
+      background: var(--success-pale); color: var(--success);
       border: 1px solid rgba(30,125,58,.15);
     }
     .pd-stock-bar--oos {
-      background: var(--error-pale);
-      color: var(--error);
+      background: var(--error-pale); color: var(--error);
       border: 1px solid rgba(192,57,43,.15);
     }
 
-    /* ── Add-to-cart button — dark navy pill ─────────────── */
+    /* ── ATC button ──────────────────────────────────────── */
     .pd-atc-btn {
-      background: var(--ink);
-      color: #fff;
-      border: none;
-      border-radius: var(--r-full);
-      padding: 0 22px;
-      min-height: 52px;
-      font-size: .92rem;
-      font-weight: 700;
-      letter-spacing: .01em;
-      white-space: nowrap;
-      cursor: pointer;
+      background: var(--ink); color: #fff; border: none;
+      border-radius: var(--r-full); padding: 0 22px;
+      min-height: 52px; font-size: .92rem; font-weight: 700;
+      letter-spacing: .01em; white-space: nowrap; cursor: pointer;
       transition: background .15s, transform .1s;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
-    .pd-atc-btn:hover { background: var(--ink-mid); }
+    .pd-atc-btn:hover  { background: var(--ink-mid); }
     .pd-atc-btn:active { transform: scale(.97); }
-    .pd-atc-btn:disabled {
-      background: var(--border-dark);
-      cursor: not-allowed;
-      transform: none;
-    }
+    .pd-atc-btn:disabled { background: var(--border-dark); cursor: not-allowed; transform: none; }
 
-    /* ── Bundle display-name pill ───────────────────────── */
-    .pd-bundle-pill-wrap {
-      margin-bottom: 20px;
-    }
+    /* ── Bundle pill ─────────────────────────────────────── */
+    .pd-bundle-pill-wrap { margin-bottom: 20px; }
     .pd-bundle-pill {
-      display: inline-block;
-      padding: 9px 24px;
-      border-radius: 8px;
-      font-size: .88rem;
-      font-weight: 700;
-      letter-spacing: .03em;
-      color: #fff;
-      background: var(--ink);
-      border: 2px solid var(--ink);
+      display: inline-block; padding: 9px 24px; border-radius: 8px;
+      font-size: .88rem; font-weight: 700; letter-spacing: .03em;
+      color: #fff; background: var(--ink); border: 2px solid var(--ink);
     }
 
-    /* ── Section title styling ───────────────────────────── */
+    /* ── Section title ───────────────────────────────────── */
     .pd-section-title {
-      font-size: .65rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--ink-soft);
-      margin-bottom: 10px;
-      padding-bottom: 6px;
+      font-size: .65rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--ink-soft);
+      margin-bottom: 10px; padding-bottom: 6px;
       border-bottom: 1.5px solid var(--border);
+    }
+
+    /* ══ VARIANT CHIPS ════════════════════════════════════ */
+    .pd-variants-section { margin-bottom: 22px; }
+
+    .pd-variant-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pd-variant-chip {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 8px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface); cursor: pointer;
+      transition: border-color .15s, background .15s, transform .1s;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      min-width: 72px; text-align: center;
+    }
+    .pd-variant-chip:hover {
+      border-color: var(--brand); background: var(--brand-ultra);
+    }
+    .pd-variant-chip.active {
+      border-color: var(--ink); background: var(--ink); color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+    .pd-variant-chip.active .pd-vc-price {
+      color: rgba(255,255,255,.8);
+    }
+    .pd-variant-chip.pd-vc-oos {
+      opacity: .48; cursor: not-allowed;
+    }
+    .pd-vc-name {
+      font-size: .78rem; font-weight: 700; line-height: 1.2;
+      letter-spacing: .01em;
+    }
+    .pd-vc-price {
+      font-size: .72rem; color: var(--brand); font-weight: 600;
+    }
+    .pd-vc-oos-tag {
+      font-size: .62rem; color: var(--error); font-weight: 600;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 360px) {
+      .pd-variant-chip { padding: 7px 10px; min-width: 60px; }
+      .pd-vc-name { font-size: .72rem; }
     }
   `;
   document.head.appendChild(style);
@@ -521,20 +665,35 @@ function _injectProductStyles() {
     const timeout    = setTimeout(() => controller.abort(), _adaptTimeout);
 
     const _fetcher = (window.AqNet && window.AqNet.fetch) ? window.AqNet.fetch : fetch;
-    const res  = await _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}`, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    });
+
+    /* Fetch product and variants in parallel */
+    const [res, varRes] = await Promise.all([
+      _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}`, {
+        signal: controller.signal,
+        headers: { 'Accept': 'application/json' }
+      }),
+      _fetcher(`${_productAPI}/products/${encodeURIComponent(id)}/variants`, {
+        headers: { 'Accept': 'application/json' }
+      }).catch(() => null)   // variants are optional — don't crash if endpoint fails
+    ]);
 
     clearTimeout(timeout);
 
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
     const json = await res.json();
-
     if (!json.success || !json.data) throw new Error(json.message || 'Product not found');
 
+    /* Render product first so DOM exists */
     _renderProduct(json.data);
+
+    /* Then overlay variants */
+    if (varRes && varRes.ok) {
+      const varJson = await varRes.json();
+      if (varJson.success && Array.isArray(varJson.data) && varJson.data.length) {
+        _renderVariants(varJson.data, json.data);
+      }
+    }
 
   } catch (err) {
     if (err.name === 'AbortError') {
