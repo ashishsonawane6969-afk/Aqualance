@@ -1,13 +1,3 @@
-/**
- * controllers/orderController.js
- * ─────────────────────────────────────────────────────────────────────────────
- * Security fixes applied in this version:
- *  - err.message no longer sent to client (was leaking DB schema/query info)
- *  - getAll now validates and sanitises ?status query param (enum-checked)
- *  - getAll has pagination (LIMIT/OFFSET) to prevent unbounded result DoS
- *  - Duplicate in-controller validation removed (Joi middleware owns validation)
- * ─────────────────────────────────────────────────────────────────────────────
- */
 'use strict';
 
 const db = require('../config/db');
@@ -24,25 +14,58 @@ function genOrderNumber() {
   return `AQ-${yy}${mm}${dd}-${rnd}`;
 }
 
+async function _fetchVariantMap(conn, variantIds) {
+  if (!variantIds.length) return {};
+  const [rows] = await conn.query(
+    `SELECT id, product_id, variant_name, price, stock, is_active
+     FROM product_variants WHERE id IN (${variantIds.map(() => '?').join(',')}) AND is_active = 1`,
+    variantIds
+  );
+  const map = {};
+  rows.forEach(v => { map[v.id] = v; });
+  return map;
+}
+
+async function _expandBundle(conn, bundleProductId, orderQty) {
+  const [items] = await conn.query(
+    `SELECT bi.product_id, bi.variant_id, bi.quantity AS component_qty,
+            p.name AS product_name, p.price AS product_price,
+            p.stock AS product_stock, p.is_active AS product_active,
+            pv.price AS variant_price, pv.stock AS variant_stock,
+            pv.variant_name, pv.is_active AS variant_active
+     FROM bundle_items bi
+     JOIN products p ON p.id = bi.product_id
+     LEFT JOIN product_variants pv ON pv.id = bi.variant_id AND pv.is_active = 1
+     WHERE bi.bundle_product_id = ?`,
+    [bundleProductId]
+  );
+  return items.map(item => ({
+    ...item,
+    effective_qty: item.component_qty * orderQty,
+  }));
+}
+
 exports.create = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    // All fields already validated + stripped by validate(orderCreateSchema) middleware
     const { customer_name, shop_name, phone, address, city, pincode,
             latitude, longitude, notes, products } = req.body;
 
-    // Fetch product prices + stock from DB (never trust client price)
-    const productIds    = products.map(p => p.id);
-    const [dbProducts]  = await conn.query(
-      `SELECT id, name, price, stock, is_active FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`,
+    const productIds   = [...new Set(products.map(p => p.id))];
+    const [dbProducts] = await conn.query(
+      `SELECT id, name, price, stock, is_active, is_bundle
+       FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`,
       productIds
     );
-
     const dbMap = {};
     for (const p of dbProducts) dbMap[p.id] = p;
 
+    const variantIds = products.filter(p => p.variant_id).map(p => p.variant_id);
+    const variantMap = await _fetchVariantMap(conn, variantIds);
+
+    // Validate stock
     for (const item of products) {
       const dbP = dbMap[item.id];
       if (!dbP) {
@@ -53,21 +76,62 @@ exports.create = async (req, res) => {
         await conn.rollback();
         return res.status(400).json({ success: false, message: `Product "${dbP.name}" is no longer available` });
       }
-      if (dbP.stock < item.quantity) {
-        await conn.rollback();
-        return res.status(400).json({
-          success: false,
-          message: `Insufficient stock for "${dbP.name}". Available: ${dbP.stock}, Requested: ${item.quantity}`,
-        });
+
+      if (dbP.is_bundle) {
+        const components = await _expandBundle(conn, item.id, item.quantity);
+        if (!components.length) {
+          await conn.rollback();
+          return res.status(400).json({ success: false, message: `Bundle "${dbP.name}" has no components configured` });
+        }
+        for (const comp of components) {
+          if (!comp.product_active) {
+            await conn.rollback();
+            return res.status(400).json({ success: false, message: `Bundle component "${comp.product_name}" is unavailable` });
+          }
+          const stock = comp.variant_id && comp.variant_active ? comp.variant_stock : comp.product_stock;
+          if (stock < comp.effective_qty) {
+            await conn.rollback();
+            return res.status(400).json({
+              success: false,
+              message: `Insufficient stock for bundle component "${comp.product_name}"${comp.variant_name ? ` (${comp.variant_name})` : ''}. Available: ${stock}, Required: ${comp.effective_qty}`,
+            });
+          }
+        }
+      } else if (item.variant_id) {
+        const v = variantMap[item.variant_id];
+        if (!v || v.product_id !== item.id) {
+          await conn.rollback();
+          return res.status(400).json({ success: false, message: `Variant not found for "${dbP.name}"` });
+        }
+        if (v.stock < item.quantity) {
+          await conn.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${dbP.name}" (${v.variant_name}). Available: ${v.stock}, Requested: ${item.quantity}`,
+          });
+        }
+      } else {
+        if (dbP.stock < item.quantity) {
+          await conn.rollback();
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock for "${dbP.name}". Available: ${dbP.stock}, Requested: ${item.quantity}`,
+          });
+        }
       }
     }
 
+    // Calculate total
     let total = 0;
     for (const item of products) {
-      total += parseFloat(dbMap[item.id].price) * item.quantity;
+      const dbP  = dbMap[item.id];
+      const price = (item.variant_id && variantMap[item.variant_id])
+        ? parseFloat(variantMap[item.variant_id].price)
+        : parseFloat(dbP.price);
+      total += price * item.quantity;
     }
 
-    const orderNumber  = genOrderNumber();
+    const orderNumber   = genOrderNumber();
     const [orderResult] = await conn.query(
       `INSERT INTO orders (order_number,customer_name,shop_name,phone,address,city,pincode,latitude,longitude,total_price,notes)
        VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
@@ -78,16 +142,44 @@ exports.create = async (req, res) => {
     );
 
     const orderId = orderResult.insertId;
+
     for (const item of products) {
-      const dbP = dbMap[item.id];
+      const dbP   = dbMap[item.id];
+      const v     = item.variant_id ? variantMap[item.variant_id] : null;
+      const price = v ? parseFloat(v.price) : parseFloat(dbP.price);
+      const pName = v ? `${dbP.name} (${v.variant_name})` : dbP.name;
+
       await conn.query(
-        'INSERT INTO order_items (order_id,product_id,product_name,quantity,price) VALUES (?,?,?,?,?)',
-        [orderId, item.id, dbP.name, item.quantity, dbP.price]
+        'INSERT INTO order_items (order_id,product_id,variant_id,product_name,quantity,price) VALUES (?,?,?,?,?,?)',
+        [orderId, item.id, item.variant_id || null, pName, item.quantity, price]
       );
-      await conn.query(
-        'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
-        [item.quantity, item.id]
-      );
+
+      if (dbP.is_bundle) {
+        const components = await _expandBundle(conn, item.id, item.quantity);
+        for (const comp of components) {
+          if (comp.variant_id && comp.variant_active) {
+            await conn.query(
+              'UPDATE product_variants SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+              [comp.effective_qty, comp.variant_id]
+            );
+          } else {
+            await conn.query(
+              'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+              [comp.effective_qty, comp.product_id]
+            );
+          }
+        }
+      } else if (v) {
+        await conn.query(
+          'UPDATE product_variants SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+          [item.quantity, v.id]
+        );
+      } else {
+        await conn.query(
+          'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+          [item.quantity, item.id]
+        );
+      }
     }
 
     await conn.commit();
@@ -102,26 +194,18 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    // SECURITY FIX: validate status query param to enum; reject unknown values.
-    // Previously accepted any string — while parameterised (safe from SQLi),
-    // returning 0 results for garbage input is still confusing and wasteful.
     const { status } = req.query;
     if (status && status !== 'all' && !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status filter' });
     }
 
-    // SECURITY FIX: pagination to prevent unbounded result sets.
-    // An admin page with 50,000 orders would previously return all of them.
     const page    = Math.max(1, parseInt(req.query.page, 10) || 1);
     const perPage = Math.min(100, Math.max(1, parseInt(req.query.per_page, 10) || 50));
     const offset  = (page - 1) * perPage;
 
     let countSql = 'SELECT COUNT(*) AS total FROM orders o';
-    let sql = `
-      SELECT o.*, u.name AS delivery_name
-      FROM orders o
-      LEFT JOIN users u ON o.delivery_id = u.id
-    `;
+    let sql = `SELECT o.*, u.name AS delivery_name
+               FROM orders o LEFT JOIN users u ON o.delivery_id = u.id`;
     const params = [];
     if (status && status !== 'all') {
       sql      += ' WHERE o.status = ?';
@@ -146,8 +230,8 @@ exports.getOne = async (req, res) => {
 
     const [orders] = await db.query(
       `SELECT o.*, u.name AS delivery_name, u.phone AS delivery_phone
-       FROM orders o LEFT JOIN users u ON o.delivery_id = u.id
-       WHERE o.id = ?`, [id]
+       FROM orders o LEFT JOIN users u ON o.delivery_id = u.id WHERE o.id = ?`,
+      [id]
     );
     if (!orders.length) return res.status(404).json({ success: false, message: 'Order not found' });
 
@@ -163,9 +247,7 @@ exports.getOne = async (req, res) => {
 
 exports.assignDelivery = async (req, res) => {
   try {
-    // Validated by orderAssignSchema middleware
     const { order_id, delivery_id } = req.body;
-
     const [boys] = await db.query(
       "SELECT id FROM users WHERE id = ? AND role = 'delivery' AND is_active = 1",
       [delivery_id]
@@ -188,16 +270,13 @@ exports.assignDelivery = async (req, res) => {
 
 exports.updateStatus = async (req, res) => {
   try {
-    // Validated by orderStatusSchema middleware
     const { order_id, status } = req.body;
-
     let sql      = 'UPDATE orders SET status = ? WHERE id = ?';
     const params = [status, order_id];
     if (req.user.role === 'delivery') {
       sql += ' AND delivery_id = ?';
       params.push(req.user.id);
     }
-
     const [result] = await db.query(sql, params);
     if (result.affectedRows === 0)
       return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
@@ -212,13 +291,12 @@ exports.getStats = async (req, res) => {
   try {
     const [[totals]]        = await db.query(`
       SELECT COUNT(*) AS total_orders,
-        SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) AS pending,
-        SUM(CASE WHEN status='assigned' THEN 1 ELSE 0 END) AS assigned,
+        SUM(CASE WHEN status='pending'          THEN 1 ELSE 0 END) AS pending,
+        SUM(CASE WHEN status='assigned'         THEN 1 ELSE 0 END) AS assigned,
         SUM(CASE WHEN status='out_for_delivery' THEN 1 ELSE 0 END) AS out_for_delivery,
-        SUM(CASE WHEN status='delivered' THEN 1 ELSE 0 END) AS delivered,
-        SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END) AS revenue
-      FROM orders
-    `);
+        SUM(CASE WHEN status='delivered'        THEN 1 ELSE 0 END) AS delivered,
+        SUM(CASE WHEN status='delivered'        THEN total_price ELSE 0 END) AS revenue
+      FROM orders`);
     const [[productCount]]  = await db.query('SELECT COUNT(*) AS count FROM products WHERE is_active=1');
     const [[deliveryCount]] = await db.query("SELECT COUNT(*) AS count FROM users WHERE role='delivery' AND is_active=1");
     res.json({ success: true, data: { ...totals, products: productCount.count, delivery_boys: deliveryCount.count } });
@@ -229,7 +307,7 @@ exports.getStats = async (req, res) => {
 
 exports.getOverview = async (req, res) => {
   try {
-    const [[totals]]     = await db.query(`
+    const [[totals]]      = await db.query(`
       SELECT COUNT(*) AS total_orders,
         SUM(CASE WHEN status='pending'          THEN 1 ELSE 0 END) AS pending,
         SUM(CASE WHEN status='assigned'         THEN 1 ELSE 0 END) AS assigned,
@@ -238,52 +316,41 @@ exports.getOverview = async (req, res) => {
         SUM(CASE WHEN status='cancelled'        THEN 1 ELSE 0 END) AS cancelled,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS total_revenue,
         COALESCE(AVG(CASE WHEN status='delivered' THEN total_price END),0)        AS avg_order_value
-      FROM orders
-    `);
-    const [dailyOrders]  = await db.query(`
+      FROM orders`);
+    const [dailyOrders]   = await db.query(`
       SELECT DATE(created_at) AS date, COUNT(*) AS orders,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS revenue
       FROM orders WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
-      GROUP BY DATE(created_at) ORDER BY date ASC
-    `);
+      GROUP BY DATE(created_at) ORDER BY date ASC`);
     const [monthlyOrders] = await db.query(`
       SELECT DATE(created_at) AS date, COUNT(*) AS orders,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS revenue
       FROM orders WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 29 DAY)
-      GROUP BY DATE(created_at) ORDER BY date ASC
-    `);
-    const [topProducts]  = await db.query(`
+      GROUP BY DATE(created_at) ORDER BY date ASC`);
+    const [topProducts]   = await db.query(`
       SELECT oi.product_name,
-        SUM(oi.quantity)            AS total_qty,
-        SUM(oi.quantity * oi.price) AS total_revenue,
+        SUM(oi.quantity) AS total_qty, SUM(oi.quantity * oi.price) AS total_revenue,
         COUNT(DISTINCT oi.order_id) AS order_count
-      FROM order_items oi
-      JOIN orders o ON o.id = oi.order_id
+      FROM order_items oi JOIN orders o ON o.id = oi.order_id
       WHERE o.status = 'delivered'
-      GROUP BY oi.product_name ORDER BY total_qty DESC LIMIT 8
-    `);
+      GROUP BY oi.product_name ORDER BY total_qty DESC LIMIT 8`);
     const [cityBreakdown] = await db.query(`
       SELECT city, COUNT(*) AS orders,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS revenue
-      FROM orders GROUP BY city ORDER BY orders DESC LIMIT 8
-    `);
+      FROM orders GROUP BY city ORDER BY orders DESC LIMIT 8`);
     const statusBreakdown = {
-      pending:          parseInt(totals.pending)          || 0,
-      assigned:         parseInt(totals.assigned)         || 0,
+      pending: parseInt(totals.pending) || 0, assigned: parseInt(totals.assigned) || 0,
       out_for_delivery: parseInt(totals.out_for_delivery) || 0,
-      delivered:        parseInt(totals.delivered)        || 0,
-      cancelled:        parseInt(totals.cancelled)        || 0,
+      delivered: parseInt(totals.delivered) || 0, cancelled: parseInt(totals.cancelled) || 0,
     };
     const [[today]]    = await db.query(`
       SELECT COUNT(*) AS orders,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS revenue
-      FROM orders WHERE DATE(created_at) = CURDATE()
-    `);
+      FROM orders WHERE DATE(created_at) = CURDATE()`);
     const [[thisWeek]] = await db.query(`
       SELECT COUNT(*) AS orders,
         COALESCE(SUM(CASE WHEN status='delivered' THEN total_price ELSE 0 END),0) AS revenue
-      FROM orders WHERE YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)
-    `);
+      FROM orders WHERE YEARWEEK(created_at,1) = YEARWEEK(CURDATE(),1)`);
     res.json({ success: true, data: { totals, today, thisWeek, dailyOrders, monthlyOrders, topProducts, cityBreakdown, statusBreakdown } });
   } catch (err) {
     serverError(res, err, '[orderController.getOverview]');
@@ -292,29 +359,24 @@ exports.getOverview = async (req, res) => {
 
 exports.getLeaderboard = async (req, res) => {
   try {
-    const [leaderboard] = await db.query(`
+    const [leaderboard]    = await db.query(`
       SELECT u.id, u.name, u.phone, u.is_active,
         COUNT(o.id) AS total_assigned,
         SUM(CASE WHEN o.status='delivered'        THEN 1 ELSE 0 END) AS delivered,
         SUM(CASE WHEN o.status='out_for_delivery' THEN 1 ELSE 0 END) AS in_progress,
         SUM(CASE WHEN o.status='assigned'         THEN 1 ELSE 0 END) AS pending_pickup,
         COALESCE(SUM(CASE WHEN o.status='delivered' THEN o.total_price ELSE 0 END),0) AS revenue_delivered,
-        ROUND(
-          COALESCE(SUM(CASE WHEN o.status='delivered' THEN 1 ELSE 0 END),0) * 100.0
-          / NULLIF(COUNT(o.id), 0), 1
-        ) AS completion_rate
-      FROM users u
-      LEFT JOIN orders o ON o.delivery_id = u.id
+        ROUND(COALESCE(SUM(CASE WHEN o.status='delivered' THEN 1 ELSE 0 END),0) * 100.0
+          / NULLIF(COUNT(o.id), 0), 1) AS completion_rate
+      FROM users u LEFT JOIN orders o ON o.delivery_id = u.id
       WHERE u.role = 'delivery'
       GROUP BY u.id, u.name, u.phone, u.is_active
-      ORDER BY delivered DESC, completion_rate DESC
-    `);
+      ORDER BY delivered DESC, completion_rate DESC`);
     const [recentActivity] = await db.query(`
       SELECT u.id AS delivery_id, DATE(o.updated_at) AS date, COUNT(*) AS deliveries
       FROM orders o JOIN users u ON u.id = o.delivery_id
       WHERE o.status = 'delivered' AND o.updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-      GROUP BY u.id, DATE(o.updated_at) ORDER BY date ASC
-    `);
+      GROUP BY u.id, DATE(o.updated_at) ORDER BY date ASC`);
     res.json({ success: true, data: { leaderboard, recentActivity } });
   } catch (err) {
     serverError(res, err, '[orderController.getLeaderboard]');
