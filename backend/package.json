@@ -1,3 +1,4 @@
+"start": "node migrate.js && node server.js",
 {
   "name": "aqualence-backend",
   "version": "1.0.0",
