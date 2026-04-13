@@ -1,11 +1,11 @@
-"start": "node migrate.js && node server.js",
+
 {
   "name": "aqualence-backend",
   "version": "1.0.0",
   "description": "Aqualence Ventures – iKrish Distribution Ordering System",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node migrate.js && node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
     "seed:products": "node scripts/seed-products.js",
