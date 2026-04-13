@@ -65,17 +65,21 @@ exports.bulkSave = async (req, res) => {
 
   const { items } = req.body;
   if (!Array.isArray(items)) return sendError(res, 400, 'items must be an array');
-  if (items.length > 50) return sendError(res, 400, 'Maximum 50 bundle items');
+  if (items.length > 50)     return sendError(res, 400, 'Maximum 50 bundle items');
 
-  const [prod] = await db.query(
-    'SELECT id, is_bundle FROM products WHERE id = ? AND is_active = 1',
-    [bundleId]
-  );
-  if (!prod.length) return sendError(res, 404, 'Product not found');
-  if (!prod[0].is_bundle) return sendError(res, 400, 'Product is not a bundle');
-
-  const conn = await db.getConnection();
+  // ── Everything in one try-catch so DB errors are always caught ──────────
+  let conn;
   try {
+    // Product check — was previously outside try-catch → caused 500 on DB error
+    const [prod] = await db.query(
+      'SELECT id, is_bundle FROM products WHERE id = ? AND is_active = 1',
+      [bundleId]
+    );
+    if (!prod.length)      return sendError(res, 404, 'Product not found');
+    if (!prod[0].is_bundle) return sendError(res, 400, 'Product is not a bundle');
+
+    // getConnection — was previously outside try-catch → caused 500 if pool exhausted
+    conn = await db.getConnection();
     await conn.beginTransaction();
 
     await conn.query('DELETE FROM bundle_items WHERE bundle_product_id = ?', [bundleId]);
@@ -112,13 +116,18 @@ exports.bulkSave = async (req, res) => {
     await conn.commit();
     res.json({ success: true, message: 'Bundle items saved', count: items.length });
   } catch (err) {
-    await conn.rollback();
+    if (conn) {
+      try { await conn.rollback(); } catch (_) {}
+    }
+    // Known validation errors → 400
     if (err.message && (err.message.startsWith('Item ') || err.message.includes('bundle cannot'))) {
       return sendError(res, 400, err.message);
     }
     serverError(res, err, '[bundleController.bulkSave]');
   } finally {
-    conn.release();
+    if (conn) {
+      try { conn.release(); } catch (_) {}
+    }
   }
 };
 
