@@ -72,6 +72,7 @@ const productWriteSchema = Joi.object({
   description:  safeText(2000).optional().allow('', null),
   price:        Joi.number().positive().precision(2).max(999_999).required(),
   mrp:          Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+  distributor_price: Joi.number().positive().precision(2).max(999_999).optional().allow(null),
   image:        _imageField,
   images:       Joi.array().items(_imageField).max(3).optional().allow(null),
   category:     safeText(80).optional().allow('', null).default('General'),
