@@ -7,6 +7,19 @@ function sendError(res, status, message) {
   return res.status(status).json({ success: false, message });
 }
 
+/* ── Helper: calculate bundle total from items array ─────── */
+function _calcBundlePrice(items) {
+  if (!items || !items.length) return 0;
+  let total = 0;
+  items.forEach(item => {
+    const unitPrice = item.has_variant
+      ? Number(item.variant_price || 0)
+      : Number(item.product_price || 0);
+    total += unitPrice * (item.quantity || 1);
+  });
+  return parseFloat(total.toFixed(2));
+}
+
 /* GET /api/v1/products/:id/bundle-items */
 exports.list = async (req, res) => {
   try {
@@ -52,7 +65,10 @@ exports.list = async (req, res) => {
       has_variant:   Boolean(row.has_variant),
     }));
 
-    res.json({ success: true, data });
+    // FIX: Return calculated bundle price so frontend can display it immediately
+    const bundle_calculated_price = _calcBundlePrice(data);
+
+    res.json({ success: true, data, bundle_calculated_price });
   } catch (err) {
     serverError(res, err, '[bundleController.list]');
   }
@@ -67,18 +83,15 @@ exports.bulkSave = async (req, res) => {
   if (!Array.isArray(items)) return sendError(res, 400, 'items must be an array');
   if (items.length > 50)     return sendError(res, 400, 'Maximum 50 bundle items');
 
-  // ── Everything in one try-catch so DB errors are always caught ──────────
   let conn;
   try {
-    // Product check — was previously outside try-catch → caused 500 on DB error
     const [prod] = await db.query(
       'SELECT id, is_bundle FROM products WHERE id = ? AND is_active = 1',
       [bundleId]
     );
-    if (!prod.length)      return sendError(res, 404, 'Product not found');
+    if (!prod.length)       return sendError(res, 404, 'Product not found');
     if (!prod[0].is_bundle) return sendError(res, 400, 'Product is not a bundle');
 
-    // getConnection — was previously outside try-catch → caused 500 if pool exhausted
     conn = await db.getConnection();
     await conn.beginTransaction();
 
@@ -114,12 +127,40 @@ exports.bulkSave = async (req, res) => {
     }
 
     await conn.commit();
-    res.json({ success: true, message: 'Bundle items saved', count: items.length });
+
+    // FIX: Re-fetch saved items with pricing to return bundle_calculated_price
+    const [savedRows] = await db.query(
+      `SELECT
+         bi.quantity,
+         COALESCE(p.price, 0)  AS product_price,
+         COALESCE(pv.price, 0) AS variant_price,
+         CASE WHEN bi.variant_id IS NOT NULL AND pv.id IS NOT NULL THEN 1 ELSE 0 END AS has_variant
+       FROM bundle_items bi
+       LEFT JOIN products p ON p.id = bi.product_id
+       LEFT JOIN product_variants pv ON pv.id = bi.variant_id AND pv.is_active = 1
+       WHERE bi.bundle_product_id = ?`,
+      [bundleId]
+    );
+
+    const bundle_calculated_price = _calcBundlePrice(
+      savedRows.map(r => ({
+        quantity:      r.quantity,
+        product_price: Number(r.product_price),
+        variant_price: Number(r.variant_price),
+        has_variant:   Boolean(r.has_variant),
+      }))
+    );
+
+    res.json({
+      success: true,
+      message: 'Bundle items saved',
+      count: items.length,
+      bundle_calculated_price,
+    });
   } catch (err) {
     if (conn) {
       try { await conn.rollback(); } catch (_) {}
     }
-    // Known validation errors → 400
     if (err.message && (err.message.startsWith('Item ') || err.message.includes('bundle cannot'))) {
       return sendError(res, 400, err.message);
     }
