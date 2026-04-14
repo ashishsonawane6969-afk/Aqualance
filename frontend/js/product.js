@@ -259,6 +259,18 @@
       else c.classList.toggle('active', parseInt(c.dataset.vid,10)===vid);
     });
 
+    /* Update product name, header, breadcrumb */
+    var activeVariant = (selVariant && selVariant!=='dist') ? selVariant : null;
+    var displayName = activeVariant && activeVariant.variant_name
+      ? activeVariant.variant_name
+      : baseProduct.name;
+    var nameEl = el('pdName');
+    if (nameEl) nameEl.textContent = displayName;
+    var hdr = el('pdHeaderTitle');
+    if (hdr) hdr.textContent = displayName.length > 22 ? displayName.slice(0,20)+'…' : displayName;
+    var bc = el('pdBreadcrumbName');
+    if (bc) bc.textContent = displayName;
+
     /* Update price display */
     if (selVariant==='dist'){
       var ref = prevVariant||baseProduct;
@@ -292,9 +304,15 @@
     var v=(selVariant==='dist')?null:selVariant;
     var item;
     if(v){
+      // If variant_name already contains the base product name (starts with it or includes it),
+      // use variant_name as the full display name. Otherwise append to base name.
+      var vName = v.variant_name || (v.size_value ? v.size_value+' '+v.size_unit : v.size_unit);
+      var fullName = vName.toLowerCase().indexOf(baseProduct.name.toLowerCase()) !== -1
+        ? vName
+        : baseProduct.name + ' — ' + vName;
       item={
         id:       baseProduct.id*10000+v.id,
-        name:     baseProduct.name+' — '+(v.variant_name||(v.size_value+' '+v.size_unit)),
+        name:     fullName,
         price:    parseFloat(v.price),
         mrp:      v.mrp?parseFloat(v.mrp):null,
         image:    baseProduct.image||'',
@@ -366,7 +384,7 @@
       +'</div>'
       +'<div class="pd-info-col">'
       +'<div class="pd-category">'+emoji+' '+esc(p.category)+(p.category==='New Launches'?'<span class="pd-new-badge">New Launch</span>':'')+'</div>'
-      +'<h1 class="pd-name">'+esc(p.name)+'</h1>'
+      +'<h1 class="pd-name" id="pdName">'+esc(p.name)+'</h1>'
       +'<div class="pd-price-row" id="pdPriceRow">'+priceHTML+'</div>'
       +'<div class="pd-stock-bar pd-stock-bar--'+(oos?'oos':'in')+'" id="pdStockBar">'+(oos?'❌ Out of Stock':'✅ In Stock')+'</div>'
       +(p.description?'<div class="pd-desc-section"><h3 class="pd-section-title">About this product</h3><p class="pd-desc">'+esc(p.description)+'</p></div>':'')
