@@ -47,14 +47,34 @@
 
   function ensureSection() {
     if (document.getElementById('vaSection')) return;
-    var anchor = null;
-    var stockEl = document.getElementById('pStock');
-    if (stockEl) {
-      var fg = stockEl.closest('.form-group');
-      anchor = fg ? fg.nextSibling : null;
+
+    // Primary anchor: explicit placeholder div injected in products.html
+    var anchor = document.getElementById('vaAnchor');
+
+    // Fallback 1: create anchor node after pStock's form-group
+    if (!anchor) {
+      var stockEl = document.getElementById('pStock');
+      if (stockEl) {
+        var fg = stockEl.closest('.form-group');
+        if (fg && fg.parentNode) {
+          anchor = document.createElement('div');
+          anchor.id = 'vaAnchorGenerated';
+          fg.parentNode.insertBefore(anchor, fg.nextSibling);
+        }
+      }
     }
-    if (!anchor) anchor = document.getElementById('productFormError') || null;
-    if (!anchor) return;
+
+    // Fallback 2: insert anchor before form error div
+    if (!anchor) {
+      var errEl = document.getElementById('productFormError');
+      if (errEl && errEl.parentNode) {
+        anchor = document.createElement('div');
+        anchor.id = 'vaAnchorGenerated';
+        errEl.parentNode.insertBefore(anchor, errEl);
+      }
+    }
+
+    if (!anchor) return; // DOM not ready — will retry on DOMContentLoaded
 
     var sec = document.createElement('div');
     sec.id = 'vaSection';
@@ -65,22 +85,32 @@
       + '<button type="button" class="btn btn-outline btn-sm" id="vaAddBtn">+ Add Variant</button>'
       + '</div>'
       + '<div id="vaContainer"></div>'
-      + '<div id="vaEmpty" class="va-empty" style="display:none">'
+      + '<div id="vaEmpty" class="va-empty">'
       +   'No variants — product sells as single unit at the base price.'
       + '</div>'
       + '<p class="va-hint">Each variant gets its own price &amp; stock. Leave empty to use base price only.</p>';
 
-    anchor.parentNode.insertBefore(sec, anchor);
+    // Insert AFTER the anchor so the section appears below it
+    if (anchor.nextSibling) {
+      anchor.parentNode.insertBefore(sec, anchor.nextSibling);
+    } else {
+      anchor.parentNode.appendChild(sec);
+    }
+
     document.getElementById('vaAddBtn').addEventListener('click', function () {
       window.addVariantRow();
     });
+
+    // Sync empty state after injection
+    _syncEmpty();
   }
 
   function _syncEmpty() {
     var c = document.getElementById('vaContainer');
     var e = document.getElementById('vaEmpty');
     if (!c || !e) return;
-    e.style.display = c.querySelectorAll('.va-row').length ? 'none' : '';
+    var hasRows = c.querySelectorAll('.va-row').length > 0;
+    e.style.display = hasRows ? 'none' : '';
   }
 
   window.resetVariants = function () {
