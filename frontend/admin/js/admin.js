@@ -596,11 +596,6 @@ document.getElementById('searchOrders')?.addEventListener('input', function() {
 if (page === 'orders') adminAuthRehydrate().then(function(ok) { if (ok) loadOrders(); });
 
 /* ─────────────────────────────────────────────────────────────
-/* ─────────────────────────────────────────────────────────────
-   PRODUCTS PAGE
-───────────────────────────────────────────────────────────── */
-
-/* ─────────────────────────────────────────────────────────────
    PRODUCTS PAGE
 ───────────────────────────────────────────────────────────── */
 let allProductsList = [];
