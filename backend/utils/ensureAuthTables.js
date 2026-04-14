@@ -404,7 +404,126 @@ async function ensureAuthTables() {
     console.warn('[ensureAuthTables] Seed check warning:', e.message);
   }
 
-  // ── 8. Geo Tables (via controller migration) ──────────────────────────────
+  // ── 8. Ensure product_variants table exists ────────────────────────────────
+  // This table is NOT in the base CREATE TABLE set above. If the DB was
+  // initialised via ensureAuthTables (Railway fresh deploy) instead of the full
+  // aqualence_complete.sql, it never gets created → every variant/bundle query
+  // throws ER_NO_SUCH_TABLE → HTTP 500.
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS product_variants (
+        id               INT           NOT NULL AUTO_INCREMENT,
+        product_id       INT           NOT NULL,
+        variant_name     VARCHAR(100)  NOT NULL,
+        size_value       DECIMAL(10,2) NOT NULL DEFAULT 0,
+        size_unit        VARCHAR(10)   NOT NULL DEFAULT 'PCS',
+        pack_quantity    INT           NOT NULL DEFAULT 1,
+        price            DECIMAL(10,2) NOT NULL,
+        mrp              DECIMAL(10,2) DEFAULT NULL,
+        distributor_price DECIMAL(10,2) DEFAULT NULL,
+        stock            INT           NOT NULL DEFAULT 0,
+        sku              VARCHAR(80)   NOT NULL DEFAULT '',
+        sort_order       INT           NOT NULL DEFAULT 0,
+        is_active        TINYINT(1)    NOT NULL DEFAULT 1,
+        created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        INDEX idx_pv_product (product_id),
+        CONSTRAINT fk_pv_product
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.info('[ensureAuthTables] ✓ product_variants table ready');
+  } catch (e) {
+    console.warn('[ensureAuthTables] product_variants:', e.message);
+  }
+
+  // ── 8a. Fix product_variants.sku — must allow empty string (NOT NULL DEFAULT '') ──
+  // Original schema had sku VARCHAR(80) NOT NULL with NO default and a UNIQUE KEY.
+  // Inserting a variant without a SKU → ER_BAD_NULL_ERROR → HTTP 500.
+  // Fix: set default to '' and drop the unique constraint (duplicates are fine for
+  // variants without explicit SKUs — uniqueness is enforced at the app layer if needed).
+  try {
+    const [skuCol] = await db.query(
+      `SELECT IS_NULLABLE, COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'product_variants' AND COLUMN_NAME = 'sku'`,
+      [DB_NAME]
+    );
+    if (skuCol.length > 0 && (skuCol[0].COLUMN_DEFAULT === null || skuCol[0].IS_NULLABLE === 'NO')) {
+      // Change to NOT NULL DEFAULT '' so empty SKU is valid
+      await db.query(
+        "ALTER TABLE `product_variants` MODIFY COLUMN `sku` VARCHAR(80) NOT NULL DEFAULT ''"
+      );
+      console.info('[ensureAuthTables] ✓ product_variants.sku → NOT NULL DEFAULT \'\'');
+    }
+  } catch (e) {
+    console.warn('[ensureAuthTables] product_variants.sku fix:', e.message);
+  }
+
+  // ── 8b. Drop unique constraint on sku if it exists ────────────────────────
+  // A blank default sku '' would cause ER_DUP_ENTRY on every second variant
+  // that has no SKU. The unique index must be dropped.
+  try {
+    const [idxRows] = await db.query(
+      `SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'product_variants'
+         AND INDEX_NAME = 'uq_variant_sku' AND NON_UNIQUE = 0`,
+      [DB_NAME]
+    );
+    if (idxRows.length > 0) {
+      await db.query('ALTER TABLE `product_variants` DROP INDEX `uq_variant_sku`');
+      console.info('[ensureAuthTables] ✓ Dropped unique index uq_variant_sku (blank SKU support)');
+    }
+  } catch (e) {
+    console.warn('[ensureAuthTables] drop uq_variant_sku:', e.message);
+  }
+
+  // ── 8c. Add distributor_price to product_variants if missing ──────────────
+  try {
+    const [dpRows] = await db.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'product_variants' AND COLUMN_NAME = 'distributor_price'`,
+      [DB_NAME]
+    );
+    if (dpRows.length === 0) {
+      await db.query(
+        'ALTER TABLE `product_variants` ADD COLUMN `distributor_price` DECIMAL(10,2) NULL DEFAULT NULL'
+      );
+      console.info('[ensureAuthTables] ✓ Added product_variants.distributor_price');
+    }
+  } catch (e) {
+    console.warn('[ensureAuthTables] product_variants.distributor_price:', e.message);
+  }
+
+  // ── 9. Ensure bundle_items table exists ───────────────────────────────────
+  // Same issue as product_variants — not in the base migration set. Any product
+  // marked is_bundle=1 will 500 on GET /products/:id/bundle-items if this table
+  // is missing.
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS bundle_items (
+        id                INT       NOT NULL AUTO_INCREMENT,
+        bundle_product_id INT       NOT NULL,
+        product_id        INT       NOT NULL,
+        variant_id        INT       DEFAULT NULL,
+        quantity          INT       NOT NULL DEFAULT 1,
+        created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        INDEX idx_bi_bundle  (bundle_product_id),
+        INDEX idx_bi_product (product_id),
+        INDEX idx_bi_variant (variant_id),
+        CONSTRAINT fk_bi_bundle
+          FOREIGN KEY (bundle_product_id) REFERENCES products (id) ON DELETE CASCADE,
+        CONSTRAINT fk_bi_product
+          FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE RESTRICT
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.info('[ensureAuthTables] ✓ bundle_items table ready');
+  } catch (e) {
+    console.warn('[ensureAuthTables] bundle_items:', e.message);
+  }
+
+  // ── 10. Geo Tables (via controller migration) ──────────────────────────────
   try {
     const { ensureGeoTables } = require('../controllers/geoController');
     await ensureGeoTables();
@@ -419,6 +538,12 @@ async function ensureAuthTables() {
     const { resetProductColsCache } = require('../controllers/productController');
     resetProductColsCache();
   } catch (_) { /* controller not loaded yet on very first boot — safe to ignore */ }
+
+  // Reset variant column cache too so distributor_price is picked up immediately.
+  try {
+    const { resetColsCache } = require('../controllers/variantController');
+    resetColsCache();
+  } catch (_) {}
 
   _done = true;
   console.info('[ensureAuthTables] ✓ Database schema up to date');
