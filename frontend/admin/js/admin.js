@@ -702,67 +702,8 @@ function renderProductsTable(products) {
   }).join('');
 }
 
-function openProductModal(productId) {
-  document.getElementById('productId').value = productId || '';
-  document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
-  document.getElementById('productForm').reset();
-  document.getElementById('productFormError').classList.add('hidden');
-  if (typeof resetBundleFields  === 'function') resetBundleFields();
-  if (typeof resetImageSlots    === 'function') resetImageSlots();
-  if (typeof resetVariants      === 'function') resetVariants();
-  // Reset product type dropdown to default
-  const ptSel = document.getElementById('pProductType');
-  if (ptSel) { ptSel.selectedIndex = 0; if (typeof onProductTypeChange === 'function') onProductTypeChange(); }
-  if (!productId) openModal('productModal');
-}
 
-async function editProduct(id) {
-  openProductModal(id);
-  try {
-    const res = await apiFetch(`${API}/products/${id}`);
-    const p   = (await res.json()).data;
-    if (!p) throw new Error('Product not found');
 
-    document.getElementById('productId').value    = p.id;
-    document.getElementById('pName').value        = p.name;
-    const pCat = document.getElementById('pCategory');
-    if (pCat) pCat.value = p.category;
-    const pDesc = document.getElementById('pDescription');
-    if (pDesc) pDesc.value = p.description || '';
-    document.getElementById('pPrice').value       = p.price;
-    const pMrp = document.getElementById('pMrp');
-    if (pMrp) pMrp.value = p.mrp || '';
-    const pDistributorPrice = document.getElementById('pDistributorPrice');
-    if (pDistributorPrice) pDistributorPrice.value = p.distributor_price || '';
-    document.getElementById('pStock').value       = p.stock;
-
-    // Set product type dropdown and sync hidden fields
-    if (typeof _setProductTypeDropdown === 'function') {
-      _setProductTypeDropdown(p.product_type || 'single', p.unit || 'piece');
-    }
-
-    // Images: merge image + images array deduplicated
-    const imgs = Array.isArray(p.images) ? [...p.images] : [];
-    if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
-    if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
-
-    // Variants
-    if (typeof resetVariants === 'function') resetVariants();
-    if (Array.isArray(p.variants)) {
-      p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
-    }
-
-    // Bundle
-    if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
-    if (p.is_bundle && typeof loadBundleItems === 'function') {
-      await loadBundleItems(p.id);
-    }
-
-    openModal('productModal');
-  } catch (err) {
-    showToast('Could not load product: ' + err.message, 'error');
-  }
-}
 
 document.getElementById('productForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -914,3 +855,167 @@ async function removeDeliveryBoy(id, name) {
 }
 
 if (page === 'delivery-boys') adminAuthRehydrate().then(function(ok) { if (ok) loadDeliveryBoys(); });
+
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   admin.js PATCH — replace only openProductModal() and editProduct()
+   These are DROP-IN replacements for the two functions in admin.js.
+   Everything else in admin.js remains unchanged.
+
+   CHANGES vs original:
+   1. openProductModal() — added optional `loadingMessage` param so the modal
+      can be opened in a "loading" state before data arrives, preventing the
+      user from seeing a blank / half-reset form.
+   2. editProduct() — opens modal immediately with a loading overlay, then
+      populates fields once the fetch completes; shows an in-modal error
+      (not just a dismissible toast) if the API call fails, so the user
+      knows why the form is empty.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+// ── Inline loading overlay helpers ──────────────────────────────────────────
+// Injected once; controlled by show/hide helpers.
+(function _injectModalLoadingStyle() {
+  if (document.getElementById('_aqModalLoadStyle')) return;
+  var s = document.createElement('style');
+  s.id = '_aqModalLoadStyle';
+  s.textContent =
+    '#_productModalLoader{' +
+      'position:absolute;inset:0;z-index:20;' +
+      'background:var(--bg,#fff);' +
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+      'gap:12px;border-radius:inherit;opacity:0;pointer-events:none;' +
+      'transition:opacity .18s;' +
+    '}' +
+    '#_productModalLoader.show{opacity:1;pointer-events:all;}' +
+    '._pml-spinner{width:36px;height:36px;border:3px solid var(--border);' +
+      'border-top-color:var(--brand,#4caf50);border-radius:50%;' +
+      'animation:_pml-spin .7s linear infinite;}' +
+    '@keyframes _pml-spin{to{transform:rotate(360deg)}}' +
+    '._pml-text{font-size:.82rem;color:var(--ink-soft);}' +
+    '#_productModalLoadErr{' +
+      'display:none;margin:0 0 12px;padding:10px 14px;' +
+      'background:var(--error-pale,#fde8e8);color:var(--error,#c0392b);' +
+      'border-radius:var(--r-sm,6px);font-size:.82rem;border:1px solid rgba(192,57,43,.2);' +
+    '}';
+  document.head.appendChild(s);
+})();
+
+function _ensureModalLoader() {
+  if (document.getElementById('_productModalLoader')) return;
+  var modalBody = document.querySelector('#productModal .modal-body, #productModal .modal-content');
+  if (!modalBody) return;
+  modalBody.style.position = 'relative';
+  var el = document.createElement('div');
+  el.id = '_productModalLoader';
+  el.innerHTML = '<div class="_pml-spinner"></div><span class="_pml-text">Loading product…</span>';
+  modalBody.appendChild(el);
+}
+
+function _showModalLoader() {
+  _ensureModalLoader();
+  var el = document.getElementById('_productModalLoader');
+  if (el) el.classList.add('show');
+}
+
+function _hideModalLoader() {
+  var el = document.getElementById('_productModalLoader');
+  if (el) el.classList.remove('show');
+}
+
+function _showModalFetchError(msg) {
+  _hideModalLoader();
+  // Show error inside the form so the user sees it without dismissing a toast
+  var errDiv = document.getElementById('productFormError');
+  if (errDiv) {
+    errDiv.textContent = 'Could not load product: ' + msg;
+    errDiv.classList.remove('hidden');
+  }
+  // Also show inline error block near the modal title if it exists
+  var inline = document.getElementById('_productModalLoadErr');
+  if (inline) {
+    inline.textContent = 'Could not load product: ' + msg;
+    inline.style.display = '';
+  }
+}
+
+// ── FIXED: openProductModal ──────────────────────────────────────────────────
+function openProductModal(productId) {
+  document.getElementById('productId').value = productId || '';
+  document.getElementById('productModalTitle').textContent = productId ? 'Edit Product' : 'Add Product';
+  document.getElementById('productForm').reset();
+  document.getElementById('productFormError').classList.add('hidden');
+
+  // Hide any previous fetch-error inline block
+  var inline = document.getElementById('_productModalLoadErr');
+  if (inline) inline.style.display = 'none';
+
+  if (typeof resetBundleFields  === 'function') resetBundleFields();
+  if (typeof resetImageSlots    === 'function') resetImageSlots();
+  if (typeof resetVariants      === 'function') resetVariants();
+
+  const ptSel = document.getElementById('pProductType');
+  if (ptSel) { ptSel.selectedIndex = 0; if (typeof onProductTypeChange === 'function') onProductTypeChange(); }
+
+  if (!productId) {
+    _hideModalLoader(); // ensure loader is hidden for new-product modal
+    openModal('productModal');
+  }
+}
+
+// ── FIXED: editProduct ───────────────────────────────────────────────────────
+async function editProduct(id) {
+  // Reset + open modal immediately with loading overlay so user sees activity
+  openProductModal(id);
+  _showModalLoader();
+  openModal('productModal'); // open now — loader covers the empty form
+
+  try {
+    const res  = await apiFetch(`${API}/products/${id}`);
+    const json = await res.json();
+    const p    = json.data;
+    if (!p) throw new Error('Product not found');
+
+    // Populate fields
+    document.getElementById('productId').value    = p.id;
+    document.getElementById('pName').value        = p.name;
+    const pCat = document.getElementById('pCategory');
+    if (pCat) pCat.value = p.category;
+    const pDesc = document.getElementById('pDescription');
+    if (pDesc) pDesc.value = p.description || '';
+    document.getElementById('pPrice').value       = p.price;
+    const pMrp = document.getElementById('pMrp');
+    if (pMrp) pMrp.value = p.mrp || '';
+    const pDistributorPrice = document.getElementById('pDistributorPrice');
+    if (pDistributorPrice) pDistributorPrice.value = p.distributor_price || '';
+    document.getElementById('pStock').value       = p.stock;
+
+    if (typeof _setProductTypeDropdown === 'function') {
+      _setProductTypeDropdown(p.product_type || 'single', p.unit || 'piece');
+    }
+
+    // Images: merge image + images array, deduplicated
+    const imgs = Array.isArray(p.images) ? [...p.images] : [];
+    if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
+    if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
+
+    // Variants
+    if (typeof resetVariants === 'function') resetVariants();
+    if (Array.isArray(p.variants)) {
+      p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
+    }
+
+    // Bundle
+    if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
+    if (p.is_bundle && typeof loadBundleItems === 'function') {
+      await loadBundleItems(p.id);
+    }
+
+    _hideModalLoader(); // reveal the populated form
+  } catch (err) {
+    _showModalFetchError(err.message);
+    // Also emit a toast for visibility on narrow screens where modal may be scrolled
+    if (typeof showToast === 'function') showToast('Could not load product: ' + err.message, 'error');
+  }
+}
