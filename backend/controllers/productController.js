@@ -303,8 +303,8 @@ exports.update = async (req, res) => {
       base_quantity:     { c: 'base_quantity=?',      v: () => base_quantity != null ? parseFloat(base_quantity) : null },
       base_unit:         { c: 'base_unit=?',          v: () => base_unit || null },
       pack_size:         { c: 'pack_size=?',          v: () => pack_size != null ? parseInt(pack_size, 10) : null },
-      is_bundle:         { c: 'is_bundle=?',          v: () => is_bundle ? 1 : 0 },
-      display_name:      { c: 'display_name=?',       v: () => display_name || null },
+      is_bundle:         { c: 'is_bundle=?',          v: () => is_bundle !== undefined ? (is_bundle ? 1 : 0) : undefined },
+      display_name:      { c: 'display_name=?',       v: () => display_name !== undefined ? (display_name || null) : undefined },
     };
 
     const ALWAYS   = ['name','description','price','image','category','stock','is_active'];
@@ -319,8 +319,12 @@ exports.update = async (req, res) => {
     }
     for (const col of OPTIONAL) {
       if (cols.has(col)) {
-        setClauses.push(WHITELIST[col].c);
-        params.push(WHITELIST[col].v());
+        const val = WHITELIST[col].v();
+        // Skip undefined values — don't overwrite DB with undefined when field wasn't sent
+        if (val !== undefined) {
+          setClauses.push(WHITELIST[col].c);
+          params.push(val);
+        }
       }
     }
     params.push(id);
