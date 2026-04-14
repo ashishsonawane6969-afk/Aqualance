@@ -290,14 +290,8 @@
         <p class="img-hint">📁 Click slot to upload file &nbsp;|&nbsp; 🔗 Paste a URL and press → &nbsp;|&nbsp; Slot 1 = main listing image</p>
 
         <!-- ── Variants ──────────────────────────────────────── -->
-        <div class="form-section-title">🔢 Product Variants <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0">(optional — e.g. 100GM, 50GM)</span></div>
-        <div class="variants-wrap">
-          <div class="variant-header">
-            <span>Name *</span><span>Size</span><span>Unit</span><span>Price (₹) *</span><span>Stock</span><span></span>
-          </div>
-          <div id="variantRows"></div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="addVariantRow()">+ Add Variant</button>
-        </div>
+        <!-- variants-admin.js injects the full variant UI here -->
+        <div id="vaAnchor"></div>
 
         <!-- ── Bundle toggle ─────────────────────────────────── -->
         <label class="bundle-toggle-row" for="pIsBundle">
@@ -484,50 +478,6 @@ function getImagePayload(){
   return{image:filled[0]||'',images:filled};
 }
 
-/* ── Variant rows ────────────────────────────────────────────── */
-function _ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
-
-function addVariantRow(d){
-  d=d||{};
-  var wrap=document.getElementById('variantRows');
-  var row=document.createElement('div');
-  row.className='variant-row';
-  if(d.id)row.dataset.variantId=d.id;
-  if(d.sku)row.dataset.sku=d.sku;
-  row.innerHTML=
-    '<input type="text" class="vname" placeholder="100 GM x 5" value="'+_ea(d.variant_name||'')+'" />'+
-    '<input type="number" class="vsize" placeholder="100" min="0" step="0.01" value="'+(d.size_value||'')+'" />'+
-    '<select class="vunit">'+['GM','ML','KG','L','PCS'].map(function(u){
-      return'<option'+(d.size_unit===u?' selected':'')+'>'+u+'</option>';
-    }).join('')+'</select>'+
-    '<input type="number" class="vprice" placeholder="₹" min="0.01" step="0.01" value="'+(d.price||'')+'" />'+
-    '<input type="number" class="vstock" placeholder="0" min="0" step="1" value="'+(d.stock!=null?d.stock:'')+'" />'+
-    '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.variant-row\').remove()">✕</button>';
-  wrap.appendChild(row);
-}
-
-function resetVariants(){document.getElementById('variantRows').innerHTML='';}
-
-function getVariantsPayload(){
-  var out=[];
-  document.querySelectorAll('#variantRows .variant-row').forEach(function(row){
-    var name=row.querySelector('.vname').value.trim();
-    var price=parseFloat(row.querySelector('.vprice').value);
-    if(!name||!price)return;
-    var obj={
-      variant_name:name,
-      size_value:parseFloat(row.querySelector('.vsize').value)||0,
-      size_unit:row.querySelector('.vunit').value,
-      pack_quantity:1,price:price,
-      stock:parseInt(row.querySelector('.vstock').value,10)||0,
-    };
-    if(row.dataset.variantId)obj.id=parseInt(row.dataset.variantId,10);
-    if(row.dataset.sku)obj.sku=row.dataset.sku;
-    out.push(obj);
-  });
-  return out;
-}
-
 /* ── Bundle toggle logic ─────────────────────────────────────── */
 (function(){
   var _override=false;
@@ -581,12 +531,15 @@ function getVariantsPayload(){
 })();
 
 /* ── Bundle component rows ───────────────────────────────────── */
+/* ── XSS helper (used in bundle component rows) ─────────── */
+function _ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 var _compProductsCache=null;
 
 async function _getCompProducts(){
   if(_compProductsCache)return _compProductsCache;
   try{
-    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products');
+    var res=await apiFetch(API+'/products');
     var data=await res.json();
     _compProductsCache=(data.data||[]).filter(function(p){return !p.is_bundle;});
   }catch(e){_compProductsCache=[];}
@@ -627,7 +580,7 @@ async function loadCompVariants(sel,preselect){
   varSel.innerHTML='<option value="">No variant</option>';
   if(!pid)return;
   try{
-    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products/'+pid+'/variants');
+    var res=await apiFetch(API+'/products/'+pid+'/variants');
     var data=await res.json();
     (data.data||[]).forEach(function(v){
       var o=document.createElement('option');
@@ -655,7 +608,7 @@ async function loadBundleItems(productId){
   document.getElementById('bundleCompRows').innerHTML='';
   _compProductsCache=null;
   try{
-    var res=await fetch('https://aqualance-production.up.railway.app/api/v1/products/'+productId+'/bundle-items');
+    var res=await apiFetch(API+'/products/'+productId+'/bundle-items');
     var data=await res.json();
     for(var i=0;i<(data.data||[]).length;i++){
       await addBundleCompRow(data.data[i]);
