@@ -96,7 +96,8 @@ exports.bulkUpsert = async (req, res) => {
       const sizeValue   = parseFloat(v.size_value)  || 0;
       const sizeUnit    = v.size_unit || 'PCS';
       const stock       = parseInt(v.stock, 10)     || 0;
-      const sku         = v.sku || null;
+      // sku: default to '' (empty string) not null — column is NOT NULL
+      const sku         = (v.sku != null && String(v.sku).trim()) ? String(v.sku).trim() : '';
       const mrp         = hasMrpCol  && v.mrp != null && !isNaN(parseFloat(v.mrp))
                           ? parseFloat(v.mrp) : null;
       const distPrice   = hasDistCol && v.distributor_price != null && !isNaN(parseFloat(v.distributor_price))
