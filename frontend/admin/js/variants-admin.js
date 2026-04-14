@@ -45,8 +45,14 @@
     document.head.appendChild(s);
   }());
 
+  // FIX: Separate "find anchor" from "build section" so ensureSection is truly idempotent.
+  // Previously, ensureSection() was called inside addVariantRow() and resetVariants(),
+  // meaning every call attempted to re-inject the section. On slow DOM loads, if the
+  // anchor wasn't found on the first call, a second call could inject a second #vaSection.
+  // Now we guard strictly: return immediately if #vaSection already exists.
   function ensureSection() {
-    if (document.getElementById('vaSection')) return;
+    // STRICT guard — if section already injected, do nothing
+    if (document.getElementById('vaSection')) return true;
 
     // Primary anchor: explicit placeholder div injected in products.html
     var anchor = document.getElementById('vaAnchor');
@@ -74,7 +80,11 @@
       }
     }
 
-    if (!anchor) return; // DOM not ready — will retry on DOMContentLoaded
+    if (!anchor) return false; // DOM not ready
+
+    // Double-check: another async call may have injected the section between our
+    // getElementById check above and here (race on slow connections).
+    if (document.getElementById('vaSection')) return true;
 
     var sec = document.createElement('div');
     sec.id = 'vaSection';
@@ -101,8 +111,8 @@
       window.addVariantRow();
     });
 
-    // Sync empty state after injection
     _syncEmpty();
+    return true;
   }
 
   function _syncEmpty() {
@@ -114,14 +124,17 @@
   }
 
   window.resetVariants = function () {
-    ensureSection();
+    // FIX: Only call ensureSection once; do not re-call on every reset.
+    // If section isn't ready yet, bail — it will be injected on DOMContentLoaded.
+    if (!ensureSection()) return;
     var c = document.getElementById('vaContainer');
     if (c) c.innerHTML = '';
     _syncEmpty();
   };
 
   window.addVariantRow = function (v) {
-    ensureSection();
+    // FIX: ensureSection() is idempotent — safe to call, but won't double-inject.
+    if (!ensureSection()) return;
     var c = document.getElementById('vaContainer');
     if (!c) return;
 
@@ -188,6 +201,7 @@
       var distP    = parseFloat(distRaw);
       var stock    = parseInt(stockRaw, 10);
 
+      // Skip silently in UI collection only — backend will validate and reject if needed
       if (!name || isNaN(price) || price <= 0) return;
 
       var sizeValue = 0;
@@ -214,6 +228,9 @@
     return variants;
   };
 
+  // FIX: On DOMContentLoaded, attempt injection once.
+  // All subsequent calls (addVariantRow, resetVariants) are guarded by the
+  // getElementById('vaSection') check at the top of ensureSection().
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensureSection);
   } else {
