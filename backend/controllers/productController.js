@@ -334,9 +334,14 @@ exports.update = async (req, res) => {
   } catch (err) {
     if (err.code === 'ER_DATA_TOO_LONG') {
       try {
-        await db.query('ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT NOT NULL');
+        await db.query(
+          'ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT DEFAULT NULL'
+        );
         _cols = null;
-      } catch (_) {}
+        console.info('[productController] ✓ Upgraded products.image to LONGTEXT on ER_DATA_TOO_LONG');
+      } catch (alterErr) {
+        console.warn('[productController] Could not upgrade products.image column:', alterErr.message);
+      }
       return sendError(res, 400, 'Image too large for current DB column. Column upgrade attempted — please retry.');
     }
     if (err.code === 'ER_BAD_FIELD_ERROR') _cols = null;
