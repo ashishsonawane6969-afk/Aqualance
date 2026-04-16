@@ -107,16 +107,9 @@ const variantBulkSchema = Joi.object({
       pack_quantity:     Joi.number().integer().min(1).max(9999).optional().default(1),
       price:             Joi.number().positive().precision(2).max(999_999).required(),
       mrp:               Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-      distributor_price: Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+      distributor_price: Joi.number().positive().precision(2).max(999_999).optional().allow(null), // NEW
       stock:             Joi.number().integer().min(0).max(999_999).optional().default(0),
       sku:               Joi.string().trim().max(80).optional().allow('', null),
-      // NEW — per-variant fields
-      category:          Joi.string().trim().max(80).optional().allow('', null),
-      discount_price:    Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-      base_quantity:     Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-      unit:              Joi.string().trim().max(20).optional().allow('', null),
-      pack_size:         Joi.number().integer().positive().max(9999).optional().allow(null),
-      display_name:      Joi.string().trim().max(255).optional().allow('', null),
     }).options({ stripUnknown: true })
   ).min(0).max(20).required(),
 }).options({ stripUnknown: true });
