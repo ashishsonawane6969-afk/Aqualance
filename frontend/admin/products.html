@@ -559,11 +559,11 @@ async function addBundleCompRow(d){
   }).join('');
 
   row.innerHTML=
-    '<select class="bc-product" onchange="loadCompVariants(this)">'+
+    '<select class="bc-product" name="bc-product" aria-label="Bundle product" onchange="loadCompVariants(this)">'+
       '<option value="">— Pick product —</option>'+opts+
     '</select>'+
-    '<select class="bc-variant"><option value="">No variant</option></select>'+
-    '<input type="number" class="bc-qty" min="1" step="1" value="'+(d.quantity||1)+'" />'+
+    '<select class="bc-variant" name="bc-variant" aria-label="Bundle variant"><option value="">No variant</option></select>'+
+    '<input type="number" class="bc-qty" name="bc-qty" aria-label="Bundle quantity" min="1" step="1" value="'+(d.quantity||1)+'" />'+
     '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.bundle-comp-row\').remove()">✕</button>';
   wrap.appendChild(row);
 
