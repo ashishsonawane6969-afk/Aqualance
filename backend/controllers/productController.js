@@ -139,7 +139,7 @@ exports.getAll = async (req, res) => {
 exports.getOne = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
+    if (isNaN(id) || id <= 0) return sendError(res, 400, 'Invalid product ID');
 
     const [rows] = await db.query(
       'SELECT * FROM products WHERE id = ? AND is_active = 1',
@@ -259,7 +259,7 @@ exports.create = async (req, res) => {
 /* ── PUT /api/v1/products/:id ──────────────────────────────── */
 exports.update = async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
+  if (isNaN(id) || id <= 0) return sendError(res, 400, 'Invalid product ID');
 
   const {
     name, description, price, mrp, distributor_price, image, images, category, stock, unit, is_active,
@@ -350,7 +350,7 @@ exports.resetProductColsCache = function () { _cols = null; _variantCols = null;
 exports.remove = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
+    if (isNaN(id) || id <= 0) return sendError(res, 400, 'Invalid product ID');
     await db.query('UPDATE products SET is_active = 0 WHERE id = ?', [id]);
     res.json({ success: true, message: 'Product removed' });
   } catch (err) {
