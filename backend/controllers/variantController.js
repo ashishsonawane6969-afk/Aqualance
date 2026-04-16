@@ -19,23 +19,33 @@ async function _getCols() {
   return _cols;
 }
 
-async function _ensureDistCol() {
+async function _ensureCols() {
+  const migrations = [
+    { col: 'distributor_price', ddl: 'DECIMAL(10,2) NULL DEFAULT NULL' },
+    { col: 'is_bundle',         ddl: 'TINYINT(1) NOT NULL DEFAULT 0' },
+    { col: 'base_quantity',     ddl: 'DECIMAL(10,2) NULL DEFAULT NULL' },
+    { col: 'base_unit',         ddl: "VARCHAR(10) NULL DEFAULT 'PCS'" },
+    { col: 'pack_size',         ddl: 'INT NULL DEFAULT NULL' },
+    { col: 'display_name',      ddl: 'VARCHAR(255) NULL DEFAULT NULL' },
+  ];
   try {
     const cols = await _getCols();
-    if (!cols.has('distributor_price')) {
-      await db.query(
-        `ALTER TABLE product_variants ADD COLUMN distributor_price DECIMAL(10,2) NULL DEFAULT NULL`
-      );
-      _cols = null;
-      console.log('[variantController] distributor_price added to product_variants ✓');
+    for (const m of migrations) {
+      if (!cols.has(m.col)) {
+        try {
+          await db.query(`ALTER TABLE product_variants ADD COLUMN ${m.col} ${m.ddl}`);
+          _cols = null;
+          console.log(`[variantController] ${m.col} added to product_variants ✓`);
+        } catch (e) {
+          if (e.code !== 'ER_DUP_FIELDNAME') console.error('[variantController] migration error:', m.col, e.message);
+        }
+      }
     }
   } catch (e) {
-    if (e.code !== 'ER_DUP_FIELDNAME') {
-      console.error('[variantController] migration error:', e.message);
-    }
+    console.error('[variantController] _ensureCols error:', e.message);
   }
 }
-_ensureDistCol();
+_ensureCols();
 
 /* ── GET /api/v1/products/:id/variants ───────────────────── */
 exports.list = async (req, res) => {
@@ -43,14 +53,21 @@ exports.list = async (req, res) => {
     const productId = parseInt(req.params.id, 10);
     if (!productId) return res.status(400).json({ success: false, message: 'Invalid product ID' });
 
-    const cols    = await _getCols();
-    const distCol = cols.has('distributor_price') ? ', distributor_price' : '';
-    const mrpCol  = cols.has('mrp')               ? ', mrp'               : '';
-    const orderBy = cols.has('sort_order')         ? 'ORDER BY sort_order, id' : 'ORDER BY id';
+    const cols       = await _getCols();
+    const distCol    = cols.has('distributor_price') ? ', distributor_price' : '';
+    const mrpCol     = cols.has('mrp')               ? ', mrp'               : '';
+    const bundleCols = [
+      cols.has('is_bundle')     ? ', is_bundle'     : '',
+      cols.has('base_quantity') ? ', base_quantity' : '',
+      cols.has('base_unit')     ? ', base_unit'     : '',
+      cols.has('pack_size')     ? ', pack_size'     : '',
+      cols.has('display_name')  ? ', display_name'  : '',
+    ].join('');
+    const orderBy    = cols.has('sort_order') ? 'ORDER BY sort_order, id' : 'ORDER BY id';
 
     const [rows] = await db.query(
       `SELECT id, product_id, variant_name, size_value, size_unit,
-              price${mrpCol}${distCol}, stock, sku, is_active
+              price${mrpCol}${distCol}${bundleCols}, stock, sku, is_active
        FROM product_variants
        WHERE product_id = ? AND is_active = 1 ${orderBy}`,
       [productId]
@@ -91,9 +108,11 @@ exports.bulkUpsert = async (req, res) => {
       }
     }
 
-    const cols       = await _getCols();
-    const hasDistCol = cols.has('distributor_price');
-    const hasMrpCol  = cols.has('mrp');
+    const cols        = await _getCols();
+    const hasDistCol  = cols.has('distributor_price');
+    const hasMrpCol   = cols.has('mrp');
+    const hasBundleCols = cols.has('is_bundle') && cols.has('base_quantity') &&
+                          cols.has('base_unit') && cols.has('pack_size') && cols.has('display_name');
 
     conn = await db.getConnection();
     await conn.beginTransaction();
@@ -116,6 +135,16 @@ exports.bulkUpsert = async (req, res) => {
       const distPrice   = hasDistCol && v.distributor_price != null && !isNaN(parseFloat(v.distributor_price))
                           ? parseFloat(v.distributor_price) : null;
 
+      // Bundle fields — only persist if columns exist
+      const isBundle    = hasBundleCols ? (v.is_bundle ? 1 : 0) : null;
+      const baseQty     = hasBundleCols && v.is_bundle && v.base_quantity != null && !isNaN(parseFloat(v.base_quantity))
+                          ? parseFloat(v.base_quantity) : null;
+      const baseUnit    = hasBundleCols && v.is_bundle ? (v.base_unit || 'PCS') : null;
+      const packSize    = hasBundleCols && v.is_bundle && v.pack_size != null && !isNaN(parseInt(v.pack_size, 10))
+                          ? parseInt(v.pack_size, 10) : null;
+      const displayName = hasBundleCols && v.is_bundle && v.display_name
+                          ? String(v.display_name).trim().slice(0, 255) : null;
+
       if (v.id) {
         // UPDATE existing row (re-activate it)
         const sets = [
@@ -123,8 +152,10 @@ exports.bulkUpsert = async (req, res) => {
           'price=?','stock=?','sku=?','is_active=1',
         ];
         const vals = [variantName, sizeValue, sizeUnit, price, stock, sku];
-        if (hasMrpCol)  { sets.push('mrp=?');               vals.push(mrp);       }
-        if (hasDistCol) { sets.push('distributor_price=?');  vals.push(distPrice); }
+        if (hasMrpCol)    { sets.push('mrp=?');               vals.push(mrp);         }
+        if (hasDistCol)   { sets.push('distributor_price=?');  vals.push(distPrice);   }
+        if (hasBundleCols){ sets.push('is_bundle=?','base_quantity=?','base_unit=?','pack_size=?','display_name=?');
+                            vals.push(isBundle, baseQty, baseUnit, packSize, displayName); }
         vals.push(v.id, productId);
         await conn.query(
           `UPDATE product_variants SET ${sets.join(',')} WHERE id = ? AND product_id = ?`,
@@ -134,8 +165,10 @@ exports.bulkUpsert = async (req, res) => {
         // INSERT new row
         const iCols = ['product_id','variant_name','size_value','size_unit','price','stock','sku','is_active'];
         const iVals = [productId, variantName, sizeValue, sizeUnit, price, stock, sku, 1];
-        if (hasMrpCol)  { iCols.push('mrp');               iVals.push(mrp);       }
-        if (hasDistCol) { iCols.push('distributor_price');  iVals.push(distPrice); }
+        if (hasMrpCol)    { iCols.push('mrp');               iVals.push(mrp);         }
+        if (hasDistCol)   { iCols.push('distributor_price');  iVals.push(distPrice);   }
+        if (hasBundleCols){ iCols.push('is_bundle','base_quantity','base_unit','pack_size','display_name');
+                            iVals.push(isBundle, baseQty, baseUnit, packSize, displayName); }
         await conn.query(
           `INSERT INTO product_variants (${iCols.join(',')}) VALUES (${iCols.map(() => '?').join(',')})`,
           iVals
