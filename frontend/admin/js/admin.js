@@ -713,7 +713,10 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
   const id       = document.getElementById('productId')?.value || '';
   const name     = (document.getElementById('pName')?.value || '').trim();
   const price    = parseFloat(document.getElementById('pPrice')?.value || '0');
+<<<<<<< HEAD
   const isBundle = typeof _isBundleChecked === 'function' ? _isBundleChecked() : false;
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 
   if (!name) {
     errDiv.textContent = 'Product name is required.';
@@ -724,10 +727,15 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     errDiv.classList.remove('hidden'); return;
   }
 
+<<<<<<< HEAD
   const imgPayload      = typeof getImagePayload    === 'function' ? getImagePayload()    : { image: '', images: [] };
   const bundlePayload   = typeof getBundlePayload   === 'function' ? getBundlePayload()   : { is_bundle: false };
   const variantsPayload = typeof getVariantsPayload === 'function' ? getVariantsPayload() : [];
   const bundleItems     = isBundle && typeof getBundleItemsPayload === 'function' ? getBundleItemsPayload() : [];
+=======
+  const imgPayload      = typeof getImagePayload    === 'function' ? getImagePayload()    : { image: '', image2: '', image3: '' };
+  const variantsPayload = typeof getVariantsPayload === 'function' ? getVariantsPayload() : [];
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 
   const body = {
     name,
@@ -737,11 +745,18 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     mrp:               parseFloat(document.getElementById('pMrp')?.value || '') || null,
     distributor_price: parseFloat(document.getElementById('pDistributorPrice')?.value || '') || null,
     stock:             parseInt(document.getElementById('pStock')?.value || '0', 10) || 0,
+<<<<<<< HEAD
     unit:              document.getElementById('pUnitVal')?.value || 'piece',
     product_type:      document.getElementById('pProductTypeVal')?.value || 'single',
     is_active:         true,
     ...imgPayload,
     ...bundlePayload,
+=======
+    unit:              document.getElementById('pUnitVal')?.value || 'PCS',
+    product_type:      document.getElementById('pProductTypeVal')?.value || 'single',
+    is_active:         true,
+    ...imgPayload
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
   };
 
   try {
@@ -753,7 +768,11 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
 
     const productId = id ? parseInt(id, 10) : data.id;
 
+<<<<<<< HEAD
     // Save variants (empty array = clear all)
+=======
+    // Save variants
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     try {
       await apiFetch(`${API}/products/${productId}/variants`, {
         method: 'POST',
@@ -761,6 +780,7 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
       });
     } catch (vErr) { showToast('Saved, but variants failed: ' + vErr.message, 'error'); }
 
+<<<<<<< HEAD
     // Save bundle components
     if (isBundle && productId) {
       try {
@@ -771,6 +791,8 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
       } catch (bErr) { showToast('Saved, but bundle components failed: ' + bErr.message, 'error'); }
     }
 
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
     loadProducts();
@@ -951,7 +973,10 @@ function openProductModal(productId) {
   var inline = document.getElementById('_productModalLoadErr');
   if (inline) inline.style.display = 'none';
 
+<<<<<<< HEAD
   if (typeof resetBundleFields  === 'function') resetBundleFields();
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
   if (typeof resetImageSlots    === 'function') resetImageSlots();
   if (typeof resetVariants      === 'function') resetVariants();
 
@@ -995,10 +1020,15 @@ async function editProduct(id) {
       _setProductTypeDropdown(p.product_type || 'single', p.unit || 'piece');
     }
 
+<<<<<<< HEAD
     // Images: merge image + images array, deduplicated
     const imgs = Array.isArray(p.images) ? [...p.images] : [];
     if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
     if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
+=======
+    // Images
+    if (typeof loadImageSlots === 'function') loadImageSlots([p.image, p.image2, p.image3]);
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 
     // Variants
     if (typeof resetVariants === 'function') resetVariants();
@@ -1006,12 +1036,15 @@ async function editProduct(id) {
       p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
     }
 
+<<<<<<< HEAD
     // Bundle
     if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
     if (p.is_bundle && typeof loadBundleItems === 'function') {
       await loadBundleItems(p.id);
     }
 
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     _hideModalLoader(); // reveal the populated form
   } catch (err) {
     _showModalFetchError(err.message);

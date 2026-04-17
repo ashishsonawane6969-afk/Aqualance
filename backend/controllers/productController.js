@@ -2,6 +2,11 @@
 
 const db              = require('../config/db');
 const { serverError } = require('../utils/errors');
+<<<<<<< HEAD
+=======
+const path            = require('path');
+const { saveBase64Image } = require('../utils/imageHandler');
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 
 function sendError(res, status, message) {
   return res.status(status).json({ success: false, message });
@@ -19,7 +24,11 @@ async function _getProductCols() {
     );
     _cols = new Set(rows.map(r => r.COLUMN_NAME));
   } catch (e) {
+<<<<<<< HEAD
     _cols = new Set(['id','name','description','price','image','category','stock','is_active','created_at']);
+=======
+    _cols = new Set(['id','name','description','price','image','image2','image3','category','stock','is_active','created_at']);
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
   }
   return _cols;
 }
@@ -33,11 +42,16 @@ async function _getVariantCols() {
     );
     _variantCols = new Set(rows.map(r => r.COLUMN_NAME));
   } catch (e) {
+<<<<<<< HEAD
     _variantCols = new Set(['id','product_id','variant_name','price','size_value','size_unit','sku','is_active']);
+=======
+    _variantCols = new Set(['id','product_id','variant_name','price','distributor_price','stock','bundle_enabled','is_active']);
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
   }
   return _variantCols;
 }
 
+<<<<<<< HEAD
 /* ── Auto-migrate: add distributor_price column if missing ───────────────── */
 async function _ensureDistributorPriceCol() {
   try {
@@ -99,6 +113,27 @@ async function _attachVariantCounts(ids) {
     rows.forEach(r => { map[r.product_id] = r.cnt; });
     return map;
   } catch { return {}; }
+=======
+/* ── Image Validation & Handling ───────────────────────────── */
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+async function processImages(reqBody) {
+  const uploadDir = path.join(__dirname, '..', 'uploads');
+  const images = {};
+
+  const imageFields = ['image', 'image2', 'image3'];
+  for (const field of imageFields) {
+    if (reqBody[field]) {
+      if (reqBody[field].length > MAX_IMAGE_SIZE * 1.4) { // base64 overhead
+        throw new Error(`${field} is too large. Max 5MB.`);
+      }
+      images[field] = await saveBase64Image(reqBody[field], uploadDir);
+    } else {
+      images[field] = '';
+    }
+  }
+  return images;
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 }
 
 /* ── GET /api/v1/products ──────────────────────────────────── */
@@ -110,6 +145,7 @@ exports.getAll = async (req, res) => {
     const selectCols = [
       'id', 'name', 'description', 'price', 'category', 'stock', 'is_active', 'created_at',
       ...(cols.has('mrp')                ? ['mrp']                : []),
+<<<<<<< HEAD
       ...(cols.has('distributor_price')  ? ['distributor_price']  : []),  // ← FIX
       ...(cols.has('image')              ? ['image']              : []),
       ...(cols.has('images')             ? ['images']             : []),
@@ -120,6 +156,15 @@ exports.getAll = async (req, res) => {
       ...(cols.has('pack_size')          ? ['pack_size']          : []),
       ...(cols.has('is_bundle')          ? ['is_bundle']          : []),
       ...(cols.has('display_name')       ? ['display_name']       : []),
+=======
+      ...(cols.has('distributor_price')  ? ['distributor_price']  : []),
+      ...(cols.has('image')              ? ['image']              : []),
+      ...(cols.has('image2')             ? ['image2']             : []),
+      ...(cols.has('image3')             ? ['image3']             : []),
+      ...(cols.has('unit')               ? ['unit']               : []),
+      ...(cols.has('product_type')       ? ['product_type']       : []),
+      ...(cols.has('is_bundle')          ? ['is_bundle']          : []),
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     ].join(', ');
 
     let sql    = `SELECT ${selectCols} FROM products WHERE is_active = 1`;
@@ -138,6 +183,7 @@ exports.getAll = async (req, res) => {
     sql += ' ORDER BY category, name';
     const [rows] = await db.query(sql, params);
 
+<<<<<<< HEAD
     const ids        = rows.map(r => r.id);
     const variantMap = await _attachVariantCounts(ids);
 
@@ -147,6 +193,8 @@ exports.getAll = async (req, res) => {
       r.variant_count = variantMap[r.id] || 0;
     });
 
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     res.json({ success: true, data: rows, count: rows.length });
   } catch (err) {
     serverError(res, err, '[productController.getAll]');
@@ -165,6 +213,7 @@ exports.getOne = async (req, res) => {
     );
     if (!rows.length) return sendError(res, 404, 'Product not found');
 
+<<<<<<< HEAD
     const product      = rows[0];
     product.images     = _parseImages(product.images);
     product.is_bundle  = Boolean(product.is_bundle);
@@ -175,11 +224,20 @@ exports.getOne = async (req, res) => {
       const orderBy   = vCols.has('sort_order') ? 'ORDER BY sort_order, id' : 'ORDER BY id';
       const [variants] = await db.query(
         `SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ${orderBy}`,
+=======
+    const product = rows[0];
+
+    // Attach variants
+    try {
+      const [variants] = await db.query(
+        `SELECT * FROM product_variants WHERE product_id = ? AND is_active = 1 ORDER BY id`,
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
         [id]
       );
       product.variants = variants;
     } catch { product.variants = []; }
 
+<<<<<<< HEAD
     // Attach bundle items
     if (product.is_bundle) {
       try {
@@ -217,6 +275,8 @@ exports.getOne = async (req, res) => {
       product.bundle_items = [];
     }
 
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     res.json({ success: true, data: product });
   } catch (err) {
     serverError(res, err, '[productController.getOne]');
@@ -226,13 +286,21 @@ exports.getOne = async (req, res) => {
 /* ── POST /api/v1/products ─────────────────────────────────── */
 exports.create = async (req, res) => {
   try {
+<<<<<<< HEAD
     const {
       name, description, price, mrp, distributor_price, image, images, category, stock, unit,
       product_type, base_quantity, base_unit, pack_size, is_bundle, display_name,
+=======
+    const processedImages = await processImages(req.body);
+    const {
+      name, description, price, mrp, distributor_price, category, stock, unit,
+      product_type, is_bundle
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     } = req.body;
 
     const cols = await _getProductCols();
 
+<<<<<<< HEAD
     let imagesVal = null;
     if (images) {
       const arr = Array.isArray(images) ? images : JSON.parse(images);
@@ -244,11 +312,18 @@ exports.create = async (req, res) => {
     const insertVals = [
       name.trim(), description || '', parseFloat(price),
       image || '', category || 'General', parseInt(stock) || 0,
+=======
+    const insertCols = ['name', 'description', 'price', 'category', 'stock'];
+    const insertVals = [
+      name.trim(), description || '', parseFloat(price),
+      category || 'General', parseInt(stock) || 0,
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     ];
 
     const optional = {
       mrp:               () => mrp ? parseFloat(mrp) : null,
       distributor_price: () => distributor_price != null && !isNaN(parseFloat(distributor_price)) ? parseFloat(distributor_price) : null,
+<<<<<<< HEAD
       images:            () => imagesVal,
       unit:              () => unit || 'piece',
       product_type:      () => ['jar', 'strip', 'single'].includes(product_type) ? product_type : 'single',
@@ -257,6 +332,14 @@ exports.create = async (req, res) => {
       pack_size:         () => pack_size != null ? parseInt(pack_size, 10) : null,
       is_bundle:         () => is_bundle ? 1 : 0,
       display_name:      () => display_name || null,
+=======
+      image:             () => processedImages.image,
+      image2:            () => processedImages.image2,
+      image3:            () => processedImages.image3,
+      unit:              () => unit || 'piece',
+      product_type:      () => product_type || 'single',
+      is_bundle:         () => is_bundle ? 1 : 0,
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     };
 
     for (const [col, fn] of Object.entries(optional)) {
@@ -270,6 +353,7 @@ exports.create = async (req, res) => {
 
     res.status(201).json({ success: true, id: result.insertId, message: 'Product created' });
   } catch (err) {
+<<<<<<< HEAD
     if (err.code === 'ER_DATA_TOO_LONG') {
       try {
         await db.query(
@@ -283,6 +367,9 @@ exports.create = async (req, res) => {
       return sendError(res, 400, 'Image too large for current DB column. Column upgrade attempted — please retry.');
     }
     if (err.code === 'ER_BAD_FIELD_ERROR') _cols = null;
+=======
+    if (err.message.includes('too large')) return sendError(res, 400, err.message);
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     serverError(res, err, '[productController.create]');
   }
 };
@@ -292,6 +379,7 @@ exports.update = async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id) || id <= 0) return sendError(res, 400, 'Invalid product ID');
 
+<<<<<<< HEAD
   const {
     name, description, price, mrp, distributor_price, image, images, category, stock, unit, is_active,
     product_type, base_quantity, base_unit, pack_size, is_bundle, display_name,
@@ -306,11 +394,24 @@ exports.update = async (req, res) => {
   }
 
   try {
+=======
+  try {
+    const processedImages = await processImages(req.body);
+    const {
+      name, description, price, mrp, distributor_price, category, stock, unit, is_active,
+      product_type, is_bundle
+    } = req.body;
+
+    if (!name || !name.trim()) return sendError(res, 400, 'name is required');
+    if (!price || parseFloat(price) <= 0) return sendError(res, 400, 'price must be positive');
+
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     const [existing] = await db.query('SELECT id FROM products WHERE id = ?', [id]);
     if (!existing.length) return sendError(res, 404, 'Product not found');
 
     const cols = await _getProductCols();
 
+<<<<<<< HEAD
     let imagesVal = null;
     if (cols.has('images') && images !== undefined) {
       const arr = Array.isArray(images) ? images : JSON.parse(images || '[]');
@@ -340,6 +441,27 @@ exports.update = async (req, res) => {
 
     const ALWAYS   = ['name','description','price','image','category','stock','is_active'];
     const OPTIONAL = ['mrp','distributor_price','images','unit','product_type','base_quantity','base_unit','pack_size','is_bundle','display_name'];
+=======
+    const WHITELIST = {
+      name:              { c: 'name=?',              v: () => name.trim() },
+      description:       { c: 'description=?',       v: () => description || '' },
+      price:             { c: 'price=?',             v: () => parseFloat(price) },
+      category:          { c: 'category=?',          v: () => category || 'General' },
+      stock:             { c: 'stock=?',             v: () => Math.max(0, parseInt(stock, 10) || 0) },
+      is_active:         { c: 'is_active=?',         v: () => is_active !== undefined ? (is_active ? 1 : 0) : 1 },
+      mrp:               { c: 'mrp=?',               v: () => mrp != null && !isNaN(parseFloat(mrp)) ? parseFloat(mrp) : null },
+      distributor_price: { c: 'distributor_price=?', v: () => distributor_price != null && !isNaN(parseFloat(distributor_price)) ? parseFloat(distributor_price) : null },
+      image:             { c: 'image=?',             v: () => processedImages.image },
+      image2:            { c: 'image2=?',            v: () => processedImages.image2 },
+      image3:            { c: 'image3=?',            v: () => processedImages.image3 },
+      unit:              { c: 'unit=?',              v: () => unit || 'piece' },
+      product_type:      { c: 'product_type=?',      v: () => product_type || 'single' },
+      is_bundle:         { c: 'is_bundle=?',         v: () => is_bundle !== undefined ? (is_bundle ? 1 : 0) : undefined },
+    };
+
+    const ALWAYS   = ['name','description','price','category','stock','is_active'];
+    const OPTIONAL = ['mrp','distributor_price','image','image2','image3','unit','product_type','is_bundle'];
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 
     const setClauses = [];
     const params     = [];
@@ -351,7 +473,10 @@ exports.update = async (req, res) => {
     for (const col of OPTIONAL) {
       if (cols.has(col)) {
         const val = WHITELIST[col].v();
+<<<<<<< HEAD
         // Skip undefined values — don't overwrite DB with undefined when field wasn't sent
+=======
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
         if (val !== undefined) {
           setClauses.push(WHITELIST[col].c);
           params.push(val);
@@ -363,6 +488,7 @@ exports.update = async (req, res) => {
     await db.query(`UPDATE products SET ${setClauses.join(', ')} WHERE id = ?`, params);
     res.json({ success: true, message: 'Product updated' });
   } catch (err) {
+<<<<<<< HEAD
     if (err.code === 'ER_DATA_TOO_LONG') {
       try {
         await db.query(
@@ -376,6 +502,9 @@ exports.update = async (req, res) => {
       return sendError(res, 400, 'Image too large for current DB column. Column upgrade attempted — please retry.');
     }
     if (err.code === 'ER_BAD_FIELD_ERROR') _cols = null;
+=======
+    if (err.message.includes('too large')) return sendError(res, 400, err.message);
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
     serverError(res, err, `[productController.update] id=${id}`);
   }
 };

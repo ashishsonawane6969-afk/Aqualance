@@ -27,6 +27,12 @@
       "devDependencies": {
         "nodemon": "^3.0.1"
       },
+<<<<<<< HEAD
+=======
+      "engines": {
+        "node": ">=20.0.0 <23.0.0"
+      },
+>>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
       "optionalDependencies": {
         "@node-rs/bcrypt": "^1.10.4"
       }

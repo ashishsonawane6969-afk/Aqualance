@@ -1,0 +1,34 @@
+ℹ️  [db] Parsed DATABASE_URL → DB_HOST=localhost DB_PORT=3306 DB_NAME=aqualence_db
+[bcrypt] Using @node-rs/bcrypt (Rust WASM)
+ℹ️  [env] ALERT_WEBHOOK_URL not set — security alerts will log to file only (no Slack/Discord).
+⚠️  [env] GOOGLE_MAPS_API_KEY is not set. The geo-map and salesman tracking features will show a fallback UI. Get a key at https://console.cloud.google.com
+⚠️  [env] GEMINI_API_KEY is not set. The AI product assistant chat will not work. Get a key at https://aistudio.google.com/app/apikey
+⚠️  [env] MFA_ENCRYPTION_KEY is not set — MFA setup will use a dev fallback derived from JWT_SECRET. Set a real key before going to production.
+✅  [env] Environment validation passed (development mode)
+❌ MySQL connection failed:
+❌ Startup failed: AggregateError [ECONNREFUSED]:
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7) {
+  code: 'ECONNREFUSED',
+  fatal: true,
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:3306
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 3306
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:3306
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 3306
+    }
+  ]
+}
