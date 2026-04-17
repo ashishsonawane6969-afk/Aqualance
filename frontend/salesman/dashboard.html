@@ -463,6 +463,12 @@
           </select>
           <button type="button" class="btn btn-outline btn-sm" onclick="psAddProduct()">+ Add</button>
         </div>
+        <!-- Variant selector: shown only when selected product has variants -->
+        <div id="psVariantRow" style="display:none;margin-top:6px;display:none">
+          <select id="psVariantDropdown" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--ink)">
+            <option value="">— Select variant (optional) —</option>
+          </select>
+        </div>
         <div id="psEmpty" style="font-size:.8rem;color:var(--ink-soft);margin-top:6px">No products added yet</div>
         <table id="psTableWrap" style="width:100%;margin-top:8px;font-size:.82rem;display:none;border-collapse:collapse">
           <thead>
