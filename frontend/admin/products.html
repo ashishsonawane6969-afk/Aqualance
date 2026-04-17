@@ -253,10 +253,10 @@
               <span class="slot-icon">🖼️</span>
               <span class="slot-label">Main</span>
               <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
-              <input type="file" id="imgFile0" accept="image/*" />
+              <input type="file" id="imgFile0" name="imgFile0" accept="image/*" aria-label="Upload main image" />
             </div>
             <div class="slot-url-row">
-              <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
+              <input type="url" id="imgUrl0" name="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" aria-label="Image 1 URL" />
               <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
             </div>
           </div>
@@ -266,10 +266,10 @@
               <span class="slot-icon">🖼️</span>
               <span class="slot-label">2nd</span>
               <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
-              <input type="file" id="imgFile1" accept="image/*" />
+              <input type="file" id="imgFile1" name="imgFile1" accept="image/*" aria-label="Upload image 2" />
             </div>
             <div class="slot-url-row">
-              <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
+              <input type="url" id="imgUrl1" name="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" aria-label="Image 2 URL" />
               <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
             </div>
           </div>
@@ -279,10 +279,10 @@
               <span class="slot-icon">🖼️</span>
               <span class="slot-label">3rd</span>
               <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
-              <input type="file" id="imgFile2" accept="image/*" />
+              <input type="file" id="imgFile2" name="imgFile2" accept="image/*" aria-label="Upload image 3" />
             </div>
             <div class="slot-url-row">
-              <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
+              <input type="url" id="imgUrl2" name="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" aria-label="Image 3 URL" />
               <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
             </div>
           </div>
@@ -559,11 +559,11 @@ async function addBundleCompRow(d){
   }).join('');
 
   row.innerHTML=
-    '<select class="bc-product" name="bc-product" aria-label="Bundle product" onchange="loadCompVariants(this)">'+
+    '<select class="bc-product" onchange="loadCompVariants(this)">'+
       '<option value="">— Pick product —</option>'+opts+
     '</select>'+
-    '<select class="bc-variant" name="bc-variant" aria-label="Bundle variant"><option value="">No variant</option></select>'+
-    '<input type="number" class="bc-qty" name="bc-qty" aria-label="Bundle quantity" min="1" step="1" value="'+(d.quantity||1)+'" />'+
+    '<select class="bc-variant"><option value="">No variant</option></select>'+
+    '<input type="number" class="bc-qty" min="1" step="1" value="'+(d.quantity||1)+'" />'+
     '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.bundle-comp-row\').remove()">✕</button>';
   wrap.appendChild(row);
 
