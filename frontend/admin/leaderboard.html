@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Leaderboard — Admin | Aqualence Ventures</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    /* ── Leaderboard Styles ─────────────────────────── */
+    .lb-hero {
+      background: linear-gradient(135deg, #ff3c00 0%, #ad437e 50%, #492c97 100%);
+      border-radius: var(--radius);
+      padding: 28px 28px 0;
+      margin-bottom: 28px;
+      color: #fff;
+      overflow: hidden;
+      position: relative;
+    }
+    .lb-hero::after {
+      content: '🏆';
+      position: absolute;
+      right: 24px;
+      bottom: -10px;
+      font-size: 7rem;
+      opacity: .12;
+    }
+    .lb-hero h2 {
+      font-family: var(--font-head);
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+    }
+    .lb-hero p { opacity: .75; font-size: .88rem; margin-bottom: 20px; }
+    .lb-hero-stats {
+      display: flex; gap: 28px; flex-wrap: wrap;
+      border-top: 1px solid rgba(255,255,255,.12);
+      padding: 16px 0;
+    }
+    .lb-hero-stat .num  { font-size: 1.5rem; font-weight: 700; color: var(--gold-light); }
+    .lb-hero-stat .lbl  { font-size: .72rem; opacity: .7; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* Podium */
+    .podium-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .podium-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      text-align: center;
+      padding: 20px 16px;
+      position: relative;
+      transition: var(--transition);
+      flex: 1;
+      max-width: 220px;
+    }
+    .podium-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .podium-card.rank-1 {
+      border-color: var(--gold);
+      box-shadow: 0 4px 20px rgba(201,168,76,.18);
+      padding-top: 28px;
+    }
+    .podium-card.rank-2 { opacity: .95; }
+    .podium-card.rank-3 { opacity: .9; }
+    .podium-crown {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+    }
+    .podium-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin: 0 auto 10px;
+    }
+    .rank-1 .podium-avatar { background: linear-gradient(135deg,#e8c97a,#c9a84c); }
+    .rank-2 .podium-avatar { background: linear-gradient(135deg,#d9d9d9,#b0b0b0); }
+    .rank-3 .podium-avatar { background: linear-gradient(135deg,#e8c4a0,#c9956c); }
+    .podium-badge {
+      position: absolute;
+      top: 10px; right: 10px;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .rank-1 .podium-badge { background: #fdf6e3; color: var(--gold); }
+    .rank-2 .podium-badge { background: #f5f5f5; color: #666; }
+    .rank-3 .podium-badge { background: #fdf0e3; color: #c9956c; }
+    .podium-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .podium-phone { font-size: .75rem; color: var(--ink-soft); margin-bottom: 10px; }
+    .podium-metric {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--sage);
+      line-height: 1;
+    }
+    .podium-metric-label { font-size: .7rem; color: var(--ink-soft); margin-top: 3px; }
+    .podium-divider { width: 40px; height: 2px; background: var(--border); margin: 10px auto; border-radius: 1px; }
+    .podium-sub-stats {
+      display: flex;
+      justify-content: space-around;
+      font-size: .72rem;
+      color: var(--ink-soft);
+    }
+    .podium-sub-stats strong { display: block; font-size: .85rem; color: var(--ink); }
+
+    /* Full leaderboard table */
+    .lb-rank-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .lb-rank-1 { background: linear-gradient(135deg,#e8c97a,#c9a84c); color: #fff; }
+    .lb-rank-2 { background: linear-gradient(135deg,#ddd,#b0b0b0); color: #fff; }
+    .lb-rank-3 { background: linear-gradient(135deg,#e8c4a0,#c9956c); color: #fff; }
+    .lb-rank-n { background: var(--sage-pale); color: var(--sage); }
+    .lb-name-cell { display: flex; align-items: center; gap: 10px; }
+
+    /* Progress bar for completion rate */
+    .rate-bar { display: flex; align-items: center; gap: 8px; }
+    .rate-track { flex: 1; max-width: 100px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .rate-fill  { height: 100%; border-radius: 3px; }
+    .rate-label { font-size: .82rem; font-weight: 700; width: 36px; }
+
+    /* Activity sparkline */
+    .sparkline { display: flex; align-items: flex-end; gap: 3px; height: 28px; }
+    .spark-bar {
+      width: 6px;
+      border-radius: 2px;
+      background: var(--sage-pale);
+      flex-shrink: 0;
+      transition: height .4s ease;
+      min-height: 2px;
+    }
+    .spark-bar.lit { background: var(--sage); }
+
+    /* Empty state */
+    .no-boys { text-align:center; padding: 60px 20px; color: var(--ink-soft); }
+
+    /* ── Overflow fixes ── */
+    .main-area { min-width: 0; overflow-x: hidden; }
+    .content-area { min-width: 0; overflow-x: hidden; max-width: 100%; }
+    .table-wrap { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+    .table-wrap table { min-width: 560px; width: 100%; border-collapse: collapse; }
+    /* Name col: constrain so phone doesn't wrap */
+    .table-wrap table td:nth-child(2) { max-width: 160px; }
+    /* lb-cards-mobile: hidden by default, shown via responsive-fix.css media query */
+    .lb-cards-mobile { display: none; }
+  </style>
+</head>
+<body class="admin-layout">
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">Admin</div>
+      <div class="role">Administrator</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </a>
+      <a href="/admin/overview.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+        Overview
+      </a>
+      <a href="/admin/leaderboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>
+        Leaderboard
+      </a>
+      <a href="/admin/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Orders
+      </a>
+      <a href="/admin/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>
+        Products
+      </a>
+      <a href="/admin/salesmen.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen</a>
+      <a href="/admin/geo-map.html" class="nav-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map</a>
+      <a href="/admin/delivery-boys.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+        Delivery Boys
+      </a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="topnav">
+      <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
+      <h2>🏆 Delivery Leaderboard</h2>
+      <button onclick="loadLeaderboard()" class="btn btn-outline btn-sm">↻ Refresh</button>
+    </div>
+
+    <div class="content-area" id="lbContent">
+      <div class="loading-overlay" style="min-height:60vh"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
+<script>
+/* ── Leaderboard Logic ───────────────────────────────────── */
+let lbChart = null;
+
+function fmtINR(v) { return '₹' + parseFloat(v || 0).toLocaleString('en-IN', {maximumFractionDigits:0}); }
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+
+async function loadLeaderboard() {
+  const content = document.getElementById('lbContent');
+  content.innerHTML = '<div class="loading-overlay" style="min-height:60vh"><div class="spinner"></div></div>';
+  try {
+    const res  = await apiFetch('/api/v1/orders/leaderboard');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message);
+    renderLeaderboard(json.data);
+  } catch (err) {
+    showToast('Failed to load leaderboard: ' + err.message, 'error');
+    content.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><h3>Failed to load</h3><p>Failed to load. Please try again.</p></div>`;
+  }
+}
+
+function buildActivityMap(recentActivity, deliveryId) {
+  // Returns array of 7 values (last 7 days)
+  const result = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const found = recentActivity.find(r => r.delivery_id == deliveryId && r.date?.startsWith(key));
+    result.push(found ? parseInt(found.deliveries) : 0);
+  }
+  return result;
+}
+
+function renderLeaderboard({ leaderboard, recentActivity }) {
+  const content = document.getElementById('lbContent');
+
+  if (!leaderboard.length) {
+    content.innerHTML = `
+      <div class="no-boys">
+        <div style="font-size:4rem;margin-bottom:12px">🚴</div>
+        <h3 style="font-family:var(--font-head);color:var(--ink)">No delivery boys yet</h3>
+        <p>Add delivery partners from the <a href="/admin/delivery-boys.html" style="color:var(--sage)">Delivery Boys</a> page.</p>
+      </div>`;
+    return;
+  }
+
+  // Hero summary stats
+  const totalDelivered = leaderboard.reduce((a,b) => a + parseInt(b.delivered||0), 0);
+  const totalRevenue   = leaderboard.reduce((a,b) => a + parseFloat(b.revenue_delivered||0), 0);
+  const topRate        = leaderboard.length ? Math.max(...leaderboard.map(b => parseFloat(b.completion_rate||0))) : 0;
+
+  // Podium (top 3)
+  const top3 = leaderboard.slice(0, 3);
+  const [first, second, third] = [top3[0], top3[1], top3[2]];
+
+  const podiumOrder = second && third
+    ? [
+        { ...second, rank: 2 },
+        { ...first,  rank: 1 },
+        { ...third,  rank: 3 },
+      ]
+    : first
+      ? [{ ...first, rank: 1 }]
+      : [];
+
+  const rankClasses = ['rank-2','rank-1','rank-3'];
+  const rankLabels  = ['2nd Place','1st Place','3rd Place'];
+
+  const podiumHTML = podiumOrder.map((boy, i) => {
+    const cls = rankClasses[i];
+    const actualRank = boy.rank;
+    return `
+      <div class="podium-card ${cls}">
+        ${actualRank === 1 ? '<div class="podium-crown">👑</div>' : ''}
+        <span class="podium-badge">${rankLabels[i]}</span>
+        <div class="podium-avatar">${initials(boy.name)}</div>
+        <div class="podium-name">${boy.name}</div>
+        <div class="podium-phone">📞 ${boy.phone}</div>
+        <div class="podium-metric">${boy.delivered}</div>
+        <div class="podium-metric-label">deliveries completed</div>
+        <div class="podium-divider"></div>
+        <div class="podium-sub-stats">
+          <div><strong>${boy.completion_rate || 0}%</strong> rate</div>
+          <div><strong>${fmtINR(boy.revenue_delivered)}</strong> rev.</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Full table rows
+  const medalsArr = ['🥇','🥈','🥉'];
+  const tableRows = leaderboard.map((boy, i) => {
+    const rank      = i + 1;
+    const rankCls   = rank <= 3 ? `lb-rank-${rank}` : 'lb-rank-n';
+    const rate      = parseFloat(boy.completion_rate || 0);
+    const rateColor = rate >= 80 ? 'var(--success)' : rate >= 50 ? 'var(--gold)' : 'var(--error)';
+    const activity  = buildActivityMap(recentActivity, boy.id);
+    const maxAct    = Math.max(...activity, 1);
+
+    const sparkHTML = activity.map((v, d) => {
+      const h = Math.max(2, Math.round(v / maxAct * 28));
+      return `<div class="spark-bar ${v > 0 ? 'lit' : ''}" style="height:${h}px" title="${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][d]}: ${v} deliveries"></div>`;
+    }).join('');
+
+    const status = boy.is_active
+      ? `<span class="tag tag-green">Active</span>`
+      : `<span class="tag tag-red">Inactive</span>`;
+
+    return `
+      <tr>
+        <td>
+          <div class="lb-name-cell">
+            <div class="lb-rank-num ${rankCls}">${rank <= 3 ? medalsArr[rank-1] : rank}</div>
+          </div>
+        </td>
+        <td>
+          <div class="lb-name-cell">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--sage-pale);color:var(--sage);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0">${initials(boy.name)}</div>
+            <div>
+              <div style="font-weight:700;font-size:.9rem">${boy.name}</div>
+              <div style="font-size:.75rem;color:var(--ink-soft)">${boy.phone}</div>
+            </div>
+          </div>
+        </td>
+        <td style="text-align:center">
+          <span style="font-size:1.2rem;font-weight:700;color:var(--success)">${boy.delivered}</span>
+        </td>
+        <td style="text-align:center">
+          <span style="font-weight:600;color:var(--ink-mid)">${boy.in_progress}</span>
+        </td>
+        <td style="text-align:center">
+          <span style="font-weight:600;color:var(--warn)">${boy.pending_pickup}</span>
+        </td>
+        <td>
+          <div class="rate-bar">
+            <div class="rate-track">
+              <div class="rate-fill" style="width:${rate}%;background:${rateColor}"></div>
+            </div>
+            <div class="rate-label" style="color:${rateColor}">${rate}%</div>
+          </div>
+        </td>
+        <td style="font-weight:700;color:var(--sage)">${fmtINR(boy.revenue_delivered)}</td>
+        <td>
+          <div class="sparkline">${sparkHTML}</div>
+        </td>
+        <td>${status}</td>
+      </tr>`;
+  }).join('');
+
+  // Mobile card rows (shown < 700px)
+  const medals = ['🥇','🥈','🥉'];
+  const mobileCardRows = leaderboard.map((boy, i) => {
+    const rank      = i + 1;
+    const rankCls   = rank <= 3 ? `lb-rank-${rank}` : 'lb-rank-n';
+    const rate      = parseFloat(boy.completion_rate || 0);
+    const rateColor = rate >= 80 ? 'var(--success)' : rate >= 50 ? 'var(--gold)' : 'var(--error)';
+    const medalOrNum = rank <= 3 ? medals[rank-1] : rank;
+    return `<div class="lb-row-card">
+      <div class="lrc-rank lb-rank-num ${rankCls}">${medalOrNum}</div>
+      <div class="lrc-body">
+        <div class="lrc-name">${boy.name}</div>
+        <div class="lrc-phone">📞 ${boy.phone}</div>
+        <div class="lrc-stats">
+          <div class="lrc-stat"><b>${boy.delivered}</b> delivered</div>
+          <div class="lrc-stat"><b>${boy.in_progress}</b> transit</div>
+          <div class="lrc-stat" style="color:${rateColor}"><b>${rate}%</b> rate</div>
+        </div>
+      </div>
+      <div class="lrc-right">
+        <div class="lrc-rate" style="color:${rateColor}">${rate}%</div>
+        <div class="lrc-rev">${fmtINR(boy.revenue_delivered)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <!-- Hero banner -->
+    <div class="lb-hero">
+      <h2>🏆 Delivery Performance</h2>
+      <p>Ranked by total deliveries completed. Updated in real time.</p>
+      <div class="lb-hero-stats">
+        <div class="lb-hero-stat">
+          <div class="num">${leaderboard.length}</div>
+          <div class="lbl">Delivery Partners</div>
+        </div>
+        <div class="lb-hero-stat">
+          <div class="num">${totalDelivered}</div>
+          <div class="lbl">Total Deliveries</div>
+        </div>
+        <div class="lb-hero-stat">
+          <div class="num">${fmtINR(totalRevenue)}</div>
+          <div class="lbl">Revenue Delivered</div>
+        </div>
+        <div class="lb-hero-stat">
+          <div class="num">${topRate}%</div>
+          <div class="lbl">Best Completion Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Podium (only if 1+ boys) -->
+    ${podiumOrder.length ? `
+    <div style="margin-bottom:8px;">
+      <h3 style="font-family:var(--font-head);font-size:1.1rem;margin-bottom:16px;color:var(--ink)">🥇 Top Performers</h3>
+      <div class="podium-row">${podiumHTML}</div>
+    </div>` : ''}
+
+    <!-- Full Leaderboard Table + Mobile Cards -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📋 Full Rankings</h3>
+        <div style="font-size:.78rem;color:var(--ink-soft)">Sparkline = last 7 days activity</div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <!-- Desktop table -->
+        <div class="lb-table-desktop">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:44px;padding-left:14px">Rank</th>
+                  <th>Delivery Boy</th>
+                  <th style="text-align:center">✅ Delivered</th>
+                  <th style="text-align:center">🚴 In Transit</th>
+                  <th style="text-align:center">⏳ Pending</th>
+                  <th>Completion Rate</th>
+                  <th>Revenue</th>
+                  <th style="min-width:80px">Activity (7d)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Mobile cards (shown < 700px) -->
+        <div class="lb-cards-mobile" style="padding:10px;gap:10px;display:flex;flex-direction:column">
+          ${mobileCardRows}
+        </div>
+      </div>
+    </div>
+
+    <!-- Bar chart: delivered by boy -->
+    ${leaderboard.length >= 2 ? `
+    <div class="card" style="margin-top:20px">
+      <div class="chart-header" style="padding:16px 20px 8px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:.9rem;font-weight:700">📊 Deliveries Comparison</div>
+          <div style="font-size:.75rem;color:var(--ink-soft);margin-top:1px">Delivered vs Assigned per partner</div>
+        </div>
+      </div>
+      <div style="padding:20px"><canvas id="lbBarChart" height="100"></canvas></div>
+    </div>` : ''}
+  `;
+
+  // Build chart if 2+ boys
+  if (leaderboard.length >= 2) {
+    buildLbBarChart(leaderboard);
+  }
+}
+
+function buildLbBarChart(leaderboard) {
+  const ctx = document.getElementById('lbBarChart')?.getContext('2d');
+  if (!ctx) return;
+  lbChart?.destroy();
+  lbChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: leaderboard.map(b => b.name),
+      datasets: [
+        {
+          label: 'Delivered',
+          data: leaderboard.map(b => parseInt(b.delivered || 0)),
+          backgroundColor: 'rgba(90,122,92,0.8)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Assigned (pending)',
+          data: leaderboard.map(b => parseInt(b.pending_pickup || 0)),
+          backgroundColor: 'rgba(201,168,76,0.7)',
+          borderRadius: 4,
+        },
+        {
+          label: 'In Transit',
+          data: leaderboard.map(b => parseInt(b.in_progress || 0)),
+          backgroundColor: 'rgba(123,31,162,0.5)',
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+      },
+    },
+  });
+}
+
+(window.adminAuthRehydrate || Promise.resolve.bind(Promise, true))().then(function(ok) { if (ok) loadLeaderboard(); });
+</script>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ADMIN BOTTOM NAV (mobile) -->
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html" class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html" class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/products.html" class="bnav-item"><span class="bnav-icon">📦</span><span>Products</span></a>
+    <a href="/admin/salesmen.html" class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+  </div>
+</nav>
+<script>
+function toggleSidebar(){
+  var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
+  var isOpen=s.classList.toggle("open");
+  o.classList.toggle("show",isOpen);
+  document.body.style.overflow=isOpen?"hidden":"";
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+  document.body.style.overflow="";
+}
+(function(){
+  // Close sidebar on Escape key
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSidebar();});
+  // Mark active bottom nav item
+  var path=window.location.pathname.split("/").pop();
+  document.querySelectorAll("#adminBottomNav .bnav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+  });
+  // Mark active sidebar item
+  document.querySelectorAll(".sidebar .nav-item").forEach(function(a){
+    if(a.getAttribute("href")===path)a.classList.add("active");
+    else a.classList.remove("active");
+  });
+})();
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>

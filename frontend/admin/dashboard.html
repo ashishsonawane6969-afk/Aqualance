@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="/manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1565a8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Admin Dashboard — Aqualence Ventures</title>
+  <link rel="stylesheet" href="/admin/css/admin.css" />
+
+  <style>
+    body { background: #f0f3ed; }
+    .main-area    { min-width: 0; overflow-x: hidden; flex: 1; width: 100%; }
+    .content-area { padding: 12px; min-width: 0; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+    @media(min-width:900px){ .content-area{ padding: 20px 24px 32px; } }
+
+    /* ── KPI TILES — full-width grid, override base style.css ── */
+    .kpi-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+      margin-bottom: 14px !important;
+      width: 100% !important;
+    }
+    @media(min-width:600px) { .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; } }
+    @media(min-width:900px) { .kpi-grid { gap: 14px !important; grid-template-columns: repeat(4, 1fr) !important; } }
+
+    .kpi-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 15px 12px 13px;
+      text-align: center;
+      box-shadow: 0 1px 6px rgba(21,101,168,.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::after {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+    }
+    .kpi-card.sage::after   { background: var(--brand,#3a6b1c); }
+    .kpi-card.green::after  { background: var(--success,#4caf7d); }
+    .kpi-card.gold::after   { background: var(--gold,#c9a84c); }
+    .kpi-card.blue::after   { background: #1565c0; }
+    .kpi-card.purple::after { background: #7b1fa2; }
+    .kpi-card.teal::after   { background: #00897b; }
+
+    .kpi-icon  { font-size: 1.5rem; display: block; margin-bottom: 3px; }
+    .kpi-value {
+      font-size: 2rem; font-weight: 800; line-height: 1.05;
+      display: block; font-variant-numeric: tabular-nums;
+    }
+    .kpi-card.sage   .kpi-value { color: var(--brand,#3a6b1c); }
+    .kpi-card.green  .kpi-value { color: var(--success,#4caf7d); }
+    .kpi-card.gold   .kpi-value { color: var(--gold,#c9a84c); }
+    .kpi-card.blue   .kpi-value { color: #1565c0; }
+    .kpi-card.purple .kpi-value { color: #7b1fa2; }
+    .kpi-card.teal   .kpi-value { color: #00897b; }
+    .kpi-value.rupee { font-size: clamp(1.3rem,5vw,1.9rem); }
+    .kpi-label {
+      font-size: .6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--ink-soft); margin-top: 3px; display: block;
+    }
+
+    /* ── RECENT ORDERS CARD ────────────────────────────── */
+    .section-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(21,101,168,.07);
+      margin-bottom: 10px;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head h3 {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* ── TABLE ─────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+    }
+    #recentOrdersTable {
+      width: 100%;
+      min-width: 520px;
+      border-collapse: collapse;
+    }
+    #recentOrdersTable th {
+      background: var(--brand-ultra,#eef4e8);
+      padding: 9px 12px;
+      font-size: .63rem;
+      font-weight: 700;
+      text-align: left;
+      color: var(--brand,#3a6b1c);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      border-bottom: 1.5px solid var(--border);
+      white-space: nowrap;
+    }
+    #recentOrdersTable td {
+      padding: 10px 12px;
+      font-size: .81rem;
+      color: var(--ink-mid);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      white-space: nowrap;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #recentOrdersTable tr:last-child td { border-bottom: none; }
+    @media(hover:hover){ #recentOrdersTable tr:hover td { background: var(--brand-ultra,#eef4e8); } }
+
+    .status {
+      display: inline-flex; align-items: center;
+      font-size: .62rem; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+
+    .btm-clear {
+      height: calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 16px);
+    }
+    @media(min-width:900px){ .btm-clear { height: 32px; } }
+  </style>
+</head>
+<body class="admin-layout">
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🌿 Aqualence</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">Admin</div>
+      <div class="role">Administrator</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard
+      </a>
+      <a href="/admin/overview.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>Overview
+      </a>
+      <a href="/admin/leaderboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>Leaderboard
+      </a>
+      <a href="/admin/orders.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders
+      </a>
+      <a href="/admin/products.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products
+      </a>
+      <a href="/admin/salesmen.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen
+      </a>
+      <a href="/admin/geo-map.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map
+      </a>
+      <a href="/admin/delivery-boys.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys
+      </a>
+      <a href="/admin/mfa-settings.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="adminLogout()" class="btn btn-outline btn-sm btn-full"
+        style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7)">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <div class="topnav">
+      <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+      <h2>📊 Dashboard</h2>
+      <span id="lastUpdated" style="font-size:.72rem;color:var(--ink-soft);white-space:nowrap"></span>
+    </div>
+
+    <div class="content-area" id="dashContent">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:50vh">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="/js/network.js"></script>
+<script src="/admin/js/admin.js"></script>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ADMIN BOTTOM NAV -->
+<nav id="adminBottomNav">
+  <div class="bottom-nav-inner">
+    <a href="/admin/dashboard.html" class="bnav-item"><span class="bnav-icon">📊</span><span>Dash</span></a>
+    <a href="/admin/overview.html"  class="bnav-item"><span class="bnav-icon">📈</span><span>Overview</span></a>
+    <a href="/admin/orders.html"    class="bnav-item"><span class="bnav-icon">📋</span><span>Orders</span></a>
+    <a href="/admin/products.html"  class="bnav-item"><span class="bnav-icon">📦</span><span>Products</span></a>
+    <a href="/admin/salesmen.html"  class="bnav-item"><span class="bnav-icon">💼</span><span>Sales</span></a>
+    <a href="/admin/geo-map.html"   class="bnav-item"><span class="bnav-icon">🗺️</span><span>Map</span></a>
+  </div>
+</nav>
+
+<script>
+/* ── Sidebar ─────────────────────────────────────── */
+function toggleSidebar(){
+  var s=document.getElementById("sidebar"),o=document.getElementById("sidebarOverlay");
+  var open=s.classList.toggle("open");
+  o.classList.toggle("show",open);
+  document.body.style.overflow=open?"hidden":"";
+}
+function closeSidebar(){
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+  document.body.style.overflow="";
+}
+(function(){
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSidebar();});
+  var p=window.location.pathname.split("/").pop();
+  document.querySelectorAll("#adminBottomNav .bnav-item").forEach(function(a){
+    if(a.getAttribute("href")===p)a.classList.add("active");
+  });
+  document.querySelectorAll(".sidebar .nav-item").forEach(function(a){
+    if(a.getAttribute("href")===p)a.classList.add("active");
+    else a.classList.remove("active");
+  });
+})();
+
+/* ── Helpers ─────────────────────────────────────── */
+function fmtINR(v){ return '₹'+parseFloat(v||0).toLocaleString('en-IN',{maximumFractionDigits:0}); }
+function fmtNum(v){ return parseInt(v||0).toLocaleString('en-IN'); }
+function fmtDate(d){ return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'}); }
+function badge(s){
+  var colors={
+    pending:'background:#fff3cd;color:#856404',
+    assigned:'background:#cfe2ff;color:#084298',
+    out_for_delivery:'background:#e8d5f7;color:#5a1088',
+    delivered:'background:#d1e7dd;color:#0a3622',
+    cancelled:'background:#f8d7da;color:#842029'
+  };
+  var st=s||'';
+  var style=colors[st]||'background:#f5f5f5;color:#555';
+  return '<span class="status" style="'+style+'">'+st.replace(/_/g,' ')+'</span>';
+}
+
+/* ── Load dashboard ──────────────────────────────── */
+async function loadDashboard(){
+  try {
+    const [sRes, oRes] = await Promise.all([
+      apiFetch('/api/v1/orders/stats'),
+      apiFetch('/api/v1/orders')
+    ]);
+    const s = (await sRes.json()).data || {};
+    const orders = (await oRes.json()).data || [];
+
+    /* Today */
+    var today = new Date().toISOString().slice(0,10);
+    var todayOrders  = orders.filter(function(o){ return (o.created_at||'').slice(0,10)===today; });
+    var todayRev     = todayOrders.reduce(function(a,o){ return a+parseFloat(o.total_price||0); },0);
+
+    /* This week */
+    var wk = new Date(); wk.setDate(wk.getDate()-wk.getDay());
+    var wkOrders = orders.filter(function(o){ return new Date(o.created_at)>=wk; });
+    var wkRev    = wkOrders.reduce(function(a,o){ return a+parseFloat(o.total_price||0); },0);
+
+    /* Derived */
+    var inTransit  = (parseInt(s.assigned)||0)+(parseInt(s.out_for_delivery)||0);
+    var compRate   = s.total_orders>0 ? Math.round((s.delivered||0)*100/s.total_orders) : 0;
+    var avgVal     = (s.delivered>0) ? Math.round(parseFloat(s.revenue||0)/parseInt(s.delivered)) : 0;
+
+    /* Recent 10 orders */
+    var recent = orders.slice(0,10);
+    var rows = recent.length
+      ? recent.map(function(o){
+          return '<tr>'
+            +'<td><strong style="color:var(--brand)">'+o.order_number+'</strong></td>'
+            +'<td>'+o.shop_name+'</td>'
+            +'<td>'+o.phone+'</td>'
+            +'<td>'+o.city+'</td>'
+            +'<td style="font-weight:600">'+fmtINR(o.total_price)+'</td>'
+            +'<td>'+badge(o.status)+'</td>'
+            +'<td style="color:var(--ink-soft)">'+fmtDate(o.created_at)+'</td>'
+            +'</tr>';
+        }).join('')
+      : '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-soft)">No orders yet</td></tr>';
+
+    document.getElementById('dashContent').innerHTML =
+      /* ── 7 KPI TILES (icon + big number + label) ── */
+      '<div class="kpi-grid">'
+        +'<div class="kpi-card sage">'
+          +'<span class="kpi-icon">📋</span>'
+          +'<span class="kpi-value">'+fmtNum(s.total_orders)+'</span>'
+          +'<span class="kpi-label">Total Orders</span>'
+        +'</div>'
+        +'<div class="kpi-card purple">'
+          +'<span class="kpi-icon">⏳</span>'
+          +'<span class="kpi-value">'+fmtNum(s.pending)+'</span>'
+          +'<span class="kpi-label">Pending</span>'
+        +'</div>'
+        +'<div class="kpi-card teal">'
+          +'<span class="kpi-icon">🚴</span>'
+          +'<span class="kpi-value">'+fmtNum(inTransit)+'</span>'
+          +'<span class="kpi-label">Out for Delivery</span>'
+        +'</div>'
+        +'<div class="kpi-card green">'
+          +'<span class="kpi-icon">✅</span>'
+          +'<span class="kpi-value">'+fmtNum(s.delivered)+'</span>'
+          +'<span class="kpi-label">Delivered</span>'
+        +'</div>'
+        +'<div class="kpi-card gold">'
+          +'<span class="kpi-icon">💰</span>'
+          +'<span class="kpi-value rupee">'+fmtINR(s.revenue)+'</span>'
+          +'<span class="kpi-label">Revenue</span>'
+        +'</div>'
+        +'<div class="kpi-card blue">'
+          +'<span class="kpi-icon">📦</span>'
+          +'<span class="kpi-value">'+fmtNum(s.products)+'</span>'
+          +'<span class="kpi-label">Products</span>'
+        +'</div>'
+        +'<div class="kpi-card sage">'
+          +'<span class="kpi-icon">🚴</span>'
+          +'<span class="kpi-value">'+fmtNum(s.delivery_boys)+'</span>'
+          +'<span class="kpi-label">Delivery Boys</span>'
+        +'</div>'
+      +'</div>'
+
+      /* ── RECENT ORDERS ── */
+      +'<div class="section-card">'
+        +'<div class="section-head">'
+          +'<h3>📋 Recent Orders</h3>'
+          +'<a href="/admin/orders.html" class="btn btn-outline btn-sm">View All</a>'
+        +'</div>'
+        +'<div class="table-wrap">'
+          +'<table id="recentOrdersTable">'
+            +'<thead><tr>'
+              +'<th>Order #</th><th>Shop</th><th>Phone</th>'
+              +'<th>City</th><th>Amount</th><th>Status</th><th>Date</th>'
+            +'</tr></thead>'
+            +'<tbody>'+rows+'</tbody>'
+          +'</table>'
+        +'</div>'
+      +'</div>'
+
+      +'<div class="btm-clear"></div>';
+
+    document.getElementById('lastUpdated').textContent =
+      'Updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+  } catch(err){
+    document.getElementById('dashContent').innerHTML =
+      '<div style="text-align:center;padding:60px 20px;color:var(--error)">'
+        +'<div style="font-size:2.5rem;margin-bottom:12px">⚠️</div>'
+        +'<div style="font-weight:700;margin-bottom:8px">Failed to load dashboard</div>'
+        +'<div style="font-size:.82rem;color:var(--ink-soft);margin-bottom:20px">'+err.message+'</div>'
+        +'<button class="btn btn-primary" onclick="loadDashboard()">↻ Retry</button>'
+      +'</div>';
+    console.error('[dashboard]',err);
+  }
+}
+
+loadDashboard();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
