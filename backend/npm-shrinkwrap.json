@@ -27,6 +27,9 @@
       "devDependencies": {
         "nodemon": "^3.0.1"
       },
+      "engines": {
+        "node": ">=20.0.0 <23.0.0"
+      },
       "optionalDependencies": {
         "@node-rs/bcrypt": "^1.10.4"
       }

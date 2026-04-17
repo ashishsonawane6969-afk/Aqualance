@@ -173,7 +173,7 @@
 
 <!-- ══ ADD/EDIT PRODUCT MODAL ══════════════════════════════════ -->
 <div class="modal-overlay" id="productModal">
-  <div class="modal">
+  <div class="modal" style="max-width:620px">
     <div class="modal-header">
       <h3 id="productModalTitle">Add Product</h3>
       <button class="modal-close" onclick="closeModal('productModal')">✕</button>
@@ -182,160 +182,178 @@
       <form id="productForm" novalidate>
         <input type="hidden" id="productId" />
 
-        <!-- Name + Category -->
-        <div class="form-row">
+        <!-- ══ CARD 1: Product Info ══════════════════════════════ -->
+        <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-lg,12px);padding:16px 16px 10px;margin-bottom:14px">
+          <div class="form-section-title" style="margin-bottom:14px;padding-bottom:8px">🏷️ Product Info</div>
+
+          <!-- 1. Product Name -->
           <div class="form-group">
-            <label for="pName">Product Name *</label>
-            <input type="text" id="pName" required placeholder="iKrish Aloe Vera Face Wash" />
+            <label for="pName">1. Product Name *</label>
+            <input type="text" id="pName" required placeholder="e.g. iKrish Aloe Vera Face Wash" />
           </div>
+
+          <!-- 2. Category -->
           <div class="form-group">
-            <label for="pCategory">Category</label>
+            <label for="pCategory">2. Category</label>
             <select id="pCategory">
               <option>Face Care</option><option>Hair Care</option><option>Body Care</option>
               <option>Essentials</option><option>New Launches</option><option>General</option>
             </select>
           </div>
-        </div>
 
-        <!-- Product Type (auto-sets unit) -->
-        <div class="form-group">
-          <label for="pProductType">Product Type &amp; Unit <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0;color:var(--ink-faint)">(auto-sets unit)</span></label>
-          <select id="pProductType" onchange="onProductTypeChange()">
-            <option value="single|piece">Single</option>
-            <option value="single|jar">Jar</option>
-            <option value="single|strip">Strip</option>
-            <option value="single|bottle">Bottle</option>
-            <option value="single|pack">Pack</option>
-            <option value="single|box">Box</option>
-          </select>
-        </div>
-        <!-- Hidden fields auto-set by dropdown -->
-        <input type="hidden" id="pProductTypeVal" value="single" />
-        <input type="hidden" id="pUnitVal" value="piece" />
-
-        <div class="form-group">
-          <label for="pDescription">Description</label>
-          <textarea id="pDescription" rows="2" placeholder="Product description..."></textarea>
-        </div>
-
-        <!-- Price + MRP + Distributor Price -->
-        <div class="form-row">
+          <!-- 3. Description -->
           <div class="form-group">
-            <label for="pPrice">Price (₹) *</label>
-            <input type="number" id="pPrice" required min="0.01" step="0.01" placeholder="120.00" />
+            <label for="pDescription">3. Description</label>
+            <textarea id="pDescription" rows="2" placeholder="Product description…"></textarea>
           </div>
+
+          <!-- Product Type (hidden field helpers) -->
           <div class="form-group">
-            <label for="pMrp">MRP (₹)</label>
-            <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
+            <label for="pProductType">Product Type &amp; Unit <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0;color:var(--ink-faint)">(auto-sets unit)</span></label>
+            <select id="pProductType" onchange="onProductTypeChange()">
+              <option value="single|piece">Single</option>
+              <option value="single|jar">Jar</option>
+              <option value="single|strip">Strip</option>
+              <option value="single|bottle">Bottle</option>
+              <option value="single|pack">Pack</option>
+              <option value="single|box">Box</option>
+            </select>
           </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pDistributorPrice">Distributor Price (₹)</label>
-            <input type="number" id="pDistributorPrice" min="0" step="0.01" placeholder="Optional" />
+          <input type="hidden" id="pProductTypeVal" value="single" />
+          <input type="hidden" id="pUnitVal" value="piece" />
+
+          <!-- 4. Images -->
+          <div class="form-section-title" style="margin-top:6px">4. 📸 Product Images (up to 3)</div>
+          <div class="img-grid">
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot0">
+                <img id="imgPreview0" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">Main</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
+                <input type="file" id="imgFile0" accept="image/*" />
+              </div>
+              <div class="slot-url-row">
+                <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
+                <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
+              </div>
+            </div>
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot1">
+                <img id="imgPreview1" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">2nd</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
+                <input type="file" id="imgFile1" accept="image/*" />
+              </div>
+              <div class="slot-url-row">
+                <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
+                <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
+              </div>
+            </div>
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot2">
+                <img id="imgPreview2" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">3rd</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
+                <input type="file" id="imgFile2" accept="image/*" />
+              </div>
+              <div class="slot-url-row">
+                <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
+                <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
+              </div>
+            </div>
           </div>
+          <p class="img-hint">📁 Click slot to upload &nbsp;|&nbsp; 🔗 Paste URL → press → &nbsp;|&nbsp; Auto-compressed to max 800px · Slot 1 = main image</p>
         </div>
 
-        <!-- Stock -->
-        <div class="form-row">
-          <div class="form-group">
-            <label for="pStock">Stock</label>
-            <input type="number" id="pStock" min="0" placeholder="0" />
-          </div>
-        </div>
+        <!-- ══ CARD 2: Variants ══════════════════════════════════ -->
+        <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-lg,12px);padding:16px 16px 10px;margin-bottom:14px">
+          <div class="form-section-title" style="margin-bottom:14px;padding-bottom:8px">📐 Variants <span style="font-weight:400;text-transform:none;font-size:.7rem;letter-spacing:0;color:var(--ink-faint)">— one product, multiple sizes/prices</span></div>
 
-        <!-- ── 3 Images with URL option ─────────────────────── -->
-        <div class="form-section-title">📸 Product Images (up to 3)</div>
-        <div class="img-grid">
-          <div class="img-slot-wrap">
-            <div class="img-slot" id="imgSlot0">
-              <img id="imgPreview0" alt="" />
-              <span class="slot-icon">🖼️</span>
-              <span class="slot-label">Main</span>
-              <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
-              <input type="file" id="imgFile0" accept="image/*" />
-            </div>
-            <div class="slot-url-row">
-              <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
-              <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
-            </div>
-          </div>
-          <div class="img-slot-wrap">
-            <div class="img-slot" id="imgSlot1">
-              <img id="imgPreview1" alt="" />
-              <span class="slot-icon">🖼️</span>
-              <span class="slot-label">2nd</span>
-              <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
-              <input type="file" id="imgFile1" accept="image/*" />
-            </div>
-            <div class="slot-url-row">
-              <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
-              <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
-            </div>
-          </div>
-          <div class="img-slot-wrap">
-            <div class="img-slot" id="imgSlot2">
-              <img id="imgPreview2" alt="" />
-              <span class="slot-icon">🖼️</span>
-              <span class="slot-label">3rd</span>
-              <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
-              <input type="file" id="imgFile2" accept="image/*" />
-            </div>
-            <div class="slot-url-row">
-              <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
-              <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
-            </div>
-          </div>
-        </div>
-        <p class="img-hint">📁 Click slot to upload file &nbsp;|&nbsp; 🔗 Paste a URL and press → &nbsp;|&nbsp; Slot 1 = main listing image</p>
+          <!-- Variant rows injected by variants-admin.js -->
+          <div id="vaAnchor"></div>
 
-        <!-- ── Variants ──────────────────────────────────────── -->
-        <!-- variants-admin.js injects the full variant UI here -->
-        <div id="vaAnchor"></div>
+          <!-- Per-variant field legend -->
+          <div style="margin-top:6px;padding:8px 10px;background:rgba(21,101,168,.05);border-radius:var(--r-sm);font-size:.7rem;color:var(--ink-soft);line-height:1.7">
+            Each variant row: &nbsp;
+            <b>1. Name</b> &nbsp;·&nbsp;
+            <b>2. Price (₹)</b> &nbsp;·&nbsp;
+            <b>3. Dist. Price (₹)</b> <span style="color:var(--ink-faint)">(optional)</span> &nbsp;·&nbsp;
+            <b>4. Stock</b>
+          </div>
 
-        <!-- ── Bundle toggle ─────────────────────────────────── -->
-        <label class="bundle-toggle-row" for="pIsBundle">
-          <input type="checkbox" id="pIsBundle" />
-          <span class="bundle-switch"></span>
-          <span class="bundle-label">Bundle Product<small>Pack / combo with multiple component products</small></span>
-        </label>
-        <div class="bundle-fields" id="bundleFields">
+          <!-- Bundle toggle + fields -->
+          <div style="margin-top:14px">
+            <div class="form-section-title" style="margin-bottom:10px;padding-bottom:8px">📦 Bundle Product Option</div>
+            <label class="bundle-toggle-row" for="pIsBundle">
+              <input type="checkbox" id="pIsBundle" />
+              <span class="bundle-switch"></span>
+              <span class="bundle-label">Bundle Product<small>Pack / combo with multiple component products</small></span>
+            </label>
+            <div class="bundle-fields" id="bundleFields">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pBaseQty">1. Base Quantity</label>
+                  <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
+                </div>
+                <div class="form-group">
+                  <label for="pBaseUnit">2. Measurement Unit</label>
+                  <select id="pBaseUnit">
+                    <option value="GM">GM</option><option value="KG">KG</option>
+                    <option value="L">L</option><option value="ML">ML</option><option value="PCS">PCS</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pPackSize">3. Pack Size</label>
+                  <input type="number" id="pPackSize" min="1" step="1" placeholder="5" />
+                </div>
+                <div class="form-group">
+                  <label for="pDisplayName">4. Display Name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.68rem">(auto — no duplicates)</span></label>
+                  <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
+                </div>
+              </div>
+
+              <!-- Bundle components -->
+              <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
+              <p class="bundle-price-note">ℹ️ Add the products that form this bundle. Stock deducted from each component on order. Set bundle sale price in the Price field above.</p>
+              <div class="bundle-comp-header">
+                <span>Product</span><span>Variant</span><span>Qty</span><span></span>
+              </div>
+              <div id="bundleCompRows"></div>
+              <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
+            </div>
+          </div>
+
+          <!-- Pricing (inside variants card, below bundle) -->
+          <div class="form-section-title" style="margin-top:14px;padding-bottom:8px">💰 Pricing &amp; Stock</div>
           <div class="form-row">
             <div class="form-group">
-              <label for="pBaseQty">Base Quantity</label>
-              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
+              <label for="pPrice">Price (₹) *</label>
+              <input type="number" id="pPrice" required min="0.01" step="0.01" placeholder="120.00" />
             </div>
             <div class="form-group">
-              <label for="pBaseUnit">Measurement Unit</label>
-              <select id="pBaseUnit">
-                <option value="GM">GM</option><option value="KG">KG</option>
-                <option value="L">L</option><option value="ML">ML</option><option value="PCS">PCS</option>
-              </select>
+              <label for="pMrp">MRP (₹)</label>
+              <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="pPackSize">Pack Size</label>
-              <input type="number" id="pPackSize" min="1" step="1" placeholder="5" />
+              <label for="pDistributorPrice">Distributor Price (₹) <span style="font-weight:400;text-transform:none;font-size:.68rem">(optional)</span></label>
+              <input type="number" id="pDistributorPrice" min="0" step="0.01" placeholder="Optional" />
             </div>
             <div class="form-group">
-              <label for="pDisplayName">Display Name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.68rem">(auto)</span></label>
-              <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
+              <label for="pStock">Stock</label>
+              <input type="number" id="pStock" min="0" placeholder="0" />
             </div>
           </div>
-
-          <!-- Bundle components -->
-          <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
-          <p class="bundle-price-note">ℹ️ Add the products that form this bundle. Stock is deducted from each component when ordered. Set the bundle sale price in the Price field above.</p>
-          <div class="bundle-comp-header">
-            <span>Product</span><span>Variant</span><span>Qty</span><span></span>
-          </div>
-          <div id="bundleCompRows"></div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
         </div>
 
         <div id="productFormError" class="login-error hidden"></div>
-        <button type="submit" class="btn btn-primary btn-full" style="margin-top:10px">Save Product</button>
+        <button type="submit" class="btn btn-primary btn-full" style="margin-top:4px">Save Product</button>
       </form>
     </div>
   </div>
@@ -407,18 +425,38 @@ function _setProductTypeDropdown(productType,unit){
 /* ── 3-Image slots ───────────────────────────────────────────── */
 var _imgSlotData=[null,null,null]; // {b64, url} or null
 
+/* ── Image compression: resize to max 800px, JPEG quality 0.82 ── */
+function _compressImage(file, cb) {
+  var MAX = 800, QUALITY = 0.82;
+  var r = new FileReader();
+  r.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', QUALITY));
+    };
+    img.src = e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
 (function(){
   for(var i=0;i<3;i++){
     (function(idx){
       document.getElementById('imgFile'+idx).addEventListener('change',function(){
         var file=this.files[0];if(!file)return;
-        var r=new FileReader();
-        r.onload=function(e){
-          _imgSlotData[idx]={b64:e.target.result,url:null};
-          _applySlot(idx,e.target.result);
+        _compressImage(file, function(b64){
+          _imgSlotData[idx]={b64:b64,url:null};
+          _applySlot(idx,b64);
           document.getElementById('imgUrl'+idx).value='';
-        };
-        r.readAsDataURL(file);
+        });
         this.value='';
       });
     })(i);
