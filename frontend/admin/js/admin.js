@@ -713,7 +713,6 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
   const id       = document.getElementById('productId')?.value || '';
   const name     = (document.getElementById('pName')?.value || '').trim();
   const price    = parseFloat(document.getElementById('pPrice')?.value || '0');
-  const isBundle = typeof _isBundleChecked === 'function' ? _isBundleChecked() : false;
 
   if (!name) {
     errDiv.textContent = 'Product name is required.';
@@ -724,10 +723,8 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     errDiv.classList.remove('hidden'); return;
   }
 
-  const imgPayload      = typeof getImagePayload    === 'function' ? getImagePayload()    : { image: '', images: [] };
-  const bundlePayload   = typeof getBundlePayload   === 'function' ? getBundlePayload()   : { is_bundle: false };
+  const imgPayload      = typeof getImagePayload    === 'function' ? getImagePayload()    : { image: '', image2: '', image3: '' };
   const variantsPayload = typeof getVariantsPayload === 'function' ? getVariantsPayload() : [];
-  const bundleItems     = isBundle && typeof getBundleItemsPayload === 'function' ? getBundleItemsPayload() : [];
 
   const body = {
     name,
@@ -737,11 +734,10 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     mrp:               parseFloat(document.getElementById('pMrp')?.value || '') || null,
     distributor_price: parseFloat(document.getElementById('pDistributorPrice')?.value || '') || null,
     stock:             parseInt(document.getElementById('pStock')?.value || '0', 10) || 0,
-    unit:              document.getElementById('pUnitVal')?.value || 'piece',
+    unit:              document.getElementById('pUnitVal')?.value || 'PCS',
     product_type:      document.getElementById('pProductTypeVal')?.value || 'single',
     is_active:         true,
-    ...imgPayload,
-    ...bundlePayload,
+    ...imgPayload
   };
 
   try {
@@ -753,23 +749,13 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
 
     const productId = id ? parseInt(id, 10) : data.id;
 
-    // Save variants (empty array = clear all)
+    // Save variants
     try {
       await apiFetch(`${API}/products/${productId}/variants`, {
         method: 'POST',
         body:   JSON.stringify({ variants: variantsPayload }),
       });
     } catch (vErr) { showToast('Saved, but variants failed: ' + vErr.message, 'error'); }
-
-    // Save bundle components
-    if (isBundle && productId) {
-      try {
-        await apiFetch(`${API}/products/${productId}/bundle-items`, {
-          method: 'POST',
-          body:   JSON.stringify({ items: bundleItems }),
-        });
-      } catch (bErr) { showToast('Saved, but bundle components failed: ' + bErr.message, 'error'); }
-    }
 
     showToast(id ? 'Product updated ✓' : 'Product added ✓', 'success');
     closeModal('productModal');
@@ -951,7 +937,6 @@ function openProductModal(productId) {
   var inline = document.getElementById('_productModalLoadErr');
   if (inline) inline.style.display = 'none';
 
-  if (typeof resetBundleFields  === 'function') resetBundleFields();
   if (typeof resetImageSlots    === 'function') resetImageSlots();
   if (typeof resetVariants      === 'function') resetVariants();
 
@@ -995,21 +980,13 @@ async function editProduct(id) {
       _setProductTypeDropdown(p.product_type || 'single', p.unit || 'piece');
     }
 
-    // Images: merge image + images array, deduplicated
-    const imgs = Array.isArray(p.images) ? [...p.images] : [];
-    if (p.image && !imgs.includes(p.image)) imgs.unshift(p.image);
-    if (typeof loadImageSlots === 'function') loadImageSlots(imgs);
+    // Images
+    if (typeof loadImageSlots === 'function') loadImageSlots([p.image, p.image2, p.image3]);
 
     // Variants
     if (typeof resetVariants === 'function') resetVariants();
     if (Array.isArray(p.variants)) {
       p.variants.forEach(v => { if (typeof addVariantRow === 'function') addVariantRow(v); });
-    }
-
-    // Bundle
-    if (typeof prefillBundleFields === 'function') prefillBundleFields(p);
-    if (p.is_bundle && typeof loadBundleItems === 'function') {
-      await loadBundleItems(p.id);
     }
 
     _hideModalLoader(); // reveal the populated form

@@ -133,7 +133,12 @@
     if (!dnEl || dnEl.dataset.override === '1') return;
     var productName = (document.getElementById('pName') ? document.getElementById('pName').value : '').trim();
     var qty  = parseFloat(row.querySelector('.va-bq') ? row.querySelector('.va-bq').value : '') || 0;
-    var unit = row.querySelector('.va-bu') ? row.querySelector('.va-bu').value : 'PCS';
+    var unit = (document.getElementById('pUnitVal') ? document.getElementById('pUnitVal').value : 'PCS');
+
+    // Sync the readonly unit field in the row
+    var rowUnitEl = row.querySelector('.va-bu');
+    if (rowUnitEl) rowUnitEl.value = unit;
+
     var pack = parseInt(row.querySelector('.va-bp') ? row.querySelector('.va-bp').value : '', 10) || 0;
     if (qty > 0 && pack > 0) {
       var parts = [];
@@ -158,7 +163,7 @@
     if (!c) return;
 
     v = v || {};
-    var isBundleEnabled = !!v.is_bundle;
+    var isBundleEnabled = !!(v.bundle_enabled || v.is_bundle);
 
     var row = document.createElement('div');
     row.className = 'va-row';
@@ -205,10 +210,6 @@
       + '</span>'
       + '</label>';
 
-    var unitOpts = ['GM','KG','ML','L','PCS'].map(function(u) {
-      return '<option value="' + u + '"' + (((v.base_unit || 'PCS') === u) ? ' selected' : '') + '>' + u + '</option>';
-    }).join('');
-
     var bundleFieldsHtml =
       '<div class="va-bundle-fields' + (isBundleEnabled ? ' open' : '') + '">'
       + '<div class="va-bundle-inner">'
@@ -220,7 +221,8 @@
       +   '</div>'
       +   '<div class="va-cell">'
       +     '<label>Unit'
-      +     '<select class="va-bu" name="va-bu">' + unitOpts + '</select>'
+      +     '<input type="text" class="va-bu" name="va-bu" readonly style="background:#f0f0f0"'
+      +     ' value="' + (v.base_unit || document.getElementById('pUnitVal')?.value || 'PCS') + '">'
       +     '</label>'
       +   '</div>'
       +   '<div class="va-cell">'
@@ -326,7 +328,7 @@
         stock:             isNaN(stock) ? 0 : Math.max(0, stock),
         size_value:        sizeValue,
         size_unit:         sizeUnit,
-        is_bundle:         false,
+        bundle_enabled:    false,
         base_quantity:     null,
         base_unit:         null,
         pack_size:         null,
@@ -335,14 +337,14 @@
 
       if (bundleCb && bundleCb.checked) {
         var bq = parseFloat(row.querySelector('.va-bq') ? row.querySelector('.va-bq').value : '');
-        var bu = row.querySelector('.va-bu') ? row.querySelector('.va-bu').value : 'PCS';
+        var bu = document.getElementById('pUnitVal')?.value || 'PCS';
         var bp = parseInt(row.querySelector('.va-bp') ? row.querySelector('.va-bp').value : '', 10);
         var dn = (row.querySelector('.va-dn') ? row.querySelector('.va-dn').value : '').trim();
-        entry.is_bundle    = true;
-        entry.base_quantity = (!isNaN(bq) && bq > 0) ? bq : null;
-        entry.base_unit    = bu || 'PCS';
-        entry.pack_size    = (!isNaN(bp) && bp > 0) ? bp : null;
-        entry.display_name = dn || null;
+        entry.bundle_enabled = true;
+        entry.base_quantity  = (!isNaN(bq) && bq > 0) ? bq : null;
+        entry.base_unit      = bu;
+        entry.pack_size      = (!isNaN(bp) && bp > 0) ? bp : null;
+        entry.display_name   = dn || null;
       }
 
       if (row.dataset.vid) entry.id = parseInt(row.dataset.vid, 10);

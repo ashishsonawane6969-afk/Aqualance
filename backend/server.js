@@ -169,6 +169,11 @@ app.use(globalLimiter);
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 
+// Serve uploaded images
+const uploadPath = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
+app.use('/uploads', express.static(uploadPath));
+
 // NOTE: SPA catch-all is registered AFTER API routes inside the async IIFE below.
 // Placing app.get('*') here — before routes are registered — intercepts every
 // /api/* request and returns 404 before the real handlers run. Don't move it back.

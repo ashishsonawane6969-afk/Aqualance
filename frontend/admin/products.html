@@ -201,12 +201,10 @@
         <div class="form-group">
           <label for="pProductType">Product Type &amp; Unit <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0;color:var(--ink-faint)">(auto-sets unit)</span></label>
           <select id="pProductType" onchange="onProductTypeChange()">
-            <option value="single|piece">Single</option>
-            <option value="single|jar">Jar</option>
-            <option value="single|strip">Strip</option>
-            <option value="single|bottle">Bottle</option>
-            <option value="single|pack">Pack</option>
-            <option value="single|box">Box</option>
+            <option value="weight|GM">Weight (GM)</option>
+            <option value="liquid|ML">Liquid (ML)</option>
+            <option value="tablet|PCS">Tablet (PCS)</option>
+            <option value="single|PCS">Single (PCS)</option>
           </select>
         </div>
         <!-- Hidden fields auto-set by dropdown -->
@@ -293,46 +291,6 @@
         <!-- variants-admin.js injects the full variant UI here -->
         <div id="vaAnchor"></div>
 
-        <!-- ── Bundle toggle ─────────────────────────────────── -->
-        <label class="bundle-toggle-row" for="pIsBundle">
-          <input type="checkbox" id="pIsBundle" />
-          <span class="bundle-switch"></span>
-          <span class="bundle-label">Bundle Product<small>Pack / combo with multiple component products</small></span>
-        </label>
-        <div class="bundle-fields" id="bundleFields">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="pBaseQty">Base Quantity</label>
-              <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
-            </div>
-            <div class="form-group">
-              <label for="pBaseUnit">Measurement Unit</label>
-              <select id="pBaseUnit">
-                <option value="GM">GM</option><option value="KG">KG</option>
-                <option value="L">L</option><option value="ML">ML</option><option value="PCS">PCS</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="pPackSize">Pack Size</label>
-              <input type="number" id="pPackSize" min="1" step="1" placeholder="5" />
-            </div>
-            <div class="form-group">
-              <label for="pDisplayName">Display Name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.68rem">(auto)</span></label>
-              <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
-            </div>
-          </div>
-
-          <!-- Bundle components -->
-          <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
-          <p class="bundle-price-note">ℹ️ Add the products that form this bundle. Stock is deducted from each component when ordered. Set the bundle sale price in the Price field above.</p>
-          <div class="bundle-comp-header">
-            <span>Product</span><span>Variant</span><span>Qty</span><span></span>
-          </div>
-          <div id="bundleCompRows"></div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
-        </div>
 
         <div id="productFormError" class="login-error hidden"></div>
         <button type="submit" class="btn btn-primary btn-full" style="margin-top:10px">Save Product</button>
@@ -470,12 +428,11 @@ function loadImageSlots(arr){
 }
 
 function getImagePayload(){
-  var all=_imgSlotData.map(function(d){
-    if(!d)return '';
-    return d.b64||d.url||'';
-  });
-  var filled=all.filter(Boolean);
-  return{image:filled[0]||'',images:filled};
+  return {
+    image:  (_imgSlotData[0] && (_imgSlotData[0].b64 || _imgSlotData[0].url)) || '',
+    image2: (_imgSlotData[1] && (_imgSlotData[1].b64 || _imgSlotData[1].url)) || '',
+    image3: (_imgSlotData[2] && (_imgSlotData[2].b64 || _imgSlotData[2].url)) || ''
+  };
 }
 
 /* ── Bundle toggle logic ─────────────────────────────────────── */
