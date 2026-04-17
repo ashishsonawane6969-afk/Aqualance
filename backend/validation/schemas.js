@@ -103,19 +103,13 @@ const variantBulkSchema = Joi.object({
       id:                Joi.number().integer().positive().optional(),
       variant_name:      Joi.string().trim().max(100).required(),
       size_value:        Joi.number().min(0).max(999_999).optional().default(0),
-      size_unit:         Joi.string().valid('GM','ML','KG','L','PCS').optional().default('PCS'),
+      size_unit:         Joi.string().valid('GM','ML','KG','L','PCS').optional().default('PCS'), // was required
       pack_quantity:     Joi.number().integer().min(1).max(9999).optional().default(1),
       price:             Joi.number().positive().precision(2).max(999_999).required(),
       mrp:               Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-      distributor_price: Joi.number().positive().precision(2).max(999_999).optional().allow(null),
+      distributor_price: Joi.number().positive().precision(2).max(999_999).optional().allow(null), // NEW
       stock:             Joi.number().integer().min(0).max(999_999).optional().default(0),
       sku:               Joi.string().trim().max(80).optional().allow('', null),
-      // Per-variant bundle fields
-      is_bundle:         Joi.boolean().optional().default(false),
-      base_quantity:     Joi.number().positive().precision(2).max(999_999).optional().allow(null),
-      base_unit:         Joi.string().valid('GM','KG','ML','L','PCS').optional().allow(null, '').default('PCS'),
-      pack_size:         Joi.number().integer().positive().max(9999).optional().allow(null),
-      display_name:      Joi.string().trim().max(255).optional().allow('', null),
     }).options({ stripUnknown: true })
   ).min(0).max(20).required(),
 }).options({ stripUnknown: true });

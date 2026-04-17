@@ -169,14 +169,6 @@ app.use(globalLimiter);
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
 
-<<<<<<< HEAD
-=======
-// Serve uploaded images
-const uploadPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
-app.use('/uploads', express.static(uploadPath));
-
->>>>>>> 3baf371fbe6d8d0c1c87c938fa873bfaf7907f9e
 // NOTE: SPA catch-all is registered AFTER API routes inside the async IIFE below.
 // Placing app.get('*') here — before routes are registered — intercepts every
 // /api/* request and returns 404 before the real handlers run. Don't move it back.
@@ -228,11 +220,16 @@ app.use('/api/config/maps-key', (req, res) => {
   res.redirect(301, req.originalUrl.replace('/api/', '/api/v1/'));
 });
 
-// ⚠️  Global error handler is intentionally registered AFTER all routes
-// inside the async IIFE below.  Express walks the middleware stack in
-// registration order — placing a 4-arg error handler here (before routes)
-// means errors thrown by route handlers never reach it.
-// The correct handler is at the bottom of the async IIFE.
+/* ── Global error handler ────────────────────────────────────────────────── */
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error("🔥 ERROR:", err); // full error
+
+  res.status(500).json({
+    success: false,
+    message: err.message || 'Internal server error'
+  });
+});
 
 
 
@@ -251,7 +248,6 @@ let httpServer = null;
   try {
     await connectDB();
     await require('./utils/ensureAuthTables').ensureAuthTables();
-    await require('./database/migrations').runMigrations();
 
     console.log('✅ Database ready');
 
@@ -263,32 +259,6 @@ let httpServer = null;
     app.use('/api/v1/salesman', require('./routes/salesman'));
     app.use('/api/v1/geo',      require('./routes/geo'));
     app.use('/api/v1/ai',       require('./routes/ai'));
-
-    // ── Global error handler (MUST be registered after all routes) ────────────
-    // Express identifies error-handling middleware by its 4-argument signature.
-    // It is only invoked when a route or middleware calls next(err).
-    // Common cases: body-parser sends next(err) for oversized / malformed bodies.
-    // Without this in the right position those errors fell through to Express's
-    // built-in finalhandler, which returned an HTML 500 page instead of JSON.
-    // eslint-disable-next-line no-unused-vars
-    app.use((err, req, res, next) => {
-      // body-parser sets err.status/err.statusCode for known HTTP errors:
-      //   413 PayloadTooLargeError (body > limit)
-      //   400 SyntaxError         (malformed JSON)
-      const status = err.status || err.statusCode || 500;
-
-      // Only log genuine server faults (5xx); client errors (4xx) are noise.
-      if (status >= 500) {
-        console.error('🔥 [globalErrorHandler]', err);
-      }
-
-      // Never send stack traces or raw MySQL messages to the client.
-      let message = 'An unexpected error occurred. Please try again.';
-      if (status === 413) message = 'Request body is too large.';
-      if (status === 400 && err.type === 'entity.parse.failed') message = 'Invalid JSON in request body.';
-
-      res.status(status).json({ success: false, message });
-    });
 
     // ✅ SPA catch-all MUST come AFTER API routes.
     // If registered before, it intercepts every /api/* and returns 404 immediately.
