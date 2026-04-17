@@ -57,8 +57,26 @@ async function _ensureDistributorPriceCol() {
   }
 }
 
+/* ── Auto-migrate: ensure image column is LONGTEXT for base64 support ─────── */
+async function _ensureImageColLongText() {
+  try {
+    const [rows] = await db.query(
+      `SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'products' AND COLUMN_NAME = 'image'`
+    );
+    if (rows.length && !rows[0].COLUMN_TYPE.toLowerCase().includes('longtext')) {
+      await db.query('ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT DEFAULT NULL');
+      _cols = null;
+      console.log('[productController] products.image upgraded to LONGTEXT');
+    }
+  } catch (e) {
+    console.warn('[productController] _ensureImageColLongText error:', e.message);
+  }
+}
+
 // Run once at startup — non-blocking
 _ensureDistributorPriceCol();
+_ensureImageColLongText();
 
 function _parseImages(raw) {
   if (!raw) return [];
@@ -252,6 +270,19 @@ exports.create = async (req, res) => {
 
     res.status(201).json({ success: true, id: result.insertId, message: 'Product created' });
   } catch (err) {
+    if (err.code === 'ER_DATA_TOO_LONG') {
+      try {
+        await db.query(
+          'ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT DEFAULT NULL'
+        );
+        _cols = null;
+        console.info('[productController] ✓ Upgraded products.image to LONGTEXT on create ER_DATA_TOO_LONG');
+      } catch (alterErr) {
+        console.warn('[productController] Could not upgrade products.image column:', alterErr.message);
+      }
+      return sendError(res, 400, 'Image too large for current DB column. Column upgrade attempted — please retry.');
+    }
+    if (err.code === 'ER_BAD_FIELD_ERROR') _cols = null;
     serverError(res, err, '[productController.create]');
   }
 };
