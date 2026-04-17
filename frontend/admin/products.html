@@ -207,7 +207,7 @@
             <textarea id="pDescription" rows="2" placeholder="Product description…"></textarea>
           </div>
 
-          <!-- Product Type (hidden field helpers) -->
+          <!-- Product Type -->
           <div class="form-group">
             <label for="pProductType">Product Type &amp; Unit <span style="font-weight:400;text-transform:none;font-size:.68rem;letter-spacing:0;color:var(--ink-faint)">(auto-sets unit)</span></label>
             <select id="pProductType" onchange="onProductTypeChange()">
@@ -222,50 +222,50 @@
           <input type="hidden" id="pProductTypeVal" value="single" />
           <input type="hidden" id="pUnitVal" value="piece" />
 
-          <!-- 4. Images -->
-          <div class="form-section-title" style="margin-top:6px">4. 📸 Product Images (up to 3)</div>
-          <div class="img-grid">
-            <div class="img-slot-wrap">
-              <div class="img-slot" id="imgSlot0">
-                <img id="imgPreview0" alt="" />
-                <span class="slot-icon">🖼️</span>
-                <span class="slot-label">Main</span>
-                <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
-                <input type="file" id="imgFile0" accept="image/*" />
-              </div>
+          <!-- 4. Image (single) -->
+          <div class="form-section-title" style="margin-top:6px">4. 📸 Product Image</div>
+          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:4px">
+            <div class="img-slot" id="imgSlot0" style="width:90px;height:90px;flex-shrink:0">
+              <img id="imgPreview0" alt="" />
+              <span class="slot-icon">🖼️</span>
+              <span class="slot-label">Main</span>
+              <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
+              <input type="file" id="imgFile0" accept="image/*" />
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px">
               <div class="slot-url-row">
-                <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
+                <input type="url" id="imgUrl0" placeholder="Paste image URL…" oninput="onSlotUrlInput(0)" />
                 <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
               </div>
-            </div>
-            <div class="img-slot-wrap">
-              <div class="img-slot" id="imgSlot1">
-                <img id="imgPreview1" alt="" />
-                <span class="slot-icon">🖼️</span>
-                <span class="slot-label">2nd</span>
-                <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
-                <input type="file" id="imgFile1" accept="image/*" />
-              </div>
-              <div class="slot-url-row">
-                <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
-                <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
-              </div>
-            </div>
-            <div class="img-slot-wrap">
-              <div class="img-slot" id="imgSlot2">
-                <img id="imgPreview2" alt="" />
-                <span class="slot-icon">🖼️</span>
-                <span class="slot-label">3rd</span>
-                <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
-                <input type="file" id="imgFile2" accept="image/*" />
-              </div>
-              <div class="slot-url-row">
-                <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
-                <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
-              </div>
+              <p class="img-hint" style="margin:0">📁 Click box to upload · auto-compressed to 600px JPEG · or paste URL</p>
             </div>
           </div>
-          <p class="img-hint">📁 Click slot to upload &nbsp;|&nbsp; 🔗 Paste URL → press → &nbsp;|&nbsp; Auto-compressed to max 800px · Slot 1 = main image</p>
+          <!-- hidden slots to keep JS working -->
+          <input type="hidden" id="imgFile1" /><input type="hidden" id="imgUrl1" /><span id="imgSlot1" style="display:none"></span><span id="imgPreview1" style="display:none"></span>
+          <input type="hidden" id="imgFile2" /><input type="hidden" id="imgUrl2" /><span id="imgSlot2" style="display:none"></span><span id="imgPreview2" style="display:none"></span>
+
+          <!-- 5. Pricing & Stock -->
+          <div class="form-section-title" style="margin-top:14px;padding-bottom:8px">💰 Pricing &amp; Stock</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pPrice">Price (₹) *</label>
+              <input type="number" id="pPrice" required min="0.01" step="0.01" placeholder="120.00" />
+            </div>
+            <div class="form-group">
+              <label for="pMrp">MRP (₹)</label>
+              <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pDistributorPrice">Distributor Price (₹) <span style="font-weight:400;text-transform:none;font-size:.68rem">(optional)</span></label>
+              <input type="number" id="pDistributorPrice" min="0" step="0.01" placeholder="Optional" />
+            </div>
+            <div class="form-group">
+              <label for="pStock">Stock</label>
+              <input type="number" id="pStock" min="0" placeholder="0" />
+            </div>
+          </div>
         </div>
 
         <!-- ══ CARD 2: Variants ══════════════════════════════════ -->
@@ -277,7 +277,7 @@
 
           <!-- Per-variant field legend -->
           <div style="margin-top:6px;padding:8px 10px;background:rgba(21,101,168,.05);border-radius:var(--r-sm);font-size:.7rem;color:var(--ink-soft);line-height:1.7">
-            Each variant row: &nbsp;
+            Each variant: &nbsp;
             <b>1. Name</b> &nbsp;·&nbsp;
             <b>2. Price (₹)</b> &nbsp;·&nbsp;
             <b>3. Dist. Price (₹)</b> <span style="color:var(--ink-faint)">(optional)</span> &nbsp;·&nbsp;
@@ -319,35 +319,12 @@
 
               <!-- Bundle components -->
               <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
-              <p class="bundle-price-note">ℹ️ Add the products that form this bundle. Stock deducted from each component on order. Set bundle sale price in the Price field above.</p>
+              <p class="bundle-price-note">ℹ️ Add products that form this bundle. Stock deducted per component on order. Bundle sale price set in Price field above.</p>
               <div class="bundle-comp-header">
                 <span>Product</span><span>Variant</span><span>Qty</span><span></span>
               </div>
               <div id="bundleCompRows"></div>
               <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
-            </div>
-          </div>
-
-          <!-- Pricing (inside variants card, below bundle) -->
-          <div class="form-section-title" style="margin-top:14px;padding-bottom:8px">💰 Pricing &amp; Stock</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="pPrice">Price (₹) *</label>
-              <input type="number" id="pPrice" required min="0.01" step="0.01" placeholder="120.00" />
-            </div>
-            <div class="form-group">
-              <label for="pMrp">MRP (₹)</label>
-              <input type="number" id="pMrp" min="0" step="0.01" placeholder="150.00" />
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="pDistributorPrice">Distributor Price (₹) <span style="font-weight:400;text-transform:none;font-size:.68rem">(optional)</span></label>
-              <input type="number" id="pDistributorPrice" min="0" step="0.01" placeholder="Optional" />
-            </div>
-            <div class="form-group">
-              <label for="pStock">Stock</label>
-              <input type="number" id="pStock" min="0" placeholder="0" />
             </div>
           </div>
         </div>
@@ -425,9 +402,9 @@ function _setProductTypeDropdown(productType,unit){
 /* ── 3-Image slots ───────────────────────────────────────────── */
 var _imgSlotData=[null,null,null]; // {b64, url} or null
 
-/* ── Image compression: resize to max 800px, JPEG quality 0.82 ── */
+/* ── Image compression: resize to max 600px, JPEG quality 0.72 ── */
 function _compressImage(file, cb) {
-  var MAX = 800, QUALITY = 0.82;
+  var MAX = 600, QUALITY = 0.72;
   var r = new FileReader();
   r.onload = function(e) {
     var img = new Image();
@@ -466,6 +443,7 @@ function _compressImage(file, cb) {
 function _applySlot(idx,src){
   var slot=document.getElementById('imgSlot'+idx);
   var img=document.getElementById('imgPreview'+idx);
+  if(!slot||!img||!slot.classList)return; // hidden placeholder slots
   if(src){img.src=src;slot.classList.add('has-image');}
   else{img.src='';slot.classList.remove('has-image');}
 }
