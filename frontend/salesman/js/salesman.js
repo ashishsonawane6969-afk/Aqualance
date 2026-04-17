@@ -197,7 +197,8 @@ var _myAreas = [];   // assigned talukas for this salesman
    PRODUCT SELECTOR — Dropdown + Table
 ══════════════════════════════════════════════════════════════ */
 var _psAllProducts = [];   // full product list from API
-var _psSelected    = [];   // [{ product_id, name, price, quantity, total }]
+var _psSelected    = [];   // [{ product_id, variant_id, name, price, quantity, total }]
+var _psVariantsCache = {}; // { product_id: [variants] }
 
 /* ── Load products into dropdown (called once on modal open) ── */
 async function loadProductsDropdown() {
@@ -227,14 +228,67 @@ function _psRebuildDropdown() {
   _psAllProducts.forEach(function(p) {
     var opt = document.createElement('option');
     opt.value = p.id;
-    opt.textContent = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0);
+    var label = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0);
+    if (p.distributor_price) label += ' (Dist: ₹' + parseFloat(p.distributor_price).toFixed(0) + ')';
+    opt.textContent = label;
     if (addedIds.has(p.id)) opt.disabled = true;
     sel.appendChild(opt);
   });
+  // Wire up variant loader on product selection change
+  sel.onchange = function() { _psLoadVariants(parseInt(sel.value, 10) || 0); };
+}
+
+/* ── Load variants for selected product ─────────────────────── */
+async function _psLoadVariants(pid) {
+  var varRow = document.getElementById('psVariantRow');
+  var varSel = document.getElementById('psVariantDropdown');
+  if (!varRow || !varSel) return;
+
+  varRow.style.display = 'none';
+  varSel.innerHTML = '<option value="">— No variant —</option>';
+  if (!pid) return;
+
+  // Use cache if available
+  if (_psVariantsCache[pid]) {
+    _psFillVariants(_psVariantsCache[pid]);
+    return;
+  }
+
+  try {
+    var res  = await apiFetch(API + '/products/' + pid + '/variants');
+    var json = await safeJson(res);
+    var variants = (json.data || []).filter(function(v){ return v.is_active !== 0; });
+    _psVariantsCache[pid] = variants;
+    _psFillVariants(variants);
+  } catch (e) {
+    console.warn('[_psLoadVariants]', e.message);
+  }
+}
+
+function _psFillVariants(variants) {
+  var varRow = document.getElementById('psVariantRow');
+  var varSel = document.getElementById('psVariantDropdown');
+  if (!varRow || !varSel) return;
+  varSel.innerHTML = '<option value="">— No variant / base product —</option>';
+  if (!variants.length) return;
+  variants.forEach(function(v) {
+    var opt = document.createElement('option');
+    opt.value = v.id;
+    var label = v.variant_name + ' — ₹' + parseFloat(v.price).toFixed(0);
+    if (v.display_name) label += ' [' + v.display_name + ']';
+    if (v.distributor_price) label += ' (Dist: ₹' + parseFloat(v.distributor_price).toFixed(0) + ')';
+    if (v.stock != null) label += ' · Stock: ' + v.stock;
+    opt.textContent = label;
+    opt.dataset.price = v.price;
+    opt.dataset.distPrice = v.distributor_price || '';
+    opt.dataset.displayName = v.display_name || '';
+    varSel.appendChild(opt);
+  });
+  varRow.style.display = '';
 }
 
 /* ── Add the selected product from dropdown to the table ─────── */
-function psAddProduct() {
+async function psAddProduct() {
   var sel = document.getElementById('psDropdown');
   if (!sel || !sel.value) return;
   var pid     = parseInt(sel.value, 10);
@@ -245,13 +299,38 @@ function psAddProduct() {
     sel.value = '';
     return;
   }
+
+  // Check if a variant is selected
+  var varSel = document.getElementById('psVariantDropdown');
+  var varRow = document.getElementById('psVariantRow');
+  var variantId = null;
+  var variantName = '';
   var price = parseFloat(product.price) || 0;
-  _psSelected.push({ product_id: pid, name: product.name, price: price, quantity: 1, total: price });
+
+  if (varSel && varRow && varRow.style.display !== 'none' && varSel.value) {
+    variantId = parseInt(varSel.value, 10);
+    var selOpt = varSel.options[varSel.selectedIndex];
+    if (selOpt && selOpt.dataset.price) price = parseFloat(selOpt.dataset.price) || price;
+    variantName = selOpt ? (selOpt.dataset.displayName || selOpt.textContent.split(' — ')[0]) : '';
+  }
+
+  var displayName = variantName ? product.name + ' – ' + variantName : product.name;
+  _psSelected.push({
+    product_id: pid,
+    variant_id: variantId,
+    name:       displayName,
+    price:      price,
+    quantity:   1,
+    total:      price
+  });
+
   sel.value = '';
+  if (varSel) { varSel.innerHTML = '<option value="">— No variant —</option>'; }
+  if (varRow) varRow.style.display = 'none';
   _psRenderTable();
   _psRebuildDropdown();
   _psClearError();
-  showToast(product.name + ' added ✓', 'success');
+  showToast(displayName + ' added ✓', 'success');
 }
 
 /* ── Render the selected-products table ─────────────────────── */
@@ -315,6 +394,11 @@ function _psUpdateGrandTotal() {
 /* ── Reset selector (called on modal open/close) ─────────────── */
 function _resetProductSelector() {
   _psSelected = [];
+  _psVariantsCache = {};
+  var varRow = document.getElementById('psVariantRow');
+  var varSel = document.getElementById('psVariantDropdown');
+  if (varRow) varRow.style.display = 'none';
+  if (varSel) varSel.innerHTML = '<option value="">— No variant —</option>';
   _psRebuildDropdown();
   _psRenderTable();
   _psClearError();
