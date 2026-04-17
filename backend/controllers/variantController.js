@@ -51,15 +51,17 @@ exports.saveVariants = async (req, res) => {
 
       if (id) {
         // Update existing
-        const setClause = cols.map(c => `\`${c}\` = ?`).join(', ');
+        const setClause = cols.map(c => "`" + c + "` = ?").join(', ');
         await connection.query(
           `UPDATE product_variants SET ${setClause} WHERE id = ? AND product_id = ?`,
           [...vals, id, productId]
         );
       } else {
         // Insert new
+        const colNames = cols.map(c => "`" + c + "`").join(', ');
+        const placeholders = cols.map(() => '?').join(', ');
         await connection.query(
-          `INSERT INTO product_variants (${cols.map(c => `\`${c}\`).join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`,
+          `INSERT INTO product_variants (${colNames}) VALUES (${placeholders})`,
           vals
         );
       }
