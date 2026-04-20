@@ -217,7 +217,7 @@ const geoLeadSchema = Joi.object({
   address_geo:  safeText(500).optional().allow('', null),
   photo_data: Joi.string()
     .pattern(/^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/)
-    .max(200_000)
+    .max(27_000_000)
     .optional().allow('', null),
   notes:       safeText(1000).optional().allow('', null),
   visited_at:  Joi.string().isoDate().optional().allow('', null),

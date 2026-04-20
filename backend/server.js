@@ -154,8 +154,8 @@ app.use(cors({
   credentials: true,
 }));
 /* ── Body parsers ────────────────────────────────────────────────────────── */
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 /* ── Cookie parser ───────────────────────────────────────────────────────── */
 app.use(cookieParser());
