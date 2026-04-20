@@ -217,14 +217,14 @@
     /* Mobile (<768px) */
     @media(max-width:767px){
       html,body{overflow-x:hidden;max-width:100%}
-      body{overflow-y:auto}
+      body{overflow-y:auto;overflow-x:hidden}
       .sidebar{z-index:400!important}
-      .main-area{height:auto;overflow:visible;margin-left:0!important;min-width:0}
+      .main-area{height:auto;overflow:visible;margin-left:0!important;min-width:0;padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
       .app-shell{height:auto;overflow-x:hidden}
       .mob-menu-btn{display:flex;align-items:center;justify-content:center}
       .geo-layout{grid-template-columns:1fr;height:auto;overflow:visible}
-      .geo-panel{height:50vh;min-height:280px}
-      .map-col{height:55vh;min-height:300px;position:relative}
+      .geo-panel{height:calc(50vh - 34px);min-height:260px}
+      .map-col{height:calc(55vh - 34px);min-height:280px;position:relative}
       .kpi-strip{grid-template-columns:repeat(2,1fr)}
       .kpi-item:nth-child(2){border-right:none}
       .topnav{padding:0 10px}
@@ -330,6 +330,7 @@
 /* Admin sidebar always dark */
 [data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
 [data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
+[data-theme="dark"] .topnav h2 { color:var(--ink)!important; }
 [data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
 
 /* Tables */
