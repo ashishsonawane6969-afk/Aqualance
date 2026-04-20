@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function(){
+  var k='aqualance_theme',d=document.documentElement;
+  var s;try{s=localStorage.getItem(k);}catch(e){}
+  if(!s)s=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+  d.setAttribute('data-theme',s);
+  // Update theme-color meta for mobile browser chrome
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',s==='dark'?'#060d14':'#1565a8');
+})();
+</script>
 <link rel="manifest" href="/manifest.json" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -205,7 +216,7 @@
     /* Block overlay */
     .block-overlay { display: none; position: fixed; inset: 0; top:0;right:0;bottom:0;left:0; background: rgba(0,0,0,.6); z-index: 800; align-items: center; justify-content: center; padding: 16px; }
     .block-overlay.show { display: flex; }
-    .block-card { background: #fff; border-radius: 20px; padding: 28px 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+    .block-card { background:var(--surface); border-radius: 20px; padding: 28px 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
     .bi { font-size: 3rem; margin-bottom: 12px; }
     .block-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: var(--error, #c0392b); }
     .block-card p  { font-size: .85rem; color: var(--ink-soft, #4a7a9b); line-height: 1.5; }
@@ -250,6 +261,230 @@ body {
 
     
   </style>
+
+
+
+
+<style id="dm-master">
+/* ═══ MASTER DARK MODE ═══════════════════════════════════════ */
+
+/* Base */
+[data-theme="dark"] body { background:var(--bg)!important; color:var(--ink)!important; }
+[data-theme="dark"] * { box-sizing:border-box; }
+
+/* Universal white/light bg catchers */
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:white"],
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background-color:#fff"],
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="background-color:white"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background-color:#ffffff"],
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background:#f"],
+[data-theme="dark"] [style*="background: #f"],
+[data-theme="dark"] [style*="background:#e"],
+[data-theme="dark"] [style*="background: #e"],
+[data-theme="dark"] [style*="background-color:#f"],
+[data-theme="dark"] [style*="background-color: #f"] {
+  background-color:var(--surface)!important;
+  background:var(--surface)!important;
+}
+
+/* Card-like elements */
+[data-theme="dark"] .card,
+[data-theme="dark"] [class*="card"]:not([class*="bottom-nav"]):not([class*="topnav"]),
+[data-theme="dark"] [class*="Card"],
+[data-theme="dark"] [class*="-box"],
+[data-theme="dark"] [class*="panel"]:not(.geo-map-panel),
+[data-theme="dark"] [class*="tile"]:not([class*="map"]),
+[data-theme="dark"] [class*="Tile"],
+[data-theme="dark"] [class*="modal"],
+[data-theme="dark"] [class*="Modal"],
+[data-theme="dark"] [class*="sheet"],
+[data-theme="dark"] [class*="popup"],
+[data-theme="dark"] [class*="drawer"],
+[data-theme="dark"] .tcard, [data-theme="dark"] .twrap,
+[data-theme="dark"] .filter-section, [data-theme="dark"] .controls-bar,
+[data-theme="dark"] .search-pill,
+[data-theme="dark"] .report-card, [data-theme="dark"] .chart-card,
+[data-theme="dark"] .kpi-card, [data-theme="dark"] .stat-card,
+[data-theme="dark"] .info-card, [data-theme="dark"] .hours-card,
+[data-theme="dark"] .form-card, [data-theme="dark"] .map-card,
+[data-theme="dark"] .whatsapp-card,
+[data-theme="dark"] .contact-hero,
+[data-theme="dark"] .geo-panel, [data-theme="dark"] .assign-panel,
+[data-theme="dark"] .detail-sheet, [data-theme="dark"] .p-tabs,
+[data-theme="dark"] .podium-card, [data-theme="dark"] .lb-card,
+[data-theme="dark"] .perf-card, [data-theme="dark"] .sm-card,
+[data-theme="dark"] .lead-card, [data-theme="dark"] .lead-row,
+[data-theme="dark"] .ps-table-wrap, [data-theme="dark"] #psTableWrap,
+[data-theme="dark"] .modal-body, [data-theme="dark"] .modal-header,
+[data-theme="dark"] .va-row, [data-theme="dark"] .va-bundle-inner,
+[data-theme="dark"] .img-slot {
+  background:var(--surface)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+
+/* Page layout */
+[data-theme="dark"] .main-area,
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .app-layout,
+[data-theme="dark"] .page-wrap,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .app-content,
+[data-theme="dark"] .tab-panel {
+  background:var(--bg)!important;
+}
+
+/* Admin sidebar always dark */
+[data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
+[data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
+[data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Tables */
+[data-theme="dark"] table { background:transparent!important; }
+[data-theme="dark"] thead tr,
+[data-theme="dark"] thead th { background:var(--surface-2)!important; color:var(--ink-soft)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody td { color:var(--ink)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody tr:hover td { background:var(--surface-2)!important; }
+
+/* Form controls */
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=submit]):not([type=button]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color:var(--ink-faint)!important; }
+
+/* Buttons */
+[data-theme="dark"] .btn-ghost { background:var(--surface-2)!important; color:var(--ink)!important; }
+[data-theme="dark"] .btn-outline { border-color:var(--brand)!important; color:var(--brand)!important; background:transparent!important; }
+
+/* Geo-map specific */
+[data-theme="dark"] .geo-panel,
+[data-theme="dark"] .p-tabs { background:var(--surface)!important; }
+[data-theme="dark"] .p-tab { color:var(--ink-soft)!important; }
+[data-theme="dark"] .p-tab.active { background:var(--surface)!important; color:var(--brand)!important; border-color:var(--brand)!important; }
+[data-theme="dark"] .filter-bar select,
+[data-theme="dark"] .filter-bar input,
+[data-theme="dark"] .at-grid input,
+[data-theme="dark"] .btn-clear,
+[data-theme="dark"] .btn-focus,
+[data-theme="dark"] #atDistrict,
+[data-theme="dark"] #atTalukaSelect { background:var(--surface-2)!important; border-color:var(--border)!important; color:var(--ink)!important; }
+[data-theme="dark"] .detail-sheet { background:var(--surface)!important; }
+
+/* Contact page */
+[data-theme="dark"] .contact-hero { background:linear-gradient(135deg,#060d14 0%,#0d2a45 100%)!important; }
+[data-theme="dark"] .whatsapp-card { background:#0d2a1a!important; border-color:#1a5c2a!important; }
+[data-theme="dark"] .whatsapp-card .wa-text h3 { color:#34d058!important; }
+[data-theme="dark"] .whatsapp-card .wa-text p { color:#34d058!important; opacity:.8; }
+[data-theme="dark"] .quick-call { background:var(--brand)!important; }
+
+/* Overview chart area */
+[data-theme="dark"] canvas { filter:brightness(.9); }
+[data-theme="dark"] .chart-wrap,
+[data-theme="dark"] [id*="chart"],
+[data-theme="dark"] [id*="Chart"] { background:var(--surface)!important; }
+
+/* Border overrides - inline styles */
+[data-theme="dark"] [style*="border:1px solid #"],
+[data-theme="dark"] [style*="border: 1px solid #"],
+[data-theme="dark"] [style*="border:1.5px solid #"],
+[data-theme="dark"] [style*="border: 1.5px solid #"],
+[data-theme="dark"] [style*="border-bottom:1px solid"],
+[data-theme="dark"] [style*="border-top:1px solid"],
+[data-theme="dark"] [style*="border-color:#"] { border-color:var(--border)!important; }
+
+/* Text color overrides - inline dark text on light bg */
+[data-theme="dark"] [style*="color:#0"],
+[data-theme="dark"] [style*="color: #0"],
+[data-theme="dark"] [style*="color:#1"],
+[data-theme="dark"] [style*="color: #1"],
+[data-theme="dark"] [style*="color:#2"],
+[data-theme="dark"] [style*="color: #2"],
+[data-theme="dark"] [style*="color:#3"],
+[data-theme="dark"] [style*="color: #3"],
+[data-theme="dark"] [style*="color:black"],
+[data-theme="dark"] [style*="color: black"] { color:var(--ink)!important; }
+
+/* Soft text */
+[data-theme="dark"] [style*="color:#6"],
+[data-theme="dark"] [style*="color: #6"],
+[data-theme="dark"] [style*="color:#7"],
+[data-theme="dark"] [style*="color: #7"],
+[data-theme="dark"] [style*="color:#8"],
+[data-theme="dark"] [style*="color: #8"],
+[data-theme="dark"] [style*="color:#9"],
+[data-theme="dark"] [style*="color: #9"] { color:var(--ink-soft)!important; }
+
+/* Product page variant chips */
+[data-theme="dark"] .pd-variant-chip {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] .pd-variant-chip.active {
+  background:var(--ink)!important;
+  color:#fff!important;
+}
+
+/* Salesman dashboard stat tiles */
+[data-theme="dark"] [class*="kpi"],
+[data-theme="dark"] [class*="stat"] { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Scrollbar */
+[data-theme="dark"] * {
+  scrollbar-color: var(--border) var(--surface-2);
+}
+</style>
+<script id="dm-runtime">
+(function(){
+  var BG_LIGHT = /^(#fff(fff)?|white|#f[0-9a-f]{5}|#e[0-9a-f]{5}|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\))$/i;
+  var BRD = /^(#[cde][0-9a-f]{5})$/i;
+  var INK_DARK = /^(#[0-3][0-9a-f]{5}|black|rgb\([01]\d{0,2},)$/i;
+
+  function patch(el){
+    var s=el.style;
+    if(!s) return;
+    var bg=s.backgroundColor||s.background;
+    if(bg && (BG_LIGHT.test(bg.trim())||bg==='rgb(255, 255, 255)'))
+      el.style.setProperty('background-color','var(--surface)','important');
+    if(s.borderColor && BRD.test(s.borderColor))
+      el.style.setProperty('border-color','var(--border)','important');
+    if(s.color && INK_DARK.test(s.color.trim()))
+      el.style.setProperty('color','var(--ink)','important');
+  }
+
+  function patchAll(){
+    if(document.documentElement.getAttribute('data-theme')!=='dark') return;
+    document.querySelectorAll('[style]').forEach(patch);
+  }
+
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      if(m.attributeName==='data-theme') setTimeout(patchAll,50);
+    });
+  }).observe(document.documentElement,{attributes:true});
+
+  document.addEventListener('DOMContentLoaded',function(){
+    patchAll();
+    new MutationObserver(function(){
+      if(document.documentElement.getAttribute('data-theme')==='dark') patchAll();
+    }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+  });
+})();
+</script>
+
 </head>
 <body>
 
@@ -497,8 +732,8 @@ async function _geoLeadAuth() {
 })();
 
 /* ══════════ PRODUCTS — Dropdown + Table ══════════ */
-let _geoAllProds = [];   // full product list from API
-let _geoSelProds = [];   // [{ id, name, price, qty }]
+let _geoAllProds = [];   // full product list from API (with .variants array)
+let _geoSelProds = [];   // [{ id, variant_id, name, price, dist_price, qty }]
 
 async function loadProducts() {
   const sel = document.getElementById('geoProductDropdown');
@@ -509,7 +744,16 @@ async function loadProducts() {
     const res  = await apiFetch('/api/v1/products');
     const data = await res.json();
     if (data.success && (data.data || data.products)) {
-      _geoAllProds = (data.data || data.products).filter(p => p.is_active !== 0);
+      const products = (data.data || data.products).filter(p => p.is_active !== 0);
+      // fetch variants for each product in parallel
+      await Promise.all(products.map(async p => {
+        try {
+          const vr = await apiFetch('/api/v1/products/' + p.id + '/variants');
+          const vj = await vr.json();
+          p.variants = (vj.data || []).filter(v => v.is_active !== 0);
+        } catch(e) { p.variants = []; }
+      }));
+      _geoAllProds = products;
     }
   } catch (e) {
     sel.innerHTML = '<option value="">⚠ Could not load products</option>';
@@ -522,29 +766,62 @@ async function loadProducts() {
 function _geoRebuildDropdown() {
   const sel = document.getElementById('geoProductDropdown');
   if (!sel) return;
-  const addedIds = new Set(_geoSelProds.map(p => p.id));
-  sel.innerHTML = '<option value="">— Select a product —</option>';
+  const addedKeys = new Set(_geoSelProds.map(p => p.id + '_' + (p.variant_id || '')));
+  sel.innerHTML = '<option value="">— Select product / variant —</option>';
   _geoAllProds.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0);
-    if (addedIds.has(p.id)) opt.disabled = true;
-    sel.appendChild(opt);
+    if (p.variants && p.variants.length > 0) {
+      // grouped: base product + each variant under optgroup
+      const grp = document.createElement('optgroup');
+      grp.label = p.name;
+      // base product option first
+      const baseKey = p.id + '_';
+      const baseOpt = document.createElement('option');
+      baseOpt.value = baseKey;
+      baseOpt.textContent = '(Base) ' + p.name + ' — ₹' + parseFloat(p.price || 0).toFixed(0)
+        + (p.distributor_price ? '  (Dist ₹' + parseFloat(p.distributor_price).toFixed(0) + ')' : '');
+      if (addedKeys.has(baseKey)) baseOpt.disabled = true;
+      grp.appendChild(baseOpt);
+      // variant options
+      p.variants.forEach(v => {
+        const key = p.id + '_' + v.id;
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = v.variant_name + ' — ₹' + parseFloat(v.price || 0).toFixed(0)
+          + (v.distributor_price ? '  (Dist ₹' + parseFloat(v.distributor_price).toFixed(0) + ')' : '');
+        if (addedKeys.has(key)) opt.disabled = true;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    } else {
+      // base product (no variants)
+      const key = p.id + '_';
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0)
+        + (p.distributor_price ? '  (Dist ₹' + parseFloat(p.distributor_price).toFixed(0) + ')' : '');
+      if (addedKeys.has(key)) opt.disabled = true;
+      sel.appendChild(opt);
+    }
   });
 }
 
 function geoAddProduct() {
   const sel = document.getElementById('geoProductDropdown');
   if (!sel || !sel.value) return;
-  const pid  = parseInt(sel.value, 10);
-  const prod = _geoAllProds.find(p => p.id === pid);
+  const parts  = sel.value.split('_');
+  const pid    = parseInt(parts[0], 10);
+  const vid    = parts[1] ? parseInt(parts[1], 10) : null;
+  const prod   = _geoAllProds.find(p => p.id === pid);
   if (!prod) return;
-  if (_geoSelProds.some(p => p.id === pid)) {
-    sel.value = '';
-    return;
-  }
-  const price = parseFloat(prod.price) || 0;
-  _geoSelProds.push({ id: pid, name: prod.name, price, qty: 1 });
+  const key = pid + '_' + (vid || '');
+  if (_geoSelProds.some(p => (p.id + '_' + (p.variant_id||'')) === key)) { sel.value = ''; return; }
+  const variant    = vid ? (prod.variants || []).find(v => v.id === vid) : null;
+  const label      = variant ? prod.name + ' — ' + variant.variant_name : prod.name;
+  const price      = parseFloat(variant ? variant.price : prod.price) || 0;
+  const dist_price = variant
+    ? (parseFloat(variant.distributor_price) || null)
+    : (parseFloat(prod.distributor_price) || null);
+  _geoSelProds.push({ id: pid, variant_id: vid || null, name: label, price, dist_price, qty: 1 });
   sel.value = '';
   _geoRenderTable();
   _geoRebuildDropdown();
@@ -563,19 +840,22 @@ function _geoRenderTable() {
   }
   if (empty) empty.style.display = 'none';
   if (wrap)  wrap.style.display  = '';
-  tbody.innerHTML = _geoSelProds.map((p, i) =>
-    '<tr>'
-    + '<td><span class="prod-row-name" title="' + _esc(p.name) + '">' + _esc(p.name) + '</span></td>'
-    + '<td><input type="number" class="prod-num-input" id="geo-price-' + i + '"'
-    +       ' value="' + p.price.toFixed(2) + '" min="0" step="0.01" inputmode="decimal"'
-    +       ' oninput="geoUpdateField(' + i + ',\'price\',this.value)" /></td>'
-    + '<td><input type="number" class="prod-num-input" id="geo-qty-' + i + '"'
-    +       ' value="' + p.qty + '" min="1" step="1" style="width:52px" inputmode="numeric"'
-    +       ' oninput="geoUpdateField(' + i + ',\'qty\',this.value)" /></td>'
-    + '<td><span class="prod-row-total" id="geo-total-' + i + '">₹' + (p.price * p.qty).toFixed(2) + '</span></td>'
-    + '<td><button type="button" class="prod-remove" onclick="geoRemoveRow(' + i + ')" title="Remove">✕</button></td>'
-    + '</tr>'
-  ).join('');
+  tbody.innerHTML = _geoSelProds.map((p, i) => {
+    const distBadge = p.dist_price
+      ? '<div style="font-size:.65rem;color:#7b1fa2;margin-top:1px">Dist ₹' + p.dist_price.toFixed(2) + '</div>'
+      : '';
+    return '<tr>'
+      + '<td><span class="prod-row-name" title="' + _esc(p.name) + '">' + _esc(p.name) + '</span>' + distBadge + '</td>'
+      + '<td><input type="number" class="prod-num-input" id="geo-price-' + i + '"'
+      +       ' value="' + p.price.toFixed(2) + '" min="0" step="0.01" inputmode="decimal"'
+      +       ' oninput="geoUpdateField(' + i + ',\'price\',this.value)" /></td>'
+      + '<td><input type="number" class="prod-num-input" id="geo-qty-' + i + '"'
+      +       ' value="' + p.qty + '" min="1" step="1" style="width:52px" inputmode="numeric"'
+      +       ' oninput="geoUpdateField(' + i + ',\'qty\',this.value)" /></td>'
+      + '<td><span class="prod-row-total" id="geo-total-' + i + '">₹' + (p.price * p.qty).toFixed(2) + '</span></td>'
+      + '<td><button type="button" class="prod-remove" onclick="geoRemoveRow(' + i + ')" title="Remove">✕</button></td>'
+      + '</tr>';
+  }).join('');
   _geoUpdateGrandTotal();
 }
 
@@ -1070,7 +1350,7 @@ async function submitLead() {
       sale_status:  _saleStatus,
       notes:        document.getElementById('fNotes').value.trim(),
       photo_data:   _photoData,
-      products_interested: _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-'+i); const qtyEl = document.getElementById('geo-qty-'+i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price; const qty = qtyEl ? Math.max(1, parseInt(qtyEl.value,10)||1) : p.qty; return { id: p.id, name: p.name, price, qty }; }),
+      products_interested: _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-'+i); const qtyEl = document.getElementById('geo-qty-'+i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price; const qty = qtyEl ? Math.max(1, parseInt(qtyEl.value,10)||1) : p.qty; return { id: p.id, variant_id: p.variant_id || null, name: p.name, price, qty, dist_price: p.dist_price || null }; }),
       latitude:     _gps?.latitude  || null,
       longitude:    _gps?.longitude || null,
       gps_accuracy: _gps?.accuracy  || null,
@@ -1142,5 +1422,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="position:fixed!important;top:12px!important;right:16px!important;z-index:99999!important;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button>
 </body>
 </html>

@@ -636,7 +636,8 @@ function renderProductsTable(products) {
       ? `<img src="${_safeSrc(p.image)}" alt="${_esc(p.name)}" class="prod-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="prod-thumb-placeholder" style="display:none">🌿</div>`
       : `<div class="prod-thumb-placeholder">🌿</div>`;
     const bundgeBadge  = p.is_bundle ? `<span class="bundle-badge">📦 Bundle</span>` : '';
-    const variantBadge = p.variant_count > 0 ? `<span class="variant-badge">${p.variant_count} var</span>` : '';
+    const variantBadge = p.variant_count > 0
+      ? `<button class="variant-badge" style="cursor:pointer;border:none;background:#1565a8;color:#fff;border-radius:4px;padding:2px 8px;font-size:.6rem;font-weight:700" onclick="showVariantsModal(${p.id},'${_esc(p.name).replace(/'/g,"\\'")}')">📐 ${p.variant_count} variant${p.variant_count>1?'s':''}</button>` : '';
     const typeBadge    = p.product_type && p.product_type !== 'single'
       ? `<span class="type-badge">${_esc(p.product_type)}</span>` : '';
     return `<tr>
@@ -676,7 +677,8 @@ function renderProductsTable(products) {
       ? '<span class="tag tag-green" style="font-size:.65rem;padding:2px 8px">Active</span>'
       : '<span class="tag tag-red" style="font-size:.65rem;padding:2px 8px">Inactive</span>';
     const bundgeLine  = p.is_bundle ? `<span class="bundle-badge" style="font-size:.6rem">📦 Bundle</span>` : '';
-    const variantLine = p.variant_count > 0 ? `<span class="variant-badge" style="font-size:.6rem">${p.variant_count} var</span>` : '';
+    const variantLine = p.variant_count > 0
+      ? `<button style="cursor:pointer;border:none;background:#1565a8;color:#fff;border-radius:4px;padding:2px 8px;font-size:.6rem;font-weight:700" onclick="showVariantsModal(${p.id},'${_esc(p.name).replace(/'/g,"\\'")}')">📐 ${p.variant_count} variant${p.variant_count>1?'s':''}</button>` : '';
     return `<div class="prod-card">
       ${imgHtml}
       <div class="prod-card-body">
@@ -780,6 +782,55 @@ document.getElementById('productForm')?.addEventListener('submit', async functio
     errDiv.classList.remove('hidden');
   }
 });
+
+
+/* ── Show Variants Modal ──────────────────────────────────────── */
+async function showVariantsModal(productId, productName) {
+  // Create or reuse modal
+  let modal = document.getElementById('variantsViewModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'variantsViewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `<div style="background:var(--bg,#fff);border-radius:16px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+      <div style="padding:16px 18px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft)">Variants</div>
+          <div id="vvmTitle" style="font-weight:700;font-size:1rem;color:var(--ink);margin-top:2px"></div>
+        </div>
+        <button onclick="this.closest('#variantsViewModal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--ink-soft);line-height:1">✕</button>
+      </div>
+      <div id="vvmBody" style="padding:16px;overflow-y:auto;flex:1"></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
+  }
+  document.getElementById('vvmTitle').textContent = productName;
+  document.getElementById('vvmBody').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink-soft)">Loading…</div>';
+
+  try {
+    const res  = await apiFetch(`${API}/products/${productId}/variants`);
+    const data = await res.json();
+    const variants = data.data || [];
+    if (!variants.length) {
+      document.getElementById('vvmBody').innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink-soft)">No variants for this product.</div>';
+      return;
+    }
+    document.getElementById('vvmBody').innerHTML = variants.map(v => `
+      <div style="border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--surface-2)">
+        <div style="font-weight:700;font-size:.9rem;color:var(--ink);margin-bottom:6px">📐 ${_esc(v.variant_name)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:.78rem">
+          <div><span style="color:var(--ink-soft)">Price:</span> <b>${fmtCurrency(v.price)}</b></div>
+          <div><span style="color:var(--ink-soft)">MRP:</span> ${v.mrp ? fmtCurrency(v.mrp) : '—'}</div>
+          <div style="color:#7b1fa2"><span style="opacity:.7">Dist Price:</span> <b>${v.distributor_price ? fmtCurrency(v.distributor_price) : '—'}</b></div>
+          <div><span style="color:var(--ink-soft)">Stock:</span> <b>${v.stock ?? '—'}</b></div>
+          ${v.is_bundle && v.base_quantity ? `<div style="grid-column:1/-1;color:var(--ink-soft)">📦 Bundle: ${v.base_quantity} ${v.base_unit||''} × ${v.pack_size||''} Pack${v.display_name ? ' — ' + _esc(v.display_name) : ''}</div>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(err) {
+    document.getElementById('vvmBody').innerHTML = `<div style="color:var(--error);padding:16px">${_esc(err.message)}</div>`;
+  }
+}
 
 async function deleteProduct(id, name) {
   if (!confirm(`Delete "${name}"?`)) return;
@@ -1019,3 +1070,38 @@ async function editProduct(id) {
     if (typeof showToast === 'function') showToast('Could not load product: ' + err.message, 'error');
   }
 }
+
+
+/* ══ DARK MODE TOGGLE ══════════════════════════════════════════ */
+(function(){
+  var KEY = 'aqualance_theme';
+  function isDark() { return document.documentElement.getAttribute('data-theme')==='dark'; }
+  function applyTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var btn = document.getElementById('dmToggleBtn');
+    if (btn) btn.textContent = dark ? '☀️' : '🌙';
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+  }
+  function injectBtn() {
+    if (document.getElementById('dmToggleBtn')) return;
+    var btn = document.createElement('button');
+    btn.id = 'dmToggleBtn';
+    btn.className = 'dm-toggle';
+    btn.title = 'Toggle dark mode';
+    btn.setAttribute('aria-label', 'Toggle dark mode');
+    btn.textContent = isDark() ? '☀️' : '🌙';
+    btn.addEventListener('click', function() { applyTheme(!isDark()); });
+    document.body.appendChild(btn);
+  }
+  // Apply saved or system theme immediately
+  var saved;
+  try { saved = localStorage.getItem(KEY); } catch(e){}
+  if (!saved) saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  applyTheme(saved === 'dark');
+  // Inject button after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBtn);
+  } else {
+    injectBtn();
+  }
+})();

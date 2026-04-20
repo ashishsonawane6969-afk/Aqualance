@@ -40,6 +40,7 @@ async function salesLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort */ }
   sessionStorage.removeItem('aq_sales_user');
+  try { localStorage.removeItem('aq_token'); } catch(_){}
   window.location.replace('login.html');
 }
 function salesmanLogout() { salesLogout(); }
@@ -152,6 +153,8 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
+        // Store token for cross-site Bearer auth (mobile browsers block httpOnly cookies cross-origin)
+        if (data.token) { try { localStorage.setItem('aq_token', data.token); } catch(_){} }
         // Fix 2: Token is in httpOnly cookie — store only the user profile
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
         // Fix 4: Force password change if required
@@ -197,20 +200,29 @@ var _myAreas = [];   // assigned talukas for this salesman
    PRODUCT SELECTOR — Dropdown + Table
 ══════════════════════════════════════════════════════════════ */
 var _psAllProducts = [];   // full product list from API
-var _psSelected    = [];   // [{ product_id, name, price, quantity, total }]
+var _psSelected    = [];   // [{ product_id, variant_id, name, price, dist_price, quantity, total }]
 
-/* ── Load products into dropdown (called once on modal open) ── */
+/* ── Load products+variants into grouped dropdown ─────────────── */
 async function loadProductsDropdown() {
   var sel = document.getElementById('psDropdown');
   if (!sel) return;
   if (_psAllProducts.length) { _psRebuildDropdown(); return; }
-
-  sel.innerHTML = '<option value="">Loading products…</option>';
+  sel.innerHTML = '<option value="">Loading…</option>';
   try {
     var res  = await apiFetch(API + '/products');
     var json = await safeJson(res);
     if (!json.success) throw new Error(json.message || 'Failed');
-    _psAllProducts = (json.data || []).filter(function(p){ return p.is_active !== 0; });
+    var products = (json.data || []).filter(function(p){ return p.is_active !== 0; });
+    // Fetch variants for each product
+    var withVariants = await Promise.all(products.map(async function(p) {
+      try {
+        var vr   = await apiFetch(API + '/products/' + p.id + '/variants');
+        var vj   = await safeJson(vr);
+        p.variants = (vj.data || []).filter(function(v){ return v.is_active !== 0; });
+      } catch(e) { p.variants = []; }
+      return p;
+    }));
+    _psAllProducts = withVariants;
     _psRebuildDropdown();
   } catch (e) {
     sel.innerHTML = '<option value="">⚠ Could not load products</option>';
@@ -218,40 +230,88 @@ async function loadProductsDropdown() {
   }
 }
 
-/* ── Rebuild dropdown options (disables already-added products) */
+/* ── Rebuild grouped dropdown ─────────────────────────────────── */
 function _psRebuildDropdown() {
   var sel = document.getElementById('psDropdown');
   if (!sel) return;
-  var addedIds = new Set(_psSelected.map(function(p){ return p.product_id; }));
-  sel.innerHTML = '<option value="">— Tap to select a product —</option>';
+  // track added as "pid_vid" or "pid_" for base
+  var addedKeys = new Set(_psSelected.map(function(p){
+    return p.product_id + '_' + (p.variant_id || '');
+  }));
+  sel.innerHTML = '<option value="">— Select product / variant —</option>';
   _psAllProducts.forEach(function(p) {
-    var opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0);
-    if (addedIds.has(p.id)) opt.disabled = true;
-    sel.appendChild(opt);
+    if (p.variants && p.variants.length > 0) {
+      // grouped: base product + variants under optgroup
+      var grp = document.createElement('optgroup');
+      grp.label = p.name;
+      // base product first
+      var baseKey = p.id + '_';
+      var baseOpt = document.createElement('option');
+      baseOpt.value = baseKey;
+      baseOpt.textContent = '(Base) ' + p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0)
+        + (p.distributor_price ? '  (Dist ₹' + parseFloat(p.distributor_price).toFixed(0) + ')' : '');
+      if (addedKeys.has(baseKey)) baseOpt.disabled = true;
+      grp.appendChild(baseOpt);
+      // variants
+      p.variants.forEach(function(v) {
+        var key = p.id + '_' + v.id;
+        var opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = v.variant_name + ' — ₹' + parseFloat(v.price || 0).toFixed(0)
+          + (v.distributor_price ? '  (Dist ₹' + parseFloat(v.distributor_price).toFixed(0) + ')' : '');
+        if (addedKeys.has(key)) opt.disabled = true;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    } else {
+      // Base product (no variants)
+      var key = p.id + '_';
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = p.name + (p.unit ? ' (' + p.unit + ')' : '') + ' — ₹' + parseFloat(p.price || 0).toFixed(0)
+        + (p.distributor_price ? '  (Dist ₹' + parseFloat(p.distributor_price).toFixed(0) + ')' : '');
+      if (addedKeys.has(key)) opt.disabled = true;
+      sel.appendChild(opt);
+    }
   });
 }
 
-/* ── Add the selected product from dropdown to the table ─────── */
+/* ── Add selected product/variant to table ────────────────────── */
 function psAddProduct() {
   var sel = document.getElementById('psDropdown');
   if (!sel || !sel.value) return;
-  var pid     = parseInt(sel.value, 10);
-  var product = _psAllProducts.find(function(p){ return p.id === pid; });
+  var parts      = sel.value.split('_');
+  var pid        = parseInt(parts[0], 10);
+  var vid        = parts[1] ? parseInt(parts[1], 10) : null;
+  var product    = _psAllProducts.find(function(p){ return p.id === pid; });
   if (!product) { sel.value = ''; return; }
-  if (_psSelected.some(function(p){ return p.product_id === pid; })) {
-    showToast(product.name + ' already added.', 'error');
-    sel.value = '';
-    return;
+
+  var key = pid + '_' + (vid || '');
+  if (_psSelected.some(function(p){ return (p.product_id + '_' + (p.variant_id||'')) === key; })) {
+    showToast('Already added.', 'error'); sel.value = ''; return;
   }
-  var price = parseFloat(product.price) || 0;
-  _psSelected.push({ product_id: pid, name: product.name, price: price, quantity: 1, total: price });
+
+  var variant    = vid ? (product.variants || []).find(function(v){ return v.id === vid; }) : null;
+  var label      = variant ? product.name + ' — ' + variant.variant_name : product.name;
+  var price      = parseFloat(variant ? variant.price : product.price) || 0;
+  var dist_price = variant
+    ? (parseFloat(variant.distributor_price) || null)
+    : (parseFloat(product.distributor_price) || null);
+
+  _psSelected.push({
+    product_id: pid,
+    variant_id: vid || null,
+    name: label,
+    price: price,
+    dist_price: dist_price,
+    quantity: 1,
+    total: price
+  });
   sel.value = '';
   _psRenderTable();
   _psRebuildDropdown();
   _psClearError();
-  showToast(product.name + ' added ✓', 'success');
+  showToast(label + ' added ✓', 'success');
 }
 
 /* ── Render the selected-products table ─────────────────────── */
@@ -271,8 +331,11 @@ function _psRenderTable() {
   if (wrap)  wrap.style.display  = '';
 
   tbody.innerHTML = _psSelected.map(function(p, i) {
+    var distBadge = p.dist_price
+      ? '<div style="font-size:.66rem;color:#7b1fa2;margin-top:1px">Dist ₹' + p.dist_price.toFixed(2) + '</div>'
+      : '';
     return '<tr>'
-      + '<td><span class="ps-prod-name" title="' + _esc(p.name) + '">' + _esc(p.name) + '</span></td>'
+      + '<td><span class="ps-prod-name" title="' + _esc(p.name) + '">' + _esc(p.name) + '</span>' + distBadge + '</td>'
       + '<td><input type="number" class="ps-num-input" id="ps-price-' + i + '"'
       +       ' value="' + p.price.toFixed(2) + '" min="0" step="0.01" inputmode="decimal"'
       +       ' oninput="psUpdateField(' + i + ',\'price\',this.value)" /></td>'
@@ -337,7 +400,7 @@ function _buildProductsPayload() {
     var qtyEl   = document.getElementById('ps-qty-'   + i);
     var price   = priceEl ? Math.max(0, parseFloat(priceEl.value) || 0) : p.price;
     var qty     = qtyEl   ? Math.max(1, parseInt(qtyEl.value, 10) || 1) : p.quantity;
-    return {
+    return { variant_id: p.variant_id || null,
       product_id: p.product_id,
       name:       p.name,
       price:      parseFloat(price.toFixed(2)),
@@ -528,7 +591,8 @@ function filterLeads() {
   const filtered = allLeads.filter(function(l) {
     const matchStatus = !st || l.sale_status === st;
     const matchSearch = !q  || [l.shop_name, l.owner_name, l.village, l.taluka, l.district, l.mobile]
-      .some(function(f) { return (f || '').toLowerCase().indexOf(q) !== -1; });
+      .some(function(f) { return (f || '').toLowerCase().indexOf(q) !== -1; })
+      || (Array.isArray(l.products) && l.products.some(function(p){ return (p.name||'').toLowerCase().indexOf(q)!==-1; }));
     return matchStatus && matchSearch;
   });
 
@@ -1115,3 +1179,38 @@ async function exportCSV() {
     showToast('Export failed: ' + e.message, 'error');
   }
 }
+
+
+/* ══ DARK MODE TOGGLE ══════════════════════════════════════════ */
+(function(){
+  var KEY = 'aqualance_theme';
+  function isDark() { return document.documentElement.getAttribute('data-theme')==='dark'; }
+  function applyTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var btn = document.getElementById('dmToggleBtn');
+    if (btn) btn.textContent = dark ? '☀️' : '🌙';
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+  }
+  function injectBtn() {
+    if (document.getElementById('dmToggleBtn')) return;
+    var btn = document.createElement('button');
+    btn.id = 'dmToggleBtn';
+    btn.className = 'dm-toggle';
+    btn.title = 'Toggle dark mode';
+    btn.setAttribute('aria-label', 'Toggle dark mode');
+    btn.textContent = isDark() ? '☀️' : '🌙';
+    btn.addEventListener('click', function() { applyTheme(!isDark()); });
+    document.body.appendChild(btn);
+  }
+  // Apply saved or system theme immediately
+  var saved;
+  try { saved = localStorage.getItem(KEY); } catch(e){}
+  if (!saved) saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  applyTheme(saved === 'dark');
+  // Inject button after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBtn);
+  } else {
+    injectBtn();
+  }
+})();

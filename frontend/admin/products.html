@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function(){
+  var k='aqualance_theme',d=document.documentElement;
+  var s;try{s=localStorage.getItem(k);}catch(e){}
+  if(!s)s=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+  d.setAttribute('data-theme',s);
+  // Update theme-color meta for mobile browser chrome
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',s==='dark'?'#060d14':'#1565a8');
+})();
+</script>
 <link rel="manifest" href="/manifest.json" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -28,7 +39,7 @@
     @media(max-width:640px){
       .table-wrap{display:none!important}
       #productCards{display:flex;flex-direction:column;gap:10px;padding:12px}
-      .prod-card{background:#fff;border-radius:14px;border:1px solid var(--border);padding:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+      .prod-card{background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:12px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,.06)}
       .prod-card-img{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--border);flex-shrink:0;background:#f5f5f5}
       .prod-card-img-placeholder{width:52px;height:52px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);display:flex;align-items:center;justify-content:center;font-size:1.4rem;border:1px solid var(--border)}
       .prod-card-body{flex:1;min-width:0}
@@ -92,7 +103,7 @@
     .bundle-toggle-row:hover{border-color:var(--brand)}
     .bundle-toggle-row input[type=checkbox]{display:none}
     .bundle-switch{position:relative;width:44px;height:24px;flex-shrink:0;background:#ccc;border-radius:12px;transition:background .25s}
-    .bundle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s}
+    .bundle-switch::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s}
     .bundle-toggle-row input:checked~.bundle-switch{background:linear-gradient(135deg,#1565a8,#43a047)}
     .bundle-toggle-row input:checked~.bundle-switch::after{transform:translateX(20px)}
     .bundle-label{font-size:.82rem;font-weight:600;color:var(--ink);user-select:none}
@@ -112,8 +123,232 @@
     /* Badges */
     .bundle-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:.63rem;font-weight:700;background:linear-gradient(135deg,#1565a8,#43a047);color:#fff;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
     .variant-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:.63rem;font-weight:700;background:#1565a8;color:#fff;letter-spacing:.03em;white-space:nowrap}
-    .type-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:5px;font-size:.6rem;font-weight:700;background:rgba(21,101,168,.12);color:#1565a8;white-space:nowrap;text-transform:capitalize}
+    .type-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:5px;font-size:.6rem;font-weight:700;background:rgba(21,101,168,.12);color:var(--ink);white-space:nowrap;text-transform:capitalize}
   </style>
+
+
+
+
+<style id="dm-master">
+/* ═══ MASTER DARK MODE ═══════════════════════════════════════ */
+
+/* Base */
+[data-theme="dark"] body { background:var(--bg)!important; color:var(--ink)!important; }
+[data-theme="dark"] * { box-sizing:border-box; }
+
+/* Universal white/light bg catchers */
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:white"],
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background-color:#fff"],
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="background-color:white"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background-color:#ffffff"],
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background:#f"],
+[data-theme="dark"] [style*="background: #f"],
+[data-theme="dark"] [style*="background:#e"],
+[data-theme="dark"] [style*="background: #e"],
+[data-theme="dark"] [style*="background-color:#f"],
+[data-theme="dark"] [style*="background-color: #f"] {
+  background-color:var(--surface)!important;
+  background:var(--surface)!important;
+}
+
+/* Card-like elements */
+[data-theme="dark"] .card,
+[data-theme="dark"] [class*="card"]:not([class*="bottom-nav"]):not([class*="topnav"]),
+[data-theme="dark"] [class*="Card"],
+[data-theme="dark"] [class*="-box"],
+[data-theme="dark"] [class*="panel"]:not(.geo-map-panel),
+[data-theme="dark"] [class*="tile"]:not([class*="map"]),
+[data-theme="dark"] [class*="Tile"],
+[data-theme="dark"] [class*="modal"],
+[data-theme="dark"] [class*="Modal"],
+[data-theme="dark"] [class*="sheet"],
+[data-theme="dark"] [class*="popup"],
+[data-theme="dark"] [class*="drawer"],
+[data-theme="dark"] .tcard, [data-theme="dark"] .twrap,
+[data-theme="dark"] .filter-section, [data-theme="dark"] .controls-bar,
+[data-theme="dark"] .search-pill,
+[data-theme="dark"] .report-card, [data-theme="dark"] .chart-card,
+[data-theme="dark"] .kpi-card, [data-theme="dark"] .stat-card,
+[data-theme="dark"] .info-card, [data-theme="dark"] .hours-card,
+[data-theme="dark"] .form-card, [data-theme="dark"] .map-card,
+[data-theme="dark"] .whatsapp-card,
+[data-theme="dark"] .contact-hero,
+[data-theme="dark"] .geo-panel, [data-theme="dark"] .assign-panel,
+[data-theme="dark"] .detail-sheet, [data-theme="dark"] .p-tabs,
+[data-theme="dark"] .podium-card, [data-theme="dark"] .lb-card,
+[data-theme="dark"] .perf-card, [data-theme="dark"] .sm-card,
+[data-theme="dark"] .lead-card, [data-theme="dark"] .lead-row,
+[data-theme="dark"] .ps-table-wrap, [data-theme="dark"] #psTableWrap,
+[data-theme="dark"] .modal-body, [data-theme="dark"] .modal-header,
+[data-theme="dark"] .va-row, [data-theme="dark"] .va-bundle-inner,
+[data-theme="dark"] .img-slot {
+  background:var(--surface)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+
+/* Page layout */
+[data-theme="dark"] .main-area,
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .app-layout,
+[data-theme="dark"] .page-wrap,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .app-content,
+[data-theme="dark"] .tab-panel {
+  background:var(--bg)!important;
+}
+
+/* Admin sidebar always dark */
+[data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
+[data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
+[data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Tables */
+[data-theme="dark"] table { background:transparent!important; }
+[data-theme="dark"] thead tr,
+[data-theme="dark"] thead th { background:var(--surface-2)!important; color:var(--ink-soft)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody td { color:var(--ink)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody tr:hover td { background:var(--surface-2)!important; }
+
+/* Form controls */
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=submit]):not([type=button]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color:var(--ink-faint)!important; }
+
+/* Buttons */
+[data-theme="dark"] .btn-ghost { background:var(--surface-2)!important; color:var(--ink)!important; }
+[data-theme="dark"] .btn-outline { border-color:var(--brand)!important; color:var(--brand)!important; background:transparent!important; }
+
+/* Geo-map specific */
+[data-theme="dark"] .geo-panel,
+[data-theme="dark"] .p-tabs { background:var(--surface)!important; }
+[data-theme="dark"] .p-tab { color:var(--ink-soft)!important; }
+[data-theme="dark"] .p-tab.active { background:var(--surface)!important; color:var(--brand)!important; border-color:var(--brand)!important; }
+[data-theme="dark"] .filter-bar select,
+[data-theme="dark"] .filter-bar input,
+[data-theme="dark"] .at-grid input,
+[data-theme="dark"] .btn-clear,
+[data-theme="dark"] .btn-focus,
+[data-theme="dark"] #atDistrict,
+[data-theme="dark"] #atTalukaSelect { background:var(--surface-2)!important; border-color:var(--border)!important; color:var(--ink)!important; }
+[data-theme="dark"] .detail-sheet { background:var(--surface)!important; }
+
+/* Contact page */
+[data-theme="dark"] .contact-hero { background:linear-gradient(135deg,#060d14 0%,#0d2a45 100%)!important; }
+[data-theme="dark"] .whatsapp-card { background:#0d2a1a!important; border-color:#1a5c2a!important; }
+[data-theme="dark"] .whatsapp-card .wa-text h3 { color:#34d058!important; }
+[data-theme="dark"] .whatsapp-card .wa-text p { color:#34d058!important; opacity:.8; }
+[data-theme="dark"] .quick-call { background:var(--brand)!important; }
+
+/* Overview chart area */
+[data-theme="dark"] canvas { filter:brightness(.9); }
+[data-theme="dark"] .chart-wrap,
+[data-theme="dark"] [id*="chart"],
+[data-theme="dark"] [id*="Chart"] { background:var(--surface)!important; }
+
+/* Border overrides - inline styles */
+[data-theme="dark"] [style*="border:1px solid #"],
+[data-theme="dark"] [style*="border: 1px solid #"],
+[data-theme="dark"] [style*="border:1.5px solid #"],
+[data-theme="dark"] [style*="border: 1.5px solid #"],
+[data-theme="dark"] [style*="border-bottom:1px solid"],
+[data-theme="dark"] [style*="border-top:1px solid"],
+[data-theme="dark"] [style*="border-color:#"] { border-color:var(--border)!important; }
+
+/* Text color overrides - inline dark text on light bg */
+[data-theme="dark"] [style*="color:#0"],
+[data-theme="dark"] [style*="color: #0"],
+[data-theme="dark"] [style*="color:#1"],
+[data-theme="dark"] [style*="color: #1"],
+[data-theme="dark"] [style*="color:#2"],
+[data-theme="dark"] [style*="color: #2"],
+[data-theme="dark"] [style*="color:#3"],
+[data-theme="dark"] [style*="color: #3"],
+[data-theme="dark"] [style*="color:black"],
+[data-theme="dark"] [style*="color: black"] { color:var(--ink)!important; }
+
+/* Soft text */
+[data-theme="dark"] [style*="color:#6"],
+[data-theme="dark"] [style*="color: #6"],
+[data-theme="dark"] [style*="color:#7"],
+[data-theme="dark"] [style*="color: #7"],
+[data-theme="dark"] [style*="color:#8"],
+[data-theme="dark"] [style*="color: #8"],
+[data-theme="dark"] [style*="color:#9"],
+[data-theme="dark"] [style*="color: #9"] { color:var(--ink-soft)!important; }
+
+/* Product page variant chips */
+[data-theme="dark"] .pd-variant-chip {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] .pd-variant-chip.active {
+  background:var(--ink)!important;
+  color:#fff!important;
+}
+
+/* Salesman dashboard stat tiles */
+[data-theme="dark"] [class*="kpi"],
+[data-theme="dark"] [class*="stat"] { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Scrollbar */
+[data-theme="dark"] * {
+  scrollbar-color: var(--border) var(--surface-2);
+}
+</style>
+<script id="dm-runtime">
+(function(){
+  var BG_LIGHT = /^(#fff(fff)?|white|#f[0-9a-f]{5}|#e[0-9a-f]{5}|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\))$/i;
+  var BRD = /^(#[cde][0-9a-f]{5})$/i;
+  var INK_DARK = /^(#[0-3][0-9a-f]{5}|black|rgb\([01]\d{0,2},)$/i;
+
+  function patch(el){
+    var s=el.style;
+    if(!s) return;
+    var bg=s.backgroundColor||s.background;
+    if(bg && (BG_LIGHT.test(bg.trim())||bg==='rgb(255, 255, 255)'))
+      el.style.setProperty('background-color','var(--surface)','important');
+    if(s.borderColor && BRD.test(s.borderColor))
+      el.style.setProperty('border-color','var(--border)','important');
+    if(s.color && INK_DARK.test(s.color.trim()))
+      el.style.setProperty('color','var(--ink)','important');
+  }
+
+  function patchAll(){
+    if(document.documentElement.getAttribute('data-theme')!=='dark') return;
+    document.querySelectorAll('[style]').forEach(patch);
+  }
+
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      if(m.attributeName==='data-theme') setTimeout(patchAll,50);
+    });
+  }).observe(document.documentElement,{attributes:true});
+
+  document.addEventListener('DOMContentLoaded',function(){
+    patchAll();
+    new MutationObserver(function(){
+      if(document.documentElement.getAttribute('data-theme')==='dark') patchAll();
+    }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+  });
+})();
+</script>
+
 </head>
 <body class="admin-layout">
 <div class="app-layout">
@@ -140,7 +375,7 @@
       <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
       <h2>📦 Products Management</h2>
       <button class="btn btn-primary btn-sm" onclick="openProductModal()">+ Add Product</button>
-    </div>
+    <button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button></div>
     <div class="content-area">
       <div class="card">
         <div class="card-header">
@@ -222,27 +457,50 @@
           <input type="hidden" id="pProductTypeVal" value="single" />
           <input type="hidden" id="pUnitVal" value="piece" />
 
-          <!-- 4. Image (single) -->
-          <div class="form-section-title" style="margin-top:6px">4. 📸 Product Image</div>
-          <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:4px">
-            <div class="img-slot" id="imgSlot0" style="width:90px;height:90px;flex-shrink:0">
-              <img id="imgPreview0" alt="" />
-              <span class="slot-icon">🖼️</span>
-              <span class="slot-label">Main</span>
-              <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
-              <input type="file" id="imgFile0" accept="image/*" />
-            </div>
-            <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <!-- 4. Images (up to 3) -->
+          <div class="form-section-title" style="margin-top:6px">4. 📸 Product Images (up to 3)</div>
+          <div class="img-grid">
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot0">
+                <img id="imgPreview0" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">Main</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(0)">✕</button>
+                <input type="file" id="imgFile0" accept="image/*" />
+              </div>
               <div class="slot-url-row">
-                <input type="url" id="imgUrl0" placeholder="Paste image URL…" oninput="onSlotUrlInput(0)" />
+                <input type="url" id="imgUrl0" placeholder="Paste URL…" oninput="onSlotUrlInput(0)" />
                 <button type="button" class="slot-url-go" onclick="applySlotUrl(0)">→</button>
               </div>
-              <p class="img-hint" style="margin:0">📁 Click box to upload · auto-compressed to 600px JPEG · or paste URL</p>
+            </div>
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot1">
+                <img id="imgPreview1" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">2nd</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(1)">✕</button>
+                <input type="file" id="imgFile1" accept="image/*" />
+              </div>
+              <div class="slot-url-row">
+                <input type="url" id="imgUrl1" placeholder="Paste URL…" oninput="onSlotUrlInput(1)" />
+                <button type="button" class="slot-url-go" onclick="applySlotUrl(1)">→</button>
+              </div>
+            </div>
+            <div class="img-slot-wrap">
+              <div class="img-slot" id="imgSlot2">
+                <img id="imgPreview2" alt="" />
+                <span class="slot-icon">🖼️</span>
+                <span class="slot-label">3rd</span>
+                <button type="button" class="slot-remove" onclick="removeSlotImage(2)">✕</button>
+                <input type="file" id="imgFile2" accept="image/*" />
+              </div>
+              <div class="slot-url-row">
+                <input type="url" id="imgUrl2" placeholder="Paste URL…" oninput="onSlotUrlInput(2)" />
+                <button type="button" class="slot-url-go" onclick="applySlotUrl(2)">→</button>
+              </div>
             </div>
           </div>
-          <!-- hidden slots to keep JS working -->
-          <input type="hidden" id="imgFile1" /><input type="hidden" id="imgUrl1" /><span id="imgSlot1" style="display:none"></span><span id="imgPreview1" style="display:none"></span>
-          <input type="hidden" id="imgFile2" /><input type="hidden" id="imgUrl2" /><span id="imgSlot2" style="display:none"></span><span id="imgPreview2" style="display:none"></span>
+          <p class="img-hint">📁 Click slot to upload · auto-compressed to 600px JPEG · or paste URL · Slot 1 = main image</p>
 
           <!-- 5. Pricing & Stock -->
           <div class="form-section-title" style="margin-top:14px;padding-bottom:8px">💰 Pricing &amp; Stock</div>
@@ -281,51 +539,8 @@
             <b>1. Name</b> &nbsp;·&nbsp;
             <b>2. Price (₹)</b> &nbsp;·&nbsp;
             <b>3. Dist. Price (₹)</b> <span style="color:var(--ink-faint)">(optional)</span> &nbsp;·&nbsp;
-            <b>4. Stock</b>
-          </div>
-
-          <!-- Bundle toggle + fields -->
-          <div style="margin-top:14px">
-            <div class="form-section-title" style="margin-bottom:10px;padding-bottom:8px">📦 Bundle Product Option</div>
-            <label class="bundle-toggle-row" for="pIsBundle">
-              <input type="checkbox" id="pIsBundle" />
-              <span class="bundle-switch"></span>
-              <span class="bundle-label">Bundle Product<small>Pack / combo with multiple component products</small></span>
-            </label>
-            <div class="bundle-fields" id="bundleFields">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pBaseQty">1. Base Quantity</label>
-                  <input type="number" id="pBaseQty" min="0.01" step="0.01" placeholder="100" />
-                </div>
-                <div class="form-group">
-                  <label for="pBaseUnit">2. Measurement Unit</label>
-                  <select id="pBaseUnit">
-                    <option value="GM">GM</option><option value="KG">KG</option>
-                    <option value="L">L</option><option value="ML">ML</option><option value="PCS">PCS</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pPackSize">3. Pack Size</label>
-                  <input type="number" id="pPackSize" min="1" step="1" placeholder="5" />
-                </div>
-                <div class="form-group">
-                  <label for="pDisplayName">4. Display Name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.68rem">(auto — no duplicates)</span></label>
-                  <input type="text" id="pDisplayName" placeholder="e.g. 100 GM × 5 Pack" />
-                </div>
-              </div>
-
-              <!-- Bundle components -->
-              <div class="form-section-title" style="margin-top:4px">📦 Bundle Components</div>
-              <p class="bundle-price-note">ℹ️ Add products that form this bundle. Stock deducted per component on order. Bundle sale price set in Price field above.</p>
-              <div class="bundle-comp-header">
-                <span>Product</span><span>Variant</span><span>Qty</span><span></span>
-              </div>
-              <div id="bundleCompRows"></div>
-              <button type="button" class="btn btn-outline btn-sm" onclick="addBundleCompRow()">+ Add Component</button>
-            </div>
+            <b>4. Stock</b> &nbsp;·&nbsp;
+            <b>5. Bundle toggle</b> → Base Qty · Unit · Pack Size · Display Name
           </div>
         </div>
 
@@ -402,9 +617,9 @@ function _setProductTypeDropdown(productType,unit){
 /* ── 3-Image slots ───────────────────────────────────────────── */
 var _imgSlotData=[null,null,null]; // {b64, url} or null
 
-/* ── Image compression: resize to max 600px, JPEG quality 0.72 ── */
+/* ── Image compression: resize to max 400px, JPEG quality 0.65 ── */
 function _compressImage(file, cb) {
-  var MAX = 600, QUALITY = 0.72;
+  var MAX = 400, QUALITY = 0.65;
   var r = new FileReader();
   r.onload = function(e) {
     var img = new Image();
@@ -417,7 +632,13 @@ function _compressImage(file, cb) {
       var canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      cb(canvas.toDataURL('image/jpeg', QUALITY));
+      var b64 = canvas.toDataURL('image/jpeg', QUALITY);
+      // ~4MB limit per image (base64 ~1.33x raw)
+      if (b64.length > 4_000_000) {
+        alert('Image still too large after compression. Please use a smaller image or paste a URL instead.');
+        return;
+      }
+      cb(b64);
     };
     img.src = e.target.result;
   };
@@ -494,143 +715,15 @@ function getImagePayload(){
   return{image:filled[0]||'',images:filled};
 }
 
-/* ── Bundle toggle logic ─────────────────────────────────────── */
-(function(){
-  var _override=false;
-  var elCb=document.getElementById('pIsBundle');
-  var elF=document.getElementById('bundleFields');
-  var elQ=document.getElementById('pBaseQty');
-  var elU=document.getElementById('pBaseUnit');
-  var elP=document.getElementById('pPackSize');
-  var elD=document.getElementById('pDisplayName');
-
-  function toggleBundle(on){elF.classList.toggle('open',on);}
-  function autoName(){
-    var q=parseFloat(elQ.value)||0,u=elU.value||'GM',p=parseInt(elP.value,10)||0;
-    if(q>0&&p>0&&!_override)elD.value=q+' '+u+' \u00d7 '+p+' Pack';
-  }
-  elCb.addEventListener('change',function(){toggleBundle(this.checked);});
-  elQ.addEventListener('input',autoName);
-  elU.addEventListener('change',autoName);
-  elP.addEventListener('input',autoName);
-  elD.addEventListener('input',function(){_override=this.value.trim()!=='';});
-
-  window.resetBundleFields=function(){
-    _override=false;elCb.checked=false;
-    elQ.value='';elU.value='GM';elP.value='';elD.value='';
-    elF.classList.remove('open');
-    document.getElementById('bundleCompRows').innerHTML='';
-    _compProductsCache=null;
-  };
-  window.prefillBundleFields=function(p){
-    if(p&&p.is_bundle){
-      elCb.checked=true;
-      elQ.value=p.base_quantity||'';elU.value=p.base_unit||'GM';elP.value=p.pack_size||'';
-      var saved=(p.display_name||'').trim();
-      var auto='';
-      if(p.base_quantity&&p.pack_size)auto=p.base_quantity+' '+(p.base_unit||'GM')+' \u00d7 '+p.pack_size+' Pack';
-      _override=saved!==''&&saved!==auto;elD.value=saved;
-      elF.classList.add('open');
-    }else{window.resetBundleFields();}
-  };
-  window.getBundlePayload=function(){
-    if(!elCb.checked)return{is_bundle:false,base_quantity:null,base_unit:null,pack_size:null,display_name:null};
-    return{
-      is_bundle:true,
-      base_quantity:parseFloat(elQ.value)||null,
-      base_unit:elU.value||null,
-      pack_size:parseInt(elP.value,10)||null,
-      display_name:elD.value.trim()||null,
-    };
-  };
-  window._isBundleChecked=function(){return elCb.checked;};
-})();
-
-/* ── Bundle component rows ───────────────────────────────────── */
-/* ── XSS helper (used in bundle component rows) ─────────── */
+/* ── Bundle stubs (bundle UI moved to per-variant in variants-admin.js) ── */
+window.resetBundleFields   = function(){};
+window.prefillBundleFields = function(){};
+window.getBundlePayload    = function(){ return {is_bundle:false,base_quantity:null,base_unit:null,pack_size:null,display_name:null}; };
+window._isBundleChecked    = function(){ return false; };
+window.getBundleItemsPayload = function(){ return []; };
+window.loadBundleItems     = function(){ return Promise.resolve(); };
 function _ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
 var _compProductsCache=null;
-
-async function _getCompProducts(){
-  if(_compProductsCache)return _compProductsCache;
-  try{
-    var res=await apiFetch(API+'/products');
-    var data=await res.json();
-    _compProductsCache=(data.data||[]).filter(function(p){return !p.is_bundle;});
-  }catch(e){_compProductsCache=[];}
-  return _compProductsCache;
-}
-
-async function addBundleCompRow(d){
-  d=d||{};
-  var products=await _getCompProducts();
-  var wrap=document.getElementById('bundleCompRows');
-  var row=document.createElement('div');
-  row.className='bundle-comp-row';
-  if(d.id)row.dataset.itemId=d.id;
-
-  var opts=products.map(function(p){
-    return '<option value="'+p.id+'"'+(p.id===d.product_id?' selected':'')+'>'+_ea(p.name)+'</option>';
-  }).join('');
-
-  row.innerHTML=
-    '<select class="bc-product" onchange="loadCompVariants(this)">'+
-      '<option value="">— Pick product —</option>'+opts+
-    '</select>'+
-    '<select class="bc-variant"><option value="">No variant</option></select>'+
-    '<input type="number" class="bc-qty" min="1" step="1" value="'+(d.quantity||1)+'" />'+
-    '<button type="button" class="variant-remove-btn" onclick="this.closest(\'.bundle-comp-row\').remove()">✕</button>';
-  wrap.appendChild(row);
-
-  if(d.product_id){
-    row.querySelector('.bc-product').value=d.product_id;
-    await loadCompVariants(row.querySelector('.bc-product'),d.variant_id||null);
-  }
-}
-
-async function loadCompVariants(sel,preselect){
-  var pid=parseInt(sel.value,10);
-  var row=sel.closest('.bundle-comp-row');
-  var varSel=row.querySelector('.bc-variant');
-  varSel.innerHTML='<option value="">No variant</option>';
-  if(!pid)return;
-  try{
-    var res=await apiFetch(API+'/products/'+pid+'/variants');
-    var data=await res.json();
-    (data.data||[]).forEach(function(v){
-      var o=document.createElement('option');
-      o.value=v.id;
-      o.textContent=v.variant_name+' — \u20b9'+parseFloat(v.price).toFixed(2);
-      if(v.id===preselect)o.selected=true;
-      varSel.appendChild(o);
-    });
-  }catch(e){}
-}
-
-function getBundleItemsPayload(){
-  var out=[];
-  document.querySelectorAll('#bundleCompRows .bundle-comp-row').forEach(function(row){
-    var pid=parseInt(row.querySelector('.bc-product').value,10);
-    if(!pid)return;
-    var vid=parseInt(row.querySelector('.bc-variant').value,10)||null;
-    var qty=parseInt(row.querySelector('.bc-qty').value,10)||1;
-    out.push({product_id:pid,variant_id:vid,quantity:qty});
-  });
-  return out;
-}
-
-async function loadBundleItems(productId){
-  document.getElementById('bundleCompRows').innerHTML='';
-  _compProductsCache=null;
-  try{
-    var res=await apiFetch(API+'/products/'+productId+'/bundle-items');
-    var data=await res.json();
-    for(var i=0;i<(data.data||[]).length;i++){
-      await addBundleCompRow(data.data[i]);
-    }
-  }catch(e){}
-}
 </script>
 
 <script src="/js/network.js"></script>
@@ -639,5 +732,6 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});
 }
 </script>
+
 </body>
 </html>

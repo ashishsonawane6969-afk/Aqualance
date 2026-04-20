@@ -528,3 +528,38 @@ initSmoothScroll();
 if (document.getElementById('productsGrid')) {
   loadProducts();
 }
+
+
+/* ══ DARK MODE TOGGLE ══════════════════════════════════════════ */
+(function(){
+  var KEY = 'aqualance_theme';
+  function isDark() { return document.documentElement.getAttribute('data-theme')==='dark'; }
+  function applyTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    var btn = document.getElementById('dmToggleBtn');
+    if (btn) btn.textContent = dark ? '☀️' : '🌙';
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+  }
+  function injectBtn() {
+    if (document.getElementById('dmToggleBtn')) return;
+    var btn = document.createElement('button');
+    btn.id = 'dmToggleBtn';
+    btn.className = 'dm-toggle';
+    btn.title = 'Toggle dark mode';
+    btn.setAttribute('aria-label', 'Toggle dark mode');
+    btn.textContent = isDark() ? '☀️' : '🌙';
+    btn.addEventListener('click', function() { applyTheme(!isDark()); });
+    document.body.appendChild(btn);
+  }
+  // Apply saved or system theme immediately
+  var saved;
+  try { saved = localStorage.getItem(KEY); } catch(e){}
+  if (!saved) saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  applyTheme(saved === 'dark');
+  // Inject button after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectBtn);
+  } else {
+    injectBtn();
+  }
+})();

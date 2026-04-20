@@ -25,7 +25,7 @@
     <form id="deliveryLoginForm" novalidate>
       <div class="form-group">
         <label for="phone">Phone Number
-          <input type="tel" id="phone" placeholder="Enter your phone number" maxlength="10" required autocomplete="username" inputmode="numeric" />
+          <input type="tel" id="phone" placeholder="Enter your phone number" maxlength="10" required autocomplete="username" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
         </label>
       </div>
       <div class="form-group">

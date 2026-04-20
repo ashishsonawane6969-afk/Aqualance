@@ -67,6 +67,7 @@
   --shadow-lg:   0 20px 60px rgba(13,42,69,.18);
   --cream:       #f7f8f5;
   --white:       #ffffff;
+  color-scheme: light;
 }
 
 /* ── RESET ── */
@@ -1756,7 +1757,7 @@ a, button, [role="button"],
   border: 1.5px solid var(--border);
   border-radius: 999px;
   font-size: 16px; /* ≥16px prevents iOS zoom */
-  background: #fff;
+  background:var(--surface);
   color: var(--ink);
   -webkit-appearance: none;
   appearance: none;
@@ -1793,7 +1794,7 @@ a, button, [role="button"],
   padding: 6px 13px;
   border-radius: 999px;
   border: 1.5px solid var(--border);
-  background: #fff;
+  background:var(--surface);
   font-size: .72rem;
   font-weight: 600;
   color: var(--ink-soft);
@@ -1832,7 +1833,7 @@ a, button, [role="button"],
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #fff;
+  background:var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 999px;
   padding: 9px 14px;
@@ -1852,7 +1853,7 @@ a, button, [role="button"],
 }
 
 .filter-select-pill {
-  background: #fff;
+  background:var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 999px;
   padding: 9px 30px 9px 14px;
@@ -1869,7 +1870,7 @@ a, button, [role="button"],
 }
 
 .csv-btn {
-  background: #fff;
+  background:var(--surface);
   border: 1.5px solid var(--border);
   border-radius: 999px;
   padding: 9px 14px;
@@ -1893,7 +1894,7 @@ a, button, [role="button"],
 ══════════════════════════════════════ */
 .table-card {
   margin: 12px var(--page-pad);
-  background: #fff;
+  background:var(--surface);
   border-radius: 14px;
   border: 1px solid var(--border);
   overflow: hidden;
@@ -1956,7 +1957,7 @@ a, button, [role="button"],
    LEADERBOARD CARDS
 ══════════════════════════════════════ */
 .lb-card {
-  background: #fff;
+  background:var(--surface);
   border-radius: 14px;
   border: 1px solid var(--border);
   padding: 14px 16px;
@@ -3334,7 +3335,7 @@ td.db-actions .btn {
    Cards shown below 700px in place of the wide table
 ══════════════════════════════════════════════════════════════════ */
 .lb-row-card {
-  background: #fff;
+  background:var(--surface);
   border-radius: 14px;
   border: 1px solid var(--border, #e5e7eb);
   padding: 12px 14px;
@@ -3708,3 +3709,60 @@ body.net-2g .prod-card-img {
   flex-shrink: 0;           /* button never compresses */
   white-space: nowrap;      /* button text never wraps */
 }
+
+
+/* ══ DARK MODE ══════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg: #0a1520; --surface: #111e2b; --surface-2: #162436;
+  --border: #1e3a55; --border-dark: #2a4f72;
+  --ink: #d0e8f8; --ink-mid: #a0c8e8; --ink-soft: #6a9bbf; --ink-faint: #3a6a8a;
+  --brand: #4aaee0; --brand-pale: #0d2a45; --brand-ultra: #0a1e30;
+  --error: #f87171; --error-pale: #2a0d0d;
+  color-scheme: dark;
+}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea {
+  background:#0a1520!important;color:#d0e8f8!important;border-color:#1e3a55!important;
+}
+.dm-toggle {
+  position:fixed;bottom:calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 12px);right:16px;
+  width:42px;height:42px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--surface);color:var(--ink);font-size:1.2rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 12px rgba(0,0,0,.2);z-index:900;transition:transform .15s;
+}
+.dm-toggle:hover{transform:scale(1.08);}
+
+.dm-toggle {
+  position: fixed !important;
+  bottom: 20px !important; right: 16px !important;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex !important; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  z-index: 9999 !important;
+  transition: background .2s, border-color .2s, transform .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dm-toggle:hover { transform: scale(1.08); border-color: var(--brand); }
+
+/* ── Dark mode targeted fixes ─────────────────────────────── */
+[data-theme="dark"] .app-header { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .kpi-tile { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .lead-card { background: var(--surface) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .lead-shop { color: var(--ink) !important; }
+[data-theme="dark"] .lead-meta { color: var(--ink-soft) !important; }
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,.75) !important; }
+[data-theme="dark"] .modal, [data-theme="dark"] .modal-content { background: var(--surface) !important; }
+[data-theme="dark"] .search-pill { background: var(--surface-2) !important; border-color: var(--border) !important; }
+[data-theme="dark"] .search-pill input { background: transparent !important; color: var(--ink) !important; }
+[data-theme="dark"] table thead th { background: var(--surface-2) !important; color: var(--ink-soft) !important; }
+[data-theme="dark"] table tbody td { color: var(--ink) !important; border-color: var(--border) !important; }
+[data-theme="dark"] table tbody tr:hover td { background: var(--surface-2) !important; }
+[data-theme="dark"] .report-card,
+[data-theme="dark"] .chart-card { background: var(--surface) !important; border-color: var(--border) !important; }

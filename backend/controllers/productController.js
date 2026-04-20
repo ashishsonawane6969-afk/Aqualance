@@ -57,8 +57,18 @@ async function _ensureDistributorPriceCol() {
   }
 }
 
+/* ── Auto-migrate: ensure both image columns are LONGTEXT ────── */
+async function _ensureImageCols() {
+  try {
+    await db.query('ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT NOT NULL DEFAULT ""');
+  } catch (e) { if (e.code !== 'ER_BAD_FIELD_ERROR') {} }
+  try {
+    await db.query('ALTER TABLE `products` MODIFY COLUMN `images` LONGTEXT NULL');
+  } catch (e) { if (e.code !== 'ER_BAD_FIELD_ERROR') {} }
+}
+
 // Run once at startup — non-blocking
-_ensureDistributorPriceCol();
+_ensureImageCols();
 
 function _parseImages(raw) {
   if (!raw) return [];
@@ -285,6 +295,9 @@ exports.update = async (req, res) => {
       const arr = Array.isArray(images) ? images : JSON.parse(images || '[]');
       if (arr.length > 3) return sendError(res, 400, 'Maximum 3 images allowed');
       imagesVal = JSON.stringify(arr.filter(Boolean).slice(0, 3));
+      if (imagesVal && imagesVal.length > 15_000_000) {
+        return sendError(res, 400, 'Images too large. Please use smaller images or paste URLs instead.');
+      }
     }
 
     const WHITELIST = {
@@ -335,6 +348,7 @@ exports.update = async (req, res) => {
     if (err.code === 'ER_DATA_TOO_LONG') {
       try {
         await db.query('ALTER TABLE `products` MODIFY COLUMN `image` LONGTEXT NOT NULL');
+        await db.query('ALTER TABLE `products` MODIFY COLUMN `images` LONGTEXT NULL');
         _cols = null;
       } catch (_) {}
       return sendError(res, 400, 'Image too large for current DB column. Column upgrade attempted — please retry.');

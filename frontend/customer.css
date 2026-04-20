@@ -67,7 +67,68 @@
   --shadow-lg: 0 20px 60px rgba(13, 42, 69, .18);
   --cream: #f7f8f5;
   --white: #ffffff;
+  color-scheme: light;
 }
+
+
+/* ══ DARK MODE ══════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --brand: #4aaee0;
+  --brand-mid: #2e8ecf;
+  --brand-light: #6ec6f5;
+  --brand-pale: #0d2a45;
+  --brand-ultra: #0a1e30;
+  --gold: #4aaee0;
+  --gold-light: #6ec6f5;
+  --gold-pale: #0d2a45;
+  --bg: #0a1520;
+  --surface: #111e2b;
+  --surface-2: #162436;
+  --border: #1e3a55;
+  --border-dark: #2a4f72;
+  --ink: #d0e8f8;
+  --ink-mid: #a0c8e8;
+  --ink-soft: #6a9bbf;
+  --ink-faint: #3a6a8a;
+  --success: #34d058;
+  --success-pale: #0d2a1a;
+  --warn: #f59e0b;
+  --warn-pale: #2a1e00;
+  --error: #f87171;
+  --error-pale: #2a0d0d;
+  --info: #4aaee0;
+  --info-pale: #0d2a45;
+  --sage: #4aaee0;
+  --sage-light: #6ec6f5;
+  --sage-pale: #0d2a45;
+  --cream: #111e2b;
+  --white: #162436;
+  --sh-xs: 0 1px 4px rgba(0,0,0,.4);
+  --sh-sm: 0 2px 12px rgba(0,0,0,.4);
+  --sh-md: 0 8px 28px rgba(0,0,0,.5);
+  --sh-lg: 0 20px 60px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+/* Dark mode toggle button */
+.dm-toggle {
+  position: fixed !important;
+  bottom: calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 14px) !important;
+  right: 16px !important;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex !important; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(21,101,168,.18);
+  z-index: 9999 !important;
+  transition: background .2s, border-color .2s, transform .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dm-toggle:hover { transform: scale(1.08); border-color: var(--brand); }
 
 /* ── RESET ── */
 *,
@@ -2563,10 +2624,15 @@ select.filter-select:focus {
 
 /* Footer */
 footer {
-  background: var(--ink);
+  background: var(--ink-mid);
   color: rgba(255, 255, 255, .65);
   padding: 22px 14px calc(22px + var(--bottom-nav-h));
   font-size: .76rem;
+}
+
+[data-theme="dark"] footer {
+  background: #060d14;
+  color: rgba(180, 210, 240, .75);
 }
 
 footer .footer-inner {
@@ -6502,7 +6568,7 @@ td.db-actions .btn {
    Cards shown below 700px in place of the wide table
 ══════════════════════════════════════════════════════════════════ */
 .lb-row-card {
-  background: #fff;
+  background:var(--surface);
   border-radius: 14px;
   border: 1px solid var(--border, #e5e7eb);
   padding: 12px 14px;

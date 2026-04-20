@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function(){
+  var k='aqualance_theme',d=document.documentElement;
+  var s;try{s=localStorage.getItem(k);}catch(e){}
+  if(!s)s=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+  d.setAttribute('data-theme',s);
+  // Update theme-color meta for mobile browser chrome
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',s==='dark'?'#060d14':'#1565a8');
+})();
+</script>
 <link rel="manifest" href="/manifest.json" />
   <meta charset="UTF-8" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -45,7 +56,7 @@
       padding: 20px 20px 0;
     }
     .kpi-tile {
-      background: #fff;
+      background:var(--surface);
       border-radius: 14px;
       border: 1px solid var(--bdr);
       padding: 18px 16px 16px;
@@ -94,7 +105,7 @@
     .icon-tab {
       flex: 1; display: flex; align-items: center; justify-content: center;
       gap: 7px; padding: 10px 12px;
-      background: #fff; border: 1px solid var(--bdr);
+      background:var(--surface); border: 1px solid var(--bdr);
       font-size: .78rem; font-weight: 600; color: var(--ink3);
       cursor: pointer; border-radius: 10px;
       transition: all .15s; font-family: var(--font);
@@ -122,7 +133,7 @@
     .date-input {
       padding: 8px 12px; border: 1.5px solid var(--bdr);
       border-radius: 8px; font-size: .8rem; font-family: var(--font);
-      background: #fff; color: var(--ink); outline: none;
+      background:var(--surface); color: var(--ink); outline: none;
       transition: border-color .15s;
     }
     .date-input:focus { border-color: var(--f2); }
@@ -136,7 +147,7 @@
     .preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
     .preset-btn {
       padding: 5px 14px; border-radius: 999px;
-      border: 1.5px solid var(--bdr); background: #fff;
+      border: 1.5px solid var(--bdr); background:var(--surface);
       font-size: .73rem; font-weight: 600; color: var(--ink3);
       cursor: pointer; transition: all .15s; font-family: var(--font);
     }
@@ -155,7 +166,7 @@
     /* Row 1: search bar — always full width */
     .search-pill {
       display: flex; align-items: center; gap: 8px;
-      background: #fff; border: 1.5px solid var(--bdr);
+      background:var(--surface); border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
       transition: border-color .15s;
       width: 100%; box-sizing: border-box;
@@ -175,22 +186,23 @@
       gap: 8px;
       width: 100%;
       box-sizing: border-box;
+      flex-wrap: wrap;
     }
     .pill-select {
-      background: #fff; border: 1.5px solid var(--bdr);
+      background:var(--surface); border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 32px 9px 12px;
       font-size: .8rem; font-weight: 600; color: var(--ink2);
       appearance: none; cursor: pointer; font-family: var(--font);
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a9480'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 10px center;
       transition: border-color .15s;
-      flex: 1 1 0; min-width: 0;
+      min-width: 120px; max-width: 180px;
       box-sizing: border-box;
     }
     .pill-select:focus { outline: none; border-color: var(--f2); }
 
     .icon-btn {
-      background: #fff; border: 1.5px solid var(--bdr);
+      background:var(--surface); border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 9px 14px;
       font-size: .8rem; font-weight: 700; color: var(--ink2);
       cursor: pointer; white-space: nowrap;
@@ -206,7 +218,7 @@
     /* ─── Table card ────────────────────────────── */
     .tcard {
       margin: 14px 20px;
-      background: #fff; border-radius: 14px;
+      background:var(--surface); border-radius: 14px;
       border: 1px solid var(--bdr); overflow: hidden;
       box-shadow: var(--card-sh);
     }
@@ -273,7 +285,7 @@
     /* ─── Leaderboard ───────────────────────────── */
     #lbCards { padding: 14px 20px 0; }
     .lb-card {
-      background: #fff; border-radius: 14px; border: 1px solid var(--bdr);
+      background:var(--surface); border-radius: 14px; border: 1px solid var(--bdr);
       padding: 12px 14px; margin-bottom: 10px;
       display: flex; align-items: center; gap: 10px;
       box-shadow: var(--card-sh); transition: box-shadow .15s;
@@ -292,7 +304,7 @@
     .lb-num-lbl { font-size:clamp(.5rem,1.8vw,.57rem); text-transform:uppercase; letter-spacing:.06em; color:var(--ink3); }
     .podium-row { display: none; gap: 12px; padding: 16px 20px 0; }
     .podium-card {
-      flex:1; background:#fff; border-radius:16px; border:1px solid var(--bdr);
+      flex:1; background:var(--surface); border-radius:16px; border:1px solid var(--bdr);
       padding:20px 16px; text-align:center; box-shadow:var(--card-sh);
     }
     .podium-card.top1 { border-color: var(--gold); box-shadow: 0 4px 20px rgba(196,130,10,.18); }
@@ -371,7 +383,7 @@
       display: none;
       position: fixed;
       z-index: 9999;
-      background: #fff;
+      background:var(--surface);
       border: 1.5px solid var(--bdr);
       border-radius: 12px;
       box-shadow: 0 8px 28px rgba(0,0,0,.14);
@@ -401,6 +413,230 @@
     html, body { overflow-x: hidden; max-width: 100%; }
     *, *::before, *::after { box-sizing: border-box; }
   </style>
+
+
+
+
+<style id="dm-master">
+/* ═══ MASTER DARK MODE ═══════════════════════════════════════ */
+
+/* Base */
+[data-theme="dark"] body { background:var(--bg)!important; color:var(--ink)!important; }
+[data-theme="dark"] * { box-sizing:border-box; }
+
+/* Universal white/light bg catchers */
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:white"],
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background-color:#fff"],
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="background-color:white"],
+[data-theme="dark"] [style*="background-color: white"],
+[data-theme="dark"] [style*="background-color:#ffffff"],
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background:#f"],
+[data-theme="dark"] [style*="background: #f"],
+[data-theme="dark"] [style*="background:#e"],
+[data-theme="dark"] [style*="background: #e"],
+[data-theme="dark"] [style*="background-color:#f"],
+[data-theme="dark"] [style*="background-color: #f"] {
+  background-color:var(--surface)!important;
+  background:var(--surface)!important;
+}
+
+/* Card-like elements */
+[data-theme="dark"] .card,
+[data-theme="dark"] [class*="card"]:not([class*="bottom-nav"]):not([class*="topnav"]),
+[data-theme="dark"] [class*="Card"],
+[data-theme="dark"] [class*="-box"],
+[data-theme="dark"] [class*="panel"]:not(.geo-map-panel),
+[data-theme="dark"] [class*="tile"]:not([class*="map"]),
+[data-theme="dark"] [class*="Tile"],
+[data-theme="dark"] [class*="modal"],
+[data-theme="dark"] [class*="Modal"],
+[data-theme="dark"] [class*="sheet"],
+[data-theme="dark"] [class*="popup"],
+[data-theme="dark"] [class*="drawer"],
+[data-theme="dark"] .tcard, [data-theme="dark"] .twrap,
+[data-theme="dark"] .filter-section, [data-theme="dark"] .controls-bar,
+[data-theme="dark"] .search-pill,
+[data-theme="dark"] .report-card, [data-theme="dark"] .chart-card,
+[data-theme="dark"] .kpi-card, [data-theme="dark"] .stat-card,
+[data-theme="dark"] .info-card, [data-theme="dark"] .hours-card,
+[data-theme="dark"] .form-card, [data-theme="dark"] .map-card,
+[data-theme="dark"] .whatsapp-card,
+[data-theme="dark"] .contact-hero,
+[data-theme="dark"] .geo-panel, [data-theme="dark"] .assign-panel,
+[data-theme="dark"] .detail-sheet, [data-theme="dark"] .p-tabs,
+[data-theme="dark"] .podium-card, [data-theme="dark"] .lb-card,
+[data-theme="dark"] .perf-card, [data-theme="dark"] .sm-card,
+[data-theme="dark"] .lead-card, [data-theme="dark"] .lead-row,
+[data-theme="dark"] .ps-table-wrap, [data-theme="dark"] #psTableWrap,
+[data-theme="dark"] .modal-body, [data-theme="dark"] .modal-header,
+[data-theme="dark"] .va-row, [data-theme="dark"] .va-bundle-inner,
+[data-theme="dark"] .img-slot {
+  background:var(--surface)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+
+/* Page layout */
+[data-theme="dark"] .main-area,
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .app-layout,
+[data-theme="dark"] .page-wrap,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .app-content,
+[data-theme="dark"] .tab-panel {
+  background:var(--bg)!important;
+}
+
+/* Admin sidebar always dark */
+[data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
+[data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
+[data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Tables */
+[data-theme="dark"] table { background:transparent!important; }
+[data-theme="dark"] thead tr,
+[data-theme="dark"] thead th { background:var(--surface-2)!important; color:var(--ink-soft)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody td { color:var(--ink)!important; border-color:var(--border)!important; }
+[data-theme="dark"] tbody tr:hover td { background:var(--surface-2)!important; }
+
+/* Form controls */
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=submit]):not([type=button]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color:var(--ink-faint)!important; }
+
+/* Buttons */
+[data-theme="dark"] .btn-ghost { background:var(--surface-2)!important; color:var(--ink)!important; }
+[data-theme="dark"] .btn-outline { border-color:var(--brand)!important; color:var(--brand)!important; background:transparent!important; }
+
+/* Geo-map specific */
+[data-theme="dark"] .geo-panel,
+[data-theme="dark"] .p-tabs { background:var(--surface)!important; }
+[data-theme="dark"] .p-tab { color:var(--ink-soft)!important; }
+[data-theme="dark"] .p-tab.active { background:var(--surface)!important; color:var(--brand)!important; border-color:var(--brand)!important; }
+[data-theme="dark"] .filter-bar select,
+[data-theme="dark"] .filter-bar input,
+[data-theme="dark"] .at-grid input,
+[data-theme="dark"] .btn-clear,
+[data-theme="dark"] .btn-focus,
+[data-theme="dark"] #atDistrict,
+[data-theme="dark"] #atTalukaSelect { background:var(--surface-2)!important; border-color:var(--border)!important; color:var(--ink)!important; }
+[data-theme="dark"] .detail-sheet { background:var(--surface)!important; }
+
+/* Contact page */
+[data-theme="dark"] .contact-hero { background:linear-gradient(135deg,#060d14 0%,#0d2a45 100%)!important; }
+[data-theme="dark"] .whatsapp-card { background:#0d2a1a!important; border-color:#1a5c2a!important; }
+[data-theme="dark"] .whatsapp-card .wa-text h3 { color:#34d058!important; }
+[data-theme="dark"] .whatsapp-card .wa-text p { color:#34d058!important; opacity:.8; }
+[data-theme="dark"] .quick-call { background:var(--brand)!important; }
+
+/* Overview chart area */
+[data-theme="dark"] canvas { filter:brightness(.9); }
+[data-theme="dark"] .chart-wrap,
+[data-theme="dark"] [id*="chart"],
+[data-theme="dark"] [id*="Chart"] { background:var(--surface)!important; }
+
+/* Border overrides - inline styles */
+[data-theme="dark"] [style*="border:1px solid #"],
+[data-theme="dark"] [style*="border: 1px solid #"],
+[data-theme="dark"] [style*="border:1.5px solid #"],
+[data-theme="dark"] [style*="border: 1.5px solid #"],
+[data-theme="dark"] [style*="border-bottom:1px solid"],
+[data-theme="dark"] [style*="border-top:1px solid"],
+[data-theme="dark"] [style*="border-color:#"] { border-color:var(--border)!important; }
+
+/* Text color overrides - inline dark text on light bg */
+[data-theme="dark"] [style*="color:#0"],
+[data-theme="dark"] [style*="color: #0"],
+[data-theme="dark"] [style*="color:#1"],
+[data-theme="dark"] [style*="color: #1"],
+[data-theme="dark"] [style*="color:#2"],
+[data-theme="dark"] [style*="color: #2"],
+[data-theme="dark"] [style*="color:#3"],
+[data-theme="dark"] [style*="color: #3"],
+[data-theme="dark"] [style*="color:black"],
+[data-theme="dark"] [style*="color: black"] { color:var(--ink)!important; }
+
+/* Soft text */
+[data-theme="dark"] [style*="color:#6"],
+[data-theme="dark"] [style*="color: #6"],
+[data-theme="dark"] [style*="color:#7"],
+[data-theme="dark"] [style*="color: #7"],
+[data-theme="dark"] [style*="color:#8"],
+[data-theme="dark"] [style*="color: #8"],
+[data-theme="dark"] [style*="color:#9"],
+[data-theme="dark"] [style*="color: #9"] { color:var(--ink-soft)!important; }
+
+/* Product page variant chips */
+[data-theme="dark"] .pd-variant-chip {
+  background:var(--surface-2)!important;
+  border-color:var(--border)!important;
+  color:var(--ink)!important;
+}
+[data-theme="dark"] .pd-variant-chip.active {
+  background:var(--ink)!important;
+  color:#fff!important;
+}
+
+/* Salesman dashboard stat tiles */
+[data-theme="dark"] [class*="kpi"],
+[data-theme="dark"] [class*="stat"] { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* Scrollbar */
+[data-theme="dark"] * {
+  scrollbar-color: var(--border) var(--surface-2);
+}
+</style>
+<script id="dm-runtime">
+(function(){
+  var BG_LIGHT = /^(#fff(fff)?|white|#f[0-9a-f]{5}|#e[0-9a-f]{5}|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\))$/i;
+  var BRD = /^(#[cde][0-9a-f]{5})$/i;
+  var INK_DARK = /^(#[0-3][0-9a-f]{5}|black|rgb\([01]\d{0,2},)$/i;
+
+  function patch(el){
+    var s=el.style;
+    if(!s) return;
+    var bg=s.backgroundColor||s.background;
+    if(bg && (BG_LIGHT.test(bg.trim())||bg==='rgb(255, 255, 255)'))
+      el.style.setProperty('background-color','var(--surface)','important');
+    if(s.borderColor && BRD.test(s.borderColor))
+      el.style.setProperty('border-color','var(--border)','important');
+    if(s.color && INK_DARK.test(s.color.trim()))
+      el.style.setProperty('color','var(--ink)','important');
+  }
+
+  function patchAll(){
+    if(document.documentElement.getAttribute('data-theme')!=='dark') return;
+    document.querySelectorAll('[style]').forEach(patch);
+  }
+
+  new MutationObserver(function(ms){
+    ms.forEach(function(m){
+      if(m.attributeName==='data-theme') setTimeout(patchAll,50);
+    });
+  }).observe(document.documentElement,{attributes:true});
+
+  document.addEventListener('DOMContentLoaded',function(){
+    patchAll();
+    new MutationObserver(function(){
+      if(document.documentElement.getAttribute('data-theme')==='dark') patchAll();
+    }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+  });
+})();
+</script>
+
 </head>
 <body class="admin-layout">
 <div class="app-layout">
@@ -460,7 +696,7 @@
       <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
       <h2>💼 Salesmen</h2>
       <span id="lastUpdated" class="lu-chip"></span>
-    </div>
+    <button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button></div>
     <div class="content-area">
 <div class="page-wrap">
 
@@ -902,16 +1138,24 @@ function filterAdminLeads() {
   const q=(document.getElementById('searchLeads').value||'').toLowerCase();
   const st=document.getElementById('statusFilter').value;
   const sm=document.getElementById('salesmanFilter').value;
-  const f=adminAllLeads.filter(l=>
-    (!st||l.sale_status===st)&&
-    (!sm||l.salesman_name===sm)&&
-    (!q||[l.shop_name,l.owner_name,l.village,l.taluka,l.district,l.salesman_name,l.mobile]
-      .some(x=>(x||'').toLowerCase().includes(q)))
-  );
+  const f=adminAllLeads.filter(l=>{
+    const matchStatus = !st||l.sale_status===st;
+    const matchSalesman = !sm||l.salesman_name===sm;
+    const prodMatch = Array.isArray(l.products) && l.products.some(p=>(p.name||'').toLowerCase().includes(q));
+    const matchSearch = !q||[l.shop_name,l.owner_name,l.village,l.taluka,l.district,l.salesman_name,l.mobile]
+      .some(x=>(x||'').toLowerCase().includes(q)) || prodMatch;
+    return matchStatus && matchSalesman && matchSearch;
+  });
   const badge=document.getElementById('leadsCountBadge');
   if(badge) badge.textContent=f.length+' lead'+(f.length!==1?'s':'');
   const tbody=document.getElementById('adminLeadsBody');
-  if(!f.length){ tbody.innerHTML='<tr><td colspan="11" class="t-empty">No leads found.</td></tr>'; return; }
+  if(!f.length){
+    const hasData = adminAllLeads.length > 0;
+    tbody.innerHTML='<tr><td colspan="11" class="t-empty">'
+      + (hasData ? 'No leads match your filters.' : 'No leads for this period. <button onclick="setAdminPreset(\'all\',document.querySelector(\'.preset-btn:last-child\'))" style="background:none;border:none;color:var(--f2);font-weight:700;cursor:pointer;font-size:.8rem">Try All Time →</button>')
+      + '</td></tr>';
+    return;
+  }
   // Use lead ID as key — avoids embedding large base64/products into onclick attribute
   tbody.innerHTML=f.map((l,i)=>{
     const photoSrc = l.photo_proof || l.photo_url || null;
@@ -2080,7 +2324,7 @@ window.onGMapsLoaded = function() {
 <style>
 .preset-chip {
   padding: 4px 12px; border-radius: 999px;
-  border: 1.5px solid var(--border); background: #fff;
+  border: 1.5px solid var(--border); background:var(--surface);
   font-size: .7rem; font-weight: 600; color: var(--ink-soft);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background .15s, color .15s, border-color .15s;
@@ -2099,5 +2343,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
 </body>
 </html>

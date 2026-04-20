@@ -151,30 +151,27 @@
 
     if (!allVariants.length && !showDistChip){ wrap.style.display='none'; return; }
 
-    var baseLabel = baseProduct.unit ? 'Original ('+baseProduct.unit+')' : 'Original';
-
     var section = document.createElement('div');
     section.className = 'pd-variants-section';
     var title = document.createElement('h3');
     title.className = 'pd-section-title';
-    title.textContent = 'Choose Size / Pack';
+    title.textContent = allVariants.length ? 'Variants' : 'Options';
     section.appendChild(title);
 
     var chips = document.createElement('div');
     chips.className = 'pd-variant-chips';
     chips.setAttribute('role','group');
-    chips.setAttribute('aria-label','Size options');
+    chips.setAttribute('aria-label','Variant options');
 
-    /* Base chip — only when no size variants exist */
-    if (!allVariants.length) {
-      var baseChip = makeChip(baseLabel, baseProduct.price, false, 'base');
-      baseChip.classList.add('active');
-      baseChip.addEventListener('click', function(){ selectVariant(null); });
-      baseChip.addEventListener('touchend', function(e){ e.preventDefault(); selectVariant(null); },{passive:false});
-      chips.appendChild(baseChip);
-    }
+    /* Base chip — always shown so user can return to base product */
+    var baseLabel = baseProduct.unit ? 'Base ('+baseProduct.unit+')' : 'Base';
+    var baseChip = makeChip(baseLabel, baseProduct.price, false, 'base');
+    baseChip.classList.add('active'); // default = base selected
+    baseChip.addEventListener('click', function(){ selectVariant(null); });
+    baseChip.addEventListener('touchend', function(e){ e.preventDefault(); selectVariant(null); },{passive:false});
+    chips.appendChild(baseChip);
 
-    /* Variant chips */
+    /* Variant chips — none active by default */
     allVariants.forEach(function(v){
       var label = v.variant_name || (v.size_value ? v.size_value+' '+v.size_unit : v.size_unit);
       var oos   = (v.stock===0);
@@ -259,17 +256,64 @@
       else c.classList.toggle('active', parseInt(c.dataset.vid,10)===vid);
     });
 
-    /* Update product name, header, breadcrumb */
+    /* Update product name — variant name when selected, base name otherwise */
     var activeVariant = (selVariant && selVariant!=='dist') ? selVariant : null;
-    var displayName = activeVariant && activeVariant.variant_name
-      ? activeVariant.variant_name
-      : baseProduct.name;
+    var displayName = activeVariant ? baseProduct.name + ' — ' + activeVariant.variant_name : baseProduct.name;
     var nameEl = el('pdName');
     if (nameEl) nameEl.textContent = displayName;
     var hdr = el('pdHeaderTitle');
-    if (hdr) hdr.textContent = displayName.length > 22 ? displayName.slice(0,20)+'…' : displayName;
+    if (hdr) hdr.textContent = displayName.length > 26 ? displayName.slice(0,24)+'…' : displayName;
     var bc = el('pdBreadcrumbName');
     if (bc) bc.textContent = displayName;
+
+    /* Variant detail box */
+    var vDetail = el('pdVariantDetail');
+    if (vDetail) {
+      if (activeVariant) {
+        var distLine = activeVariant.distributor_price
+          ? '<div style="font-size:.8rem;color:#7b1fa2;margin-top:4px">💜 Distributor Price: <b>₹'+parseFloat(activeVariant.distributor_price).toFixed(2)+'</b></div>'
+          : '';
+        var _isBundle = activeVariant.is_bundle==1||activeVariant.is_bundle===true||activeVariant.is_bundle==='1';
+        var _hasBundle = _isBundle && (activeVariant.base_quantity||activeVariant.pack_size||activeVariant.display_name);
+        var bundleLine = _hasBundle
+          ? '<div style="font-size:.78rem;color:var(--brand,#1565a8);margin-top:6px;padding:6px 10px;background:var(--brand-ultra,#f0f7ff);border-radius:8px">📦 Bundle: '
+            +(activeVariant.base_quantity?(parseFloat(activeVariant.base_quantity)+' '+(activeVariant.base_unit||'')):'')
+            +(activeVariant.pack_size?' × '+activeVariant.pack_size+' Pack':'')
+            +(activeVariant.display_name?' — '+esc(activeVariant.display_name):'')
+            +'</div>'
+          : '';
+        vDetail.innerHTML = '<div style="margin-top:8px;padding:10px 14px;border-radius:10px;border:1.5px solid var(--brand,#1565a8);background:var(--surface-2)">'
+          + '<div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:4px">Selected Variant</div>'
+          + '<div style="font-weight:700;font-size:.95rem;color:var(--ink)">'+esc(activeVariant.variant_name)+'</div>'
+          + distLine + bundleLine
+          + '</div>';
+        vDetail.style.display = '';
+        /* sync dist chip to this variant's dist price */
+        if (distChipEl) {
+          var vdp = activeVariant.distributor_price || baseProduct.distributor_price || 0;
+          if (vdp) {
+            var prEl = distChipEl.querySelector('.pd-vc-price');
+            if (prEl) prEl.textContent = '₹'+parseFloat(vdp).toFixed(2);
+            distChipEl.style.display = '';
+          } else {
+            distChipEl.style.display = 'none';
+          }
+        }
+      } else if (selVariant !== 'dist') {
+        /* Base selected — hide detail box, reset dist chip to base dist price */
+        vDetail.style.display = 'none';
+        if (distChipEl) {
+          var bdp = baseProduct.distributor_price || 0;
+          if (bdp) {
+            var bprEl = distChipEl.querySelector('.pd-vc-price');
+            if (bprEl) bprEl.textContent = '₹'+parseFloat(bdp).toFixed(2);
+            distChipEl.style.display = '';
+          } else {
+            distChipEl.style.display = 'none';
+          }
+        }
+      }
+    }
 
     /* Update price display */
     if (selVariant==='dist'){
@@ -490,8 +534,7 @@
 
     renderVariants(v);
 
-    /* Auto-select first variant if variants exist */
-    if(v.length>0) selectVariant(v[0].id);
+    /* Do NOT auto-select a variant — show base product price by default */
   })
   .catch(function(err){
     console.error('[product.js]', err);
