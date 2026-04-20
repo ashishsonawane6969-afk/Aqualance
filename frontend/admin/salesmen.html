@@ -515,7 +515,7 @@
   color:var(--ink)!important;
 }
 [data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder { color:var(--ink-faint)!important; }
+[data-theme="dark"] textarea::placeholder { color:var(--ink4)!important; }
 
 /* Buttons */
 [data-theme="dark"] .btn-ghost { background:var(--surface-2)!important; color:var(--ink)!important; }
@@ -775,7 +775,7 @@
       <div class="controls-bar">
         <!-- Row 1: Search (full width) -->
         <div class="search-pill">
-          <span style="color:var(--ink-faint)">🔍</span>
+          <span style="color:var(--ink4)">🔍</span>
           <input type="text" id="searchLeads" placeholder="Search shop, owner, village, salesman…" oninput="filterAdminLeads()" />
         </div>
         <!-- Row 2: Filters + CSV pushed to far right via margin-left:auto -->
@@ -862,7 +862,7 @@
     </div>
     <div class="controls-bar" style="padding-top:10px">
       <div class="search-pill">
-        <span style="color:var(--ink-faint)">🔍</span>
+        <span style="color:var(--ink4)">🔍</span>
         <input type="text" id="searchSalesman" placeholder="Search name or phone…" oninput="filterSalesmanList()" />
       </div>
     </div>
@@ -896,7 +896,7 @@
       </div>
       <div class="controls-bar" style="margin-top:6px">
         <div class="search-pill">
-          <span style="color:var(--ink-faint)">🔍</span>
+          <span style="color:var(--ink4)">🔍</span>
           <input type="text" id="spSearch" placeholder="Search shop, owner, product, village…" oninput="filterSalesProducts()" />
         </div>
         <!-- Export dropdown -->
@@ -1378,7 +1378,7 @@ function renderSalesmanList(list) {
       :`<span style="font-size:.6rem;background:#fff3e0;color:#e65100;padding:2px 7px;border-radius:999px;font-weight:700;margin-left:4px">🌐 All areas</span>`;
     const nm=s.name.replace(/`/g,"'");
     return `<tr>
-      <td style="color:var(--ink-faint);font-size:.73rem">${i+1}</td>
+      <td style="color:var(--ink4);font-size:.73rem">${i+1}</td>
       <td><strong>${s.name}</strong> ${areasBadge}</td>
       <td><a href="tel:${s.phone}" style="color:var(--brand);font-weight:600">${s.phone}</a></td>
       <td style="font-weight:700">${total}</td>
