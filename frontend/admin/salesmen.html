@@ -189,18 +189,22 @@
     .controls-bar {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
       gap: 6px;
       width: 100%;
       box-sizing: border-box;
+      height: auto;
     }
 
-    /* Row 1: search bar — always full width */
+    /* Row 1: search bar — always full width, never grows vertically */
     .search-pill {
       display: flex; align-items: center; gap: 8px;
       background:var(--surface); border: 1.5px solid var(--bdr);
       border-radius: 8px; padding: 8px 12px;
       transition: border-color .15s;
       width: 100%; box-sizing: border-box;
+      flex: 0 0 auto; /* prevent vertical stretch in column-flex parent */
+      height: auto;
     }
     .search-pill:focus-within { border-color: var(--f2); }
     .search-pill input {
@@ -820,7 +824,7 @@
       <span class="t-icon">🛒</span>Sales Products
     </button>
   </div>
-
+</br>
   <!-- ═══════ TAB: ALL LEADS ═══════════════════════════ -->
   <div class="tab-panel active" id="tabAllLeads">
     <div class="filter-section">
