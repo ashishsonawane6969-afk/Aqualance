@@ -42,6 +42,37 @@
       --card-sh: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(13,34,16,.05);
       --font: 'DM Sans', system-ui, sans-serif;
       --mono: 'JetBrains Mono', monospace;
+      /* shared surface vars (resolved by admin.css in light mode) */
+      --surface: #ffffff;
+      --surface-2: #f0f4fa;
+      --border: #e0ead1;
+    }
+
+    /* ── DARK MODE: override all local custom properties ── */
+    [data-theme="dark"] {
+      color-scheme: dark;
+      /* page backgrounds */
+      --bg:      #0a1520;
+      --surface: #111e2b;
+      --surface-2: #162436;
+      --border:  #1e3a55;
+      --bdr:     #1e3a55;
+      --card-sh: 0 1px 4px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.2);
+      /* ink scale → readable on dark */
+      --ink:  #d0e8f8;
+      --ink2: #a0c8e8;
+      --ink3: #6a9bbf;
+      --ink4: #3a6a8a;
+      /* green palette → brighter for dark bg */
+      --f0: #e8f5e9; --f1: #4caf72; --f2: #5aab65;
+      --f3: #6ec67a; --f4: #8fd49a;
+      --f5: #b4e2bc; --f6: #1e3a26; --f7: #0d2016;
+      /* semantic colours */
+      --blue:    #4aaee0; --blu-lt:  #0d2a45;
+      --amber:   #f59e0b; --amb-lt:  #2a1e00;
+      --red:     #f87171; --red-lt:  #2a0d0d;
+      --em:      #34d058; --em-lt:   #0d2a1a;
+      --gold:    #f59e0b; --gld-lt:  #2a1e00;
     }
     *, *::before, *::after { box-sizing: border-box; }
     body { background: var(--bg); font-family: var(--font); }
@@ -244,7 +275,7 @@
     }
     .tcard tbody td {
       padding: 12px 14px; font-size: .84rem;
-      color: var(--ink2); border-bottom: 1px solid #f0f4ec;
+      color: var(--ink2); border-bottom: 1px solid var(--bdr);
       vertical-align: middle;
     }
     /* Prevent word-breaking in key columns */
@@ -498,6 +529,40 @@
 [data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
 [data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
 [data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
+
+/* ── salesmen.html specific dark overrides ── */
+[data-theme="dark"] .kpi-tile { background:var(--surface)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .icon-tab { background:var(--surface)!important; border-color:var(--bdr)!important; color:var(--ink3)!important; }
+[data-theme="dark"] .icon-tab.active { background:var(--f1)!important; color:#fff!important; border-color:var(--f1)!important; }
+[data-theme="dark"] .date-input,
+[data-theme="dark"] .pill-select,
+[data-theme="dark"] .icon-btn,
+[data-theme="dark"] .btn-clear,
+[data-theme="dark"] .preset-btn:not(.active) { background:var(--surface-2)!important; border-color:var(--bdr)!important; color:var(--ink2)!important; }
+[data-theme="dark"] .preset-btn.active,
+[data-theme="dark"] .btn-apply { background:var(--f1)!important; border-color:var(--f1)!important; color:#fff!important; }
+[data-theme="dark"] .tcard { background:var(--surface)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .twrap td { border-color:var(--bdr)!important; color:var(--ink2)!important; }
+[data-theme="dark"] .twrap th { background:var(--surface-2)!important; color:var(--f4)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .twrap tbody tr:hover td { background:var(--surface-2)!important; }
+[data-theme="dark"] .sm-name { color:var(--f4)!important; }
+[data-theme="dark"] .mobile-link { color:var(--f3)!important; }
+[data-theme="dark"] .sale-yes { background:var(--em-lt)!important; color:var(--em)!important; }
+[data-theme="dark"] .sale-no  { background:var(--red-lt)!important; color:var(--red)!important; }
+[data-theme="dark"] .tag-inactive { background:var(--surface-2)!important; color:var(--ink3)!important; }
+[data-theme="dark"] .csv-menu { background:var(--surface)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .csv-menu-item { color:var(--ink2)!important; }
+[data-theme="dark"] .csv-menu-item:hover { background:var(--surface-2)!important; color:var(--f4)!important; }
+[data-theme="dark"] .lb-hero { background:linear-gradient(135deg,#0d2016 0%,#1a3020 100%)!important; }
+[data-theme="dark"] .podium-card { background:var(--surface)!important; border-color:var(--bdr)!important; color:var(--ink)!important; }
+[data-theme="dark"] .lb-row-card { background:var(--surface)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .rate-track { background:var(--surface-2)!important; }
+[data-theme="dark"] .area-chip { background:var(--em-lt)!important; color:var(--em)!important; }
+[data-theme="dark"] .filter-section,
+[data-theme="dark"] .controls-bar { background:transparent!important; }
+[data-theme="dark"] .search-pill { background:var(--surface-2)!important; border-color:var(--bdr)!important; }
+[data-theme="dark"] .search-pill input { color:var(--ink)!important; }
+[data-theme="dark"] .search-pill input::placeholder { color:var(--ink4)!important; }
 
 /* Tables */
 [data-theme="dark"] table { background:transparent!important; }
@@ -1888,7 +1953,7 @@ function handleSPExportSelect(sel) {
       </div>
 
       <!-- Google Map -->
-      <div id="areasMap" style="width:100%;height:220px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:14px;background:#f0f4f0;overflow:hidden;position:relative"></div>
+      <div id="areasMap" style="width:100%;height:220px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:14px;background:var(--surface-2);overflow:hidden;position:relative"></div>
 
       <!-- Assigned areas list -->
       <div style="margin-bottom:14px">
