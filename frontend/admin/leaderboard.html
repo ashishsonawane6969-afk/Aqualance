@@ -64,7 +64,7 @@
       margin-bottom: 32px;
     }
     .podium-card {
-      background: var(--white);
+      background: var(--surface);
       border-radius: var(--radius);
       border: 1px solid var(--border);
       text-align: center;
@@ -110,15 +110,15 @@
       padding: 2px 8px;
       border-radius: 10px;
     }
-    .rank-1 .podium-badge { background: #fdf6e3; color: var(--gold); }
-    .rank-2 .podium-badge { background: #f5f5f5; color: #666; }
+    .rank-1 .podium-badge { background: #fdf6e3; color: #c9a84c; }
+    .rank-2 .podium-badge { background: #f5f5f5; color: #888; }
     .rank-3 .podium-badge { background: #fdf0e3; color: #c9956c; }
     .podium-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .podium-phone { font-size: .75rem; color: var(--ink-soft); margin-bottom: 10px; }
     .podium-metric {
       font-size: 1.6rem;
       font-weight: 700;
-      color: var(--sage);
+      color: var(--brand);
       line-height: 1;
     }
     .podium-metric-label { font-size: .7rem; color: var(--ink-soft); margin-top: 3px; }
@@ -169,6 +169,46 @@
 
     /* Empty state */
     .no-boys { text-align:center; padding: 60px 20px; color: var(--ink-soft); }
+
+    /* ── Dark mode local overrides ── */
+    [data-theme="dark"] .lb-hero {
+      background: linear-gradient(135deg, #8b1a00 0%, #5a1a40 50%, #1e0f4a 100%);
+    }
+    [data-theme="dark"] .podium-card {
+      background: var(--surface) !important;
+      border-color: var(--border) !important;
+    }
+    [data-theme="dark"] .podium-card.rank-1 {
+      border-color: #c9a84c !important;
+      box-shadow: 0 4px 20px rgba(201,168,76,.12);
+    }
+    [data-theme="dark"] .podium-badge {
+      background: var(--surface-2) !important;
+      color: var(--ink-soft) !important;
+    }
+    [data-theme="dark"] .rank-1 .podium-badge { color: #e8c97a !important; }
+    [data-theme="dark"] .rank-3 .podium-badge { color: #e8c4a0 !important; }
+    [data-theme="dark"] .podium-name { color: var(--ink) !important; }
+    [data-theme="dark"] .podium-phone { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .podium-metric { color: var(--brand) !important; }
+    [data-theme="dark"] .podium-metric-label { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .podium-divider { background: var(--border) !important; }
+    [data-theme="dark"] .podium-sub-stats { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .podium-sub-stats strong { color: var(--ink) !important; }
+    [data-theme="dark"] .lb-hero-stat .num { color: #e8c97a; }
+    [data-theme="dark"] .spark-bar { background: var(--surface-2) !important; }
+    [data-theme="dark"] .spark-bar.lit { background: var(--brand) !important; }
+    [data-theme="dark"] .rate-track { background: var(--border) !important; }
+    [data-theme="dark"] .lb-rank-n { background: var(--brand-pale) !important; color: var(--brand) !important; }
+    [data-theme="dark"] .no-boys { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .lb-row-card { background: var(--surface) !important; border-color: var(--border) !important; }
+    [data-theme="dark"] .lb-row-card .lrc-name { color: var(--ink) !important; }
+    [data-theme="dark"] .lb-row-card .lrc-phone { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .lb-row-card .lrc-stat { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .lb-row-card .lrc-stat b { color: var(--ink) !important; }
+    [data-theme="dark"] .lb-row-card .lrc-rev { color: var(--ink-soft) !important; }
+    [data-theme="dark"] .lb-rank-n { background: var(--brand-pale) !important; color: var(--brand) !important; }
+    [data-theme="dark"] .podium-sub-stats strong { color: var(--ink) !important; }
 
     /* ── Overflow fixes ── */
     .main-area { min-width: 0; overflow-x: hidden; }
@@ -733,7 +773,13 @@ function renderLeaderboard({ leaderboard, recentActivity }) {
   }
 }
 
+// Re-render chart on theme change
+document.documentElement.addEventListener && new MutationObserver(function(ms){
+  ms.forEach(function(m){ if(m.attributeName==='data-theme' && window._lastLbData) buildLbBarChart(window._lastLbData); });
+}).observe(document.documentElement,{attributes:true});
+
 function buildLbBarChart(leaderboard) {
+  window._lastLbData = leaderboard;
   const ctx = document.getElementById('lbBarChart')?.getContext('2d');
   if (!ctx) return;
   lbChart?.destroy();
@@ -769,7 +815,7 @@ function buildLbBarChart(leaderboard) {
       },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+        y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: document.documentElement.getAttribute('data-theme')==='dark' ? '#1e3a55' : '#f0f0f0' } },
       },
     },
   });
