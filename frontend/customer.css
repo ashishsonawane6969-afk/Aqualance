@@ -2701,8 +2701,9 @@ footer {
 footer .footer-inner {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   flex-direction: column;
-  gap: 8px;
+  gap: 60px;
 }
 
 footer a {
