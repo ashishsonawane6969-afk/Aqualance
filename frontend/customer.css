@@ -654,7 +654,20 @@ select.filter-select:focus { outline:none; border-color:var(--brand); }
 
 /* Footer */
 footer { background:var(--ink); color:rgba(255,255,255,.65); padding:22px 14px calc(22px + var(--bottom-nav-h)); font-size:.76rem; }
-footer .footer-inner { display:flex; flex-direction:column; gap:8px; }
+footer .footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+              
+.footer-links {
+  width: 50%;
+}
+
+.footer-portals {
+  width: 50%;
+}
 footer a { color:var(--gold-light); }
 footer .footer-brand { font-family:var(--font-head); font-size:.9rem; color:var(--gold-light); margin-bottom:3px; }
 
