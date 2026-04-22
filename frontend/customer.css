@@ -2705,7 +2705,14 @@ footer .footer-inner {
   flex-direction: column;
   gap: 60px;
 }
-
+   
+.footer-links-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 80px;   /* space between Quick Links & Portals */
+  text-align: left;
+}
+   
 footer a {
   color: var(--gold-light);
 }
