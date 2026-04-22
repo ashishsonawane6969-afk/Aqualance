@@ -2700,6 +2700,7 @@ footer {
 
 footer .footer-inner {
   display: flex;
+  justify-content: center;
   flex-direction: column;
   gap: 8px;
 }
