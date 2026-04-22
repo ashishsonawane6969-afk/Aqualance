@@ -49,7 +49,7 @@
   --sh-sm: 0 2px 12px rgba(21, 101, 168, .10);
   --sh-md: 0 8px 28px rgba(21, 101, 168, .13);
   --sh-lg: 0 20px 60px rgba(13, 42, 69, .18);
-  --sh-up: 0 -4px 20px rgba(21, 101, 168, .08);
+  --sh-up: 0 -4px 20px rgba(21, 101, 168, .08);F
   --font-head: 'Lora', Georgia, serif;
   --font-body: 'Sora', system-ui, sans-serif;
   --ease: cubic-bezier(.4, 0, .2, 1);
@@ -1103,11 +1103,11 @@ footer {
   display: flex;
   justify-content: center;   /* center ला आणेल */
   gap: 80px;                 /* spacing */
-  text-align: left;
+  text-align: center;
 }
 
 .footer-links-group h4 {
-  text-align: center;
+  margin-bottom: 10px;
 }
 
 .footer-links-group a {
@@ -1115,7 +1115,7 @@ footer {
   margin-bottom: 6px;
 }
 
-   @media (max-width: 700px) {
+   @media (max-width: 600px) {
   .footer-links-row {
     flex-direction: column;
     align-items: center;
