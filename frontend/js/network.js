@@ -507,6 +507,10 @@ window.fetch = function(url, options) {
     document.addEventListener('visibilitychange', function () {
       if (!document.hidden) {
         NetQ._probe && NetQ._probe();
+        // Only re-validate session on portal pages — skip on public customer pages
+        var _path = window.location.pathname;
+        var _isPortal = /^\/(admin|salesman|delivery)/.test(_path);
+        if (!_isPortal) return; // no auth needed on customer storefront
         // Silently re-validate the cookie without hiding the page.
         // If the cookie expired while the tab was inactive, the next
         // apiFetch will return 401 and logout() will handle the redirect.
