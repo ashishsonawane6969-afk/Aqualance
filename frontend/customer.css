@@ -660,14 +660,6 @@ footer .footer-inner {
   align-items: flex-start;
   gap: 40px;
 }
-              
-.footer-links {
-  width: 50%;
-}
-
-.footer-portals {
-  width: 50%;
-}
 footer a { color:var(--gold-light); }
 footer .footer-brand { font-family:var(--font-head); font-size:.9rem; color:var(--gold-light); margin-bottom:3px; }
 
