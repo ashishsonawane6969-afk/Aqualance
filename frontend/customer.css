@@ -4610,14 +4610,15 @@ body {
 /* ══════════════════════════════════════
    ENHANCED FOOTER
 ══════════════════════════════════════ */
+/* ── FOOTER — dark navy bg always; Quick Links + Portals side by side ── */
 footer {
-  background: var(--ink);
-  color: rgba(255, 255, 255, .65);
-  padding: 28px 14px 0;
+  background: #0d2a45;
+  color: rgba(255,255,255,.75);
+  padding: 28px 20px 0;
   font-size: .78rem;
-  /* account for bottom nav on mobile */
   padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 10px);
 }
+[data-theme="dark"] footer { background: #060d14; }
 
 .footer-inner {
   display: flex;
@@ -4630,15 +4631,16 @@ footer {
 .footer-logo {
   font-family: var(--font-head);
   font-size: 1rem;
-  color: var(--gold-light);
+  color: #90caf9;
   margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .footer-tagline {
   font-size: .76rem;
   margin-bottom: 10px;
   line-height: 1.5;
+  color: rgba(255,255,255,.6);
 }
 
 .footer-contact {
@@ -4646,50 +4648,52 @@ footer {
   flex-direction: column;
   gap: 4px;
   font-size: .74rem;
+  color: rgba(255,255,255,.65);
 }
 
-.footer-contact a {
-  color: var(--gold-light);
-}
+.footer-contact a { color: #90caf9; }
 
+/* Quick Links + Portals always parallel (side by side) */
 .footer-links-row {
   display: flex;
-  gap: 32px;
+  gap: 36px;
+  flex-shrink: 0;
 }
 
 .footer-links-group {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  min-width: 90px;
 }
 
 .footer-links-group h4 {
-  font-size: .7rem;
-  font-weight: 700;
+  font-size: .68rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--gold-light);
-  margin-bottom: 3px;
+  letter-spacing: .1em;
+  color: #90caf9;
+  margin-bottom: 4px;
 }
 
 .footer-links-group a {
-  color: rgba(255, 255, 255, .55);
-  font-size: .78rem;
-  transition: color var(--t-fast);
+  color: rgba(255,255,255,.6);
+  font-size: .8rem;
+  text-decoration: none;
+  transition: color .15s;
 }
 
-.footer-links-group a:active {
-  color: #fff;
-}
+.footer-links-group a:hover,
+.footer-links-group a:active { color: #fff; }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, .08);
+  border-top: 1px solid rgba(255,255,255,.1);
   padding: 14px 0;
   text-align: center;
   font-size: .68rem;
-  color: rgba(255, 255, 255, .3);
+  color: rgba(255,255,255,.3);
   max-width: 1280px;
-  margin: 16px auto 0;
+  margin: 20px auto 0;
 }
 
 /* ══════════════════════════════════════
