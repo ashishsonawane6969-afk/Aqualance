@@ -39,12 +39,12 @@ Server runs on **http://localhost:5000**
 
 ## 👤 Default Login Credentials
 
-| Role     | URL                            | Phone      | Password     |
-|----------|-------------------------------|------------|--------------|
-| Admin    | /admin/login.html              | 9000000001 | Admin@123    |
-| Delivery | /delivery/login.html           | 9000000002 | Delivery@123 |
-| Salesman | /salesman/login.html           | 9000000004 | Sales@123    |
-| Customer | / (no login required)          | —          | —            |
+| Role      | URL                           | Phone      | Password     |
+|---------- |-------------------------------|------------|--------------|
+| Admin     | /admin/login.html             | 9000000001 | admin@123    |
+| Delivery  | /delivery/login.html          | 8888888888 | 120120120    |
+| Salesman  | /salesman/login.html          | 9000000004 | sales@123    |
+| SalesMan2 | /salesman/login.html          | 9999999999 | 420420420    |
 
 > ⚠️ **Change all default passwords and the JWT_SECRET before going to production!**
 
