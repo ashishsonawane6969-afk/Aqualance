@@ -1125,7 +1125,17 @@ footer {
 .footer-links-group {
   text-align: center;        /* content center */
 }
-   
+
+.footer-links-group h4 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.footer-links-group a {
+  display: block;
+  margin-bottom: 6px;
+}
+
 @media (max-width: 600px) {
 
   .footer-links-row {
