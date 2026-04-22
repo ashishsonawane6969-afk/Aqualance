@@ -9,6 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
 
 /* ── TOKENS ─────────────────────────────────────────────────── */
+/* ── CSS DESIGN TOKENS — global color, spacing, font, shadow variables used everywhere ── */
 :root {
   --brand: #1565a8;
   --brand-mid: #0d4a7a;
@@ -72,6 +73,7 @@
 
 
 /* ══ DARK MODE ══════════════════════════════════════════════════ */
+/* ── DARK MODE OVERRIDES — all variables for dark theme (toggled via data-theme="dark" on <html>) ── */
 [data-theme="dark"] {
   --brand: #4aaee0;
   --brand-mid: #2e8ecf;
@@ -130,7 +132,7 @@
 }
 .dm-toggle:hover { transform: scale(1.08); border-color: var(--brand); }
 
-/* ── RESET ── */
+/* ── RESET — normalize browser defaults (box-sizing, margin, padding) ── *//* ── RESET ── */
 *,
 *::before,
 *::after {
@@ -146,7 +148,9 @@ html {
   overflow-y: auto;
 }
 
+/* ── BODY — base font, background, color, min-height for all pages ── */
 body {
+  font-familybody {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--ink);
@@ -198,6 +202,7 @@ textarea {
 /* ══════════════════════════════════════
    BUTTONS
 ══════════════════════════════════════ */
+/* ── BUTTONS (.btn) — base button used on index, product, cart, checkout, all pages ── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -219,6 +224,7 @@ textarea {
   transform: scale(.96);
 }
 
+/* .btn-primary — main CTA (Shop Now, Add to Cart, Place Order) ── */
 .btn-primary {
   background: var(--brand);
   color: #fff;
@@ -231,6 +237,7 @@ textarea {
   box-shadow: 0 4px 14px rgba(200, 147, 42, .3);
 }
 
+/* .btn-outline — secondary action (Continue Shopping, Back) ── */
 .btn-outline {
   background: transparent;
   border: 1.5px solid var(--brand);
@@ -242,6 +249,7 @@ textarea {
   background: var(--brand-pale);
 }
 
+/* .btn-ghost — tertiary/quiet action (View Cart link) ── */
 .btn-ghost {
   background: var(--surface-2);
   color: var(--ink-mid);
@@ -251,6 +259,7 @@ textarea {
   background: var(--border);
 }
 
+/* .btn-danger — destructive actions (Remove item from cart) ── */
 .btn-danger {
   background: var(--error);
   color: #fff;
@@ -261,6 +270,7 @@ textarea {
   color: #fff;
 }
 
+/* .btn-sm/.btn-lg/.btn-full — size variants used across all pages ── */
 .btn-sm {
   min-height: 36px;
   padding: 0 14px;
@@ -301,6 +311,7 @@ textarea {
 /* ══════════════════════════════════════
    BADGES & STATUS
 ══════════════════════════════════════ */
+/* ── BADGES — small status/label pills used on product cards, order status ── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -391,6 +402,7 @@ textarea {
   color: #c62828;
 }
 
+/* ── TAGS — colored category/status tags (.tag-sage, .tag-gold, .tag-red, .tag-green) ── */
 .tag {
   padding: 3px 9px;
   border-radius: var(--r-full);
@@ -813,6 +825,7 @@ textarea {
 /* ══════════════════════════════════════
    BOTTOM NAVIGATION
 ══════════════════════════════════════ */
+/* ── BOTTOM NAV — fixed navigation bar at bottom of customer pages (index, cart, product) ── */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -835,6 +848,7 @@ textarea {
   height: 100%;
 }
 
+/* .bnav-item — individual nav tab (Home, Products, Order, Contact) ── */
 .bnav-item {
   flex: 1;
   display: flex;
@@ -909,6 +923,7 @@ textarea {
 /* Remove the old top-bar line */
 .bnav-item.active::before { display: none; }
 
+/* .bnav-fab — center FAB slot in bottom nav (holds the cart circular button) ── */
 .bnav-fab {
   flex: 1;
   display: flex;
@@ -918,6 +933,7 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* .bnav-fab-btn — the large circular cart button in center of bottom nav (index.html) ── */
 .bnav-fab-btn {
   width: 52px;
   height: 52px;
@@ -927,7 +943,7 @@ textarea {
   align-items: center;
   justify-content: center;
   font-size: 1.45rem;
-  box-shadow: 0 4px 18px rgba(21, 101, 168, .4), 0 0 0 5px var(--brand-pale);
+  box-shadow: 0 4px 18px rgba(21, 101, 168, .45), 0 0 0 4px var(--bg), 0 0 0 7px var(--brand);
   transform: translateY(-10px);
   color: #fff;
   transition: all .3s cubic-bezier(.34,1.56,.64,1);
@@ -935,13 +951,14 @@ textarea {
 
 .bnav-fab-btn:active {
   transform: translateY(-6px) scale(.9);
-  box-shadow: 0 2px 8px rgba(21,101,168,.3), 0 0 0 5px var(--brand-pale);
+  box-shadow: 0 2px 8px rgba(21,101,168,.3), 0 0 0 4px var(--bg), 0 0 0 7px var(--brand);
 }
 
 
 /* ══════════════════════════════════════
    SIDE DRAWER
 ══════════════════════════════════════ */
+/* ── SIDE DRAWER — slide-in nav drawer on mobile (opened from hamburger/logo tap) ── */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -957,6 +974,7 @@ textarea {
   visibility: visible;
 }
 
+/* .drawer — the slide-in panel itself (contains logo, nav links, user info) ── */
 .drawer {
   position: fixed;
   top: 0;
@@ -1024,6 +1042,7 @@ textarea {
   padding: 8px 0;
 }
 
+/* .drawer-nav-item — each link inside the side drawer (Home, Products, Contact etc.) ── */
 .drawer-nav-item {
   display: flex;
   align-items: center;
@@ -1063,7 +1082,8 @@ textarea {
   padding: 14px 18px 6px;
 }
 
-.drawer-footer {
+.drawer-/* ── FOOTER — site footer on index/product pages (brand, links, copyright) ── */
+footer {
   padding: 14px 18px;
   border-top: 1px solid rgba(255, 255, 255, .08);
 }
@@ -1210,6 +1230,7 @@ textarea {
 /* ══════════════════════════════════════
    PRODUCT GRID (customer)
 ══════════════════════════════════════ */
+/* ── PRODUCTS GRID — 2-column card grid on index.html listing all products ── */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1217,6 +1238,7 @@ textarea {
   padding: 12px;
 }
 
+/* .product-card — individual product card (image + name + price + badges) ── */
 .product-card {
   background: var(--surface);
   border-radius: var(--r);
@@ -1232,6 +1254,7 @@ textarea {
   transform: scale(.98);
 }
 
+/* .product-img — image container inside each product card ── */
 .product-img {
   width: 100%;
   aspect-ratio: 1;
@@ -1250,6 +1273,7 @@ textarea {
   object-fit: cover;
 }
 
+/* .product-badge-new — "New Launch" badge overlaid on product card image ── */
 .product-badge-new {
   position: absolute;
   top: 8px;
@@ -1267,6 +1291,7 @@ textarea {
   padding: 10px 11px 12px;
 }
 
+/* .product-name — product title text inside card ── */
 .product-name {
   font-size: .8rem;
   font-weight: 600;
@@ -1284,6 +1309,7 @@ textarea {
   margin-bottom: 4px;
 }
 
+/* .product-price-row — price + MRP + discount % row inside product card ── */
 .product-price-row {
   display: flex;
   align-items: center;
@@ -1356,6 +1382,7 @@ textarea {
 }
 
 /* Hero (customer) */
+/* ── HERO SECTION — large banner at top of index.html with headline + CTA buttons ── */
 .hero {
   background: linear-gradient(135deg, #073a6e 0%, var(--brand) 55%, var(--brand-mid) 100%);
   padding: 22px 14px 26px;
@@ -1378,6 +1405,7 @@ textarea {
   position: relative;
 }
 
+/* .hero-text h1 — main headline "iKrish Wellness Products" on index.html ── */
 .hero-text h1 {
   font-family: var(--font-head);
   font-size: 1.45rem;
@@ -1398,6 +1426,7 @@ textarea {
   line-height: 1.5;
 }
 
+/* .hero-badge — pill tags below headline (Natural, Fast Delivery, Genuine, 16+ Products) ── */
 .hero-badge {
   display: flex;
   gap: 6px;
@@ -1433,6 +1462,7 @@ textarea {
 }
 
 /* Category bar */
+/* ── CATEGORY BAR — horizontal scrollable pill filters (All, New, Face, Hair, Body...) on index.html ── */
 .cat-bar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -1450,6 +1480,7 @@ textarea {
   display: none;
 }
 
+/* .cat-pill — individual category filter pill (All, Face Care, Hair Care etc.) ── */
 .cat-pill {
   display: inline-block;
   padding: 7px 15px;
@@ -1466,6 +1497,7 @@ textarea {
   white-space: nowrap;
 }
 
+/* .cat-pill.active — selected/active category pill state ── */
 .cat-pill.active {
   background: var(--brand);
   color: #fff;
@@ -1531,6 +1563,7 @@ textarea {
   gap: 8px;
 }
 
+/* ── CART BUTTON (TOPBAR) — cart icon button in top-right header of index/product pages ── */
 .cart-btn {
   position: relative;
   width: 38px;
@@ -1550,6 +1583,7 @@ textarea {
   opacity: .8;
 }
 
+/* .cart-count — red badge showing number of items on cart button ── */
 .cart-count {
   position: absolute;
   top: 4px;
@@ -1582,6 +1616,7 @@ textarea {
 /* ══════════════════════════════════════
    CART
 ══════════════════════════════════════ */
+/* ── CART PAGE (cart.html) — main layout container ── */
 .cart-layout {
   display: flex;
   flex-direction: column;
@@ -1591,6 +1626,7 @@ textarea {
   padding: 12px;
 }
 
+/* .cart-item — each row in cart list (image + name + price + quantity controls) ── */
 .cart-item {
   background: var(--surface);
   border-radius: var(--r);
@@ -1640,6 +1676,7 @@ textarea {
   font-weight: 700;
 }
 
+/* .cart-item-controls — +/- quantity buttons and remove button per cart item ── */
 .cart-item-controls {
   display: flex;
   align-items: center;
@@ -1656,6 +1693,7 @@ textarea {
   padding: 4px;
 }
 
+/* .cart-summary — subtotal/total section at bottom of cart page ── */
 .cart-summary {
   background: var(--surface);
   border-radius: var(--r);
@@ -1688,6 +1726,7 @@ textarea {
   margin-top: 4px;
 }
 
+/* .cart-empty — empty state shown when cart has no items ── */
 .cart-empty {
   text-align: center;
   padding: 50px 20px;
@@ -1708,6 +1747,7 @@ textarea {
 /* ══════════════════════════════════════
    CHECKOUT
 ══════════════════════════════════════ */
+/* ── CHECKOUT PAGE (checkout.html) — form layout for customer details + order review ── */
 .checkout-layout {
   display: flex;
   flex-direction: column;
@@ -1715,6 +1755,7 @@ textarea {
   gap: 12px;
 }
 
+/* .order-review — order summary panel shown during checkout ── */
 .order-review {
   background: var(--surface);
   border-radius: var(--r);
@@ -1824,6 +1865,7 @@ textarea {
 /* ══════════════════════════════════════
    DELIVERY CARDS
 ══════════════════════════════════════ */
+/* .order-tile — card shown on order-success.html and order listing pages ── */
 .order-tile {
   background: var(--surface);
   border-radius: var(--r);
@@ -1836,6 +1878,7 @@ textarea {
   box-shadow: var(--sh-sm);
 }
 
+/* .order-tile-header — order number + status badge row ── */
 .order-tile-header {
   display: flex;
   justify-content: space-between;
@@ -1953,6 +1996,7 @@ textarea {
 /* ══════════════════════════════════════
    MODAL (bottom sheet)
 ══════════════════════════════════════ */
+/* ── MODAL SYSTEM — overlay + modal used for product quick-view, confirmations ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1973,6 +2017,7 @@ textarea {
   visibility: visible;
 }
 
+/* .modal — the modal dialog box (slides up from bottom on mobile) ── */
 .modal {
   background: var(--surface);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
@@ -2004,6 +2049,7 @@ textarea {
   margin: 10px auto 0;
 }
 
+/* .modal-header — modal title bar with close (✕) button ── */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -2035,6 +2081,7 @@ textarea {
   background: var(--border);
 }
 
+/* .modal-body — scrollable content area inside modal ── */
 .modal-body {
   padding: 14px 18px;
 }
@@ -2196,6 +2243,7 @@ tr:hover td {
   padding: 8px 0;
 }
 
+/* ── SEARCH INPUT — mobile search bar in products section of index.html ── */
 .search-input {
   flex: 1;
   min-width: 0;
@@ -2235,6 +2283,7 @@ select.filter-select:focus {
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
+/* ── TOAST NOTIFICATIONS — floating success/error messages (bottom of screen) ── */
 .toast-container {
   position: fixed;
   bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 8px);
@@ -2250,6 +2299,7 @@ select.filter-select:focus {
   pointer-events: none;
 }
 
+/* .toast — individual toast notification pill ── */
 .toast {
   background: rgba(13, 42, 69, .92);
   color: #fff;
@@ -2309,6 +2359,7 @@ select.filter-select:focus {
   line-height: 1.5;
 }
 
+/* ── SPINNER — loading indicator used while fetching products/orders ── */
 .spinner {
   display: inline-block;
   width: 26px;
@@ -2605,6 +2656,7 @@ select.filter-select:focus {
 }
 
 /* Skeleton */
+/* ── SKELETON LOADER — animated placeholder while content loads (product cards) ── */
 .skeleton {
   background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
   background-size: 200% 100%;
@@ -2653,7 +2705,7 @@ footer .footer-brand {
 }
 
 /* ══════════════════════════════════════
-   RESPONSIVE
+   RESPONSIVE — media queries for tablet/desktop layout adjustments
 ══════════════════════════════════════ */
 @media (min-width: 900px) {
   .bottom-nav {
@@ -3222,6 +3274,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* ── TOPBAR SEARCH — desktop search bar in topbar header of index.html ── */
 .search-pill-wrap {
   display: flex;
   align-items: center;
@@ -4011,6 +4064,7 @@ body {
 /* ══════════════════════════════════════
    TRUST BAR
 ══════════════════════════════════════ */
+/* ── TRUST BAR — "Premium Quality | Secure Ordering | Fast Delivery" scrolling strip on index.html ── */
 .trust-bar {
   background: var(--brand-pale);
   border-bottom: 1px solid var(--border);
