@@ -674,12 +674,6 @@ footer .footer-brand { font-family:var(--font-head); font-size:.9rem; color:var(
 /* ══════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════ */
-@media (max-width: 600px) {
-  footer .footer-inner {
-    flex-direction: column;
-  }
-}
-
 @media (min-width: 900px) {
   .bottom-nav { display:none; }
   .toast-container { bottom:20px; }
