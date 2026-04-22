@@ -1114,13 +1114,31 @@ footer {
   display: block;
   margin-bottom: 6px;
 }
+   
+.footer-links-row {
+  display: flex;
+  justify-content: center;   /* center ला आणेल */
+  gap: 40px;
+  width: 100%;
+}
 
-   @media (max-width: 600px) {
+.footer-links-group {
+  text-align: center;        /* content center */
+}
+   
+@media (max-width: 600px) {
+
   .footer-links-row {
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    gap: 30px;
+  }
+
+  .footer-links-group {
+    width: 45%;              /* equal space */
     text-align: center;
   }
+
 }
 /* ══════════════════════════════════════
    ADMIN LAYOUT (legacy compat + mobile)
