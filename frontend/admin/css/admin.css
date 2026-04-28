@@ -1,3 +1,160 @@
+/* ===== Final mobile-safe action layout overrides ===== */
+@media (max-width: 767px) {
+  .topnav,
+  .filter-bar,
+  .controls-bar,
+  .cart-item-controls,
+  .hero-ctas,
+  .pd-actions-row,
+  .nav-actions,
+  .form-actions,
+  .modal-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .topnav .btn,
+  .filter-bar .btn,
+  .controls-bar .btn,
+  .cart-item-controls .btn,
+  .hero-ctas .btn,
+  .pd-actions-row .btn,
+  .nav-actions .btn,
+  .form-actions .btn,
+  .modal-actions .btn {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 120px !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .topnav .btn,
+  .filter-bar .btn,
+  .controls-bar .btn,
+  .cart-item-controls .btn,
+  .hero-ctas .btn,
+  .pd-actions-row .btn,
+  .nav-actions .btn,
+  .form-actions .btn,
+  .modal-actions .btn {
+    flex-basis: 100% !important;
+  }
+}
+/* ---- Responsive button overlap guard (all devices) ---- */
+:where(
+  .actions,
+  .action-row,
+  .btn-row,
+  .button-row,
+  .form-actions,
+  .modal-actions,
+  .controls,
+  .controls-bar,
+  .filter-bar,
+  .nav-actions,
+  .topnav,
+  .cart-item-controls,
+  .hero-ctas,
+  .pd-actions-row
+) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+:where(
+  .actions,
+  .action-row,
+  .btn-row,
+  .button-row,
+  .form-actions,
+  .modal-actions,
+  .controls,
+  .controls-bar,
+  .filter-bar,
+  .nav-actions,
+  .topnav,
+  .cart-item-controls,
+  .hero-ctas,
+  .pd-actions-row
+) > :where(button, .btn, a.btn, [role="button"]) {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+
+@media (max-width: 768px) {
+  :where(
+    .actions,
+    .action-row,
+    .btn-row,
+    .button-row,
+    .form-actions,
+    .modal-actions,
+    .controls,
+    .controls-bar,
+    .filter-bar,
+    .nav-actions,
+    .topnav,
+    .cart-item-controls,
+    .hero-ctas,
+    .pd-actions-row
+  ) > :where(button, .btn, a.btn, [role="button"]) {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  :where(
+    .actions,
+    .action-row,
+    .btn-row,
+    .button-row,
+    .form-actions,
+    .modal-actions,
+    .controls,
+    .controls-bar,
+    .filter-bar,
+    .nav-actions,
+    .topnav,
+    .cart-item-controls,
+    .hero-ctas,
+    .pd-actions-row
+  ) > :where(.btn-full) {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  :where(
+    .actions,
+    .action-row,
+    .btn-row,
+    .button-row,
+    .form-actions,
+    .modal-actions,
+    .controls,
+    .controls-bar,
+    .filter-bar,
+    .nav-actions,
+    .topnav,
+    .cart-item-controls,
+    .hero-ctas,
+    .pd-actions-row
+  ) > :where(button, .btn, a.btn, [role="button"]) {
+    flex-basis: 100%;
+  }
+}
+
+:where(td, .table-wrap td, .tcard td) :where(.btn, button, a.btn) {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
+}
 /* --- admin.css --- generated bundle */
 /* --- style.css --- */
 /* ═══════════════════════════════════════════════════════════════
