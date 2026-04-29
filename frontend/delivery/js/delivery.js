@@ -1,5 +1,5 @@
 /* ─── delivery.js ─────────────────────────────────────────── */
-const API = 'https://aqualance-production.up.railway.app/api/v1';
+const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
 
 /* ── XSS Guard: escape all DB values before inserting into innerHTML ────── */
 function _esc(str) {
