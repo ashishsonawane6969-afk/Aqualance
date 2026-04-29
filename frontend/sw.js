@@ -64,7 +64,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // Handle Railway API calls (cross-origin) — Network-First
-  const RAILWAY_API = 'https://aqualance-production.up.railway.app';
+  const RAILWAY_API = 'https://aqualance-production-9e22.up.railway.app';
   if (url.origin === RAILWAY_API) {
     // ✅ FIX (Login Loop): Auth endpoints must NEVER be served from cache.
     // On mobile/PWA, a stale cached 200 from /auth/me tricks network.js into
