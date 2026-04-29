@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  var API = 'https://aqualance-production.up.railway.app/api/v1';
+  var API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
 
   function esc(s) {
     var d = document.createElement('div');
