@@ -165,7 +165,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async e => {
     const _ctrl    = new AbortController();
     const _tid     = setTimeout(() => _ctrl.abort(), _timeout);
     const _fetcher = (window.AqNet && window.AqNet.fetch) ? window.AqNet.fetch : fetch;
-    const res = await _fetcher('https://aqualance-production.up.railway.app/api/v1/orders', {
+    const res = await _fetcher('https://aqualance-production-9e22.up.railway.app/api/v1/orders', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
