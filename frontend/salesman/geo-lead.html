@@ -1424,5 +1424,8 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="position:fixed!important;top:12px!important;right:16px!important;z-index:99999!important;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button>
+  <!-- Vercel Speed Insights -->
+  <script type="module" src="/js/speed-insights-init.js"></script>
+
 </body>
 </html>

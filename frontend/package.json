@@ -1,0 +1,10 @@
+{
+  "name": "aqualance-frontend",
+  "version": "1.0.0",
+  "description": "Aqualance Ventures - iKrish Wellness Frontend",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "@vercel/speed-insights": "^1.3.1"
+  }
+}
