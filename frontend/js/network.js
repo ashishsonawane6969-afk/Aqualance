@@ -21,7 +21,7 @@ console.log("✅ NEW network.js LOADED");
 (function (global) {
   'use strict';
 
-  const API_BASE = 'https://aqualance-production.up.railway.app';
+  const API_BASE = 'https://aqualance-production-9e22.up.railway.app';
 
   // Helper: build headers for /auth/me and other direct fetch() calls.
   // On mobile, cross-site cookies are blocked so we fall back to Bearer token
@@ -460,7 +460,7 @@ console.log("✅ NEW network.js LOADED");
 const _nativeFetch = window.fetch.bind(window);
 window.fetch = function(url, options) {
   if (typeof url === 'string' && url.startsWith('/api')) {
-    url = API_BASE + url;  // API_BASE = 'https://aqualance-production.up.railway.app'
+    url = API_BASE + url;  // API_BASE = 'https://aqualance-production-9e22.up.railway.app'
   }
   return _nativeFetch(url, options);
 };
