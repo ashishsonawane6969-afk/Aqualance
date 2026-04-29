@@ -134,18 +134,13 @@ app.use(cors({
     // Allow no-origin requests (mobile PWA, server-to-server, curl, Postman)
     if (!origin) return callback(null, true);
 
-    // Allow exact matches
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Case-insensitive exact match against the allowed list
+    const normalizedOrigin = origin.toLowerCase();
+    const match = allowedOrigins.some(o => o.toLowerCase() === normalizedOrigin);
 
-    // Allow any subdomain of allowed origins (e.g. preview deployments on Vercel)
-    const isAllowedSubdomain = allowedOrigins.some(allowed => {
-      try {
-        const base = new URL(allowed).hostname.replace(/^www\./, '');
-        const reqHost = new URL(origin).hostname.replace(/^www\./, '');
-        return reqHost === base || reqHost.endsWith('.' + base);
-      } catch { return false; }
-    });
-    if (isAllowedSubdomain) return callback(null, true);
+    console.log(`[CORS] origin="${origin}" allowed=${match} (checking against: ${allowedOrigins.join(', ')})`);
+
+    if (match) return callback(null, true);
 
     // Log and reject unknown origins
     console.warn(`[CORS] Blocked origin: ${origin}`);
