@@ -10,14 +10,14 @@ const ORIGINAL_FETCH = window.fetch;
 
 window.fetch = function (url, options = {}) {
   if (typeof url === 'string' && url.startsWith('/api')) {
-    url = 'https://aqualance-production.up.railway.app' + url;
+    url = 'https://aqualance-production-9e22.up.railway.app' + url;
   }
   return ORIGINAL_FETCH(url, options);
 };
 
 
 
-const API = 'https://aqualance-production.up.railway.app/api/v1';
+const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
 
 /* ─────────────────────────────────────────────────────────────
    TOAST
