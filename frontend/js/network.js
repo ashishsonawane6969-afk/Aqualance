@@ -118,13 +118,8 @@ console.log("✅ NEW network.js LOADED");
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
-          // ✅ FIX (Login Loop): Clear ALL auth state BEFORE redirecting to login.
           _clearAuthState();
-          var a = document.createElement('a');
-          a.href = portalPrefix + '/login.html';
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
+          window.location.replace(portalPrefix + '/login.html');
           return;
         }
         return res.json();
@@ -132,6 +127,17 @@ console.log("✅ NEW network.js LOADED");
       .then(function(data) {
         if (!data) return;
         var role = data.user && data.user.role;
+
+        // Role ↔ portal mismatch: user is authenticated but wrong portal
+        // e.g. delivery boy visiting /admin/ — redirect to their own portal
+        var expectedRole = portalPrefix.replace('/', ''); // 'admin' | 'salesman' | 'delivery'
+        if (role !== expectedRole) {
+          window._aqRehydrating = false;
+          _clearAuthState();
+          window.location.replace('/' + role + '/login.html');
+          return;
+        }
+
         if (role === 'admin') {
           sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
         } else if (role === 'salesman') {
@@ -146,15 +152,9 @@ console.log("✅ NEW network.js LOADED");
       })
       .catch(function() {
         window._aqRehydrating = false;
-        document.documentElement.style.visibility = '';
-        // ✅ FIX (Login Loop): Also clear on network error so the login page
-        // does not bounce back to dashboard when the /auth/me fetch fails.
+        // Keep page hidden until redirect completes — avoids content flash
         _clearAuthState();
-        var a = document.createElement('a');
-        a.href = portalPrefix + '/login.html';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
+        window.location.replace(portalPrefix + '/login.html');
       });
   }
 
