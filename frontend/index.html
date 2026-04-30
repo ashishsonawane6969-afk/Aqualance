@@ -24,11 +24,11 @@
     content="iKrish Wellness Products — Premium skincare, haircare & daily essentials from Aqualence Ventures, Sangamner." />
   <title>Aqualence Ventures — iKrish Wellness</title>
   <link rel="stylesheet" href="/customer.css" />
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
 <style>html,body{overflow-x:hidden;max-width:100%;}*,*::before,*::after{box-sizing:border-box;}img,iframe,canvas{max-width:100%;height:auto;}select{max-width:100%;}.filter-bar,.controls-bar,.filter-row{flex-wrap:wrap;}@media(max-width:767px){select{font-size:16px;}}</style>
 
-<link rel="manifest" href="/manifest.json">
+
 
 <style id="dm-master">
 /* ═══ MASTER DARK MODE ═══════════════════════════════════════ */
@@ -281,7 +281,7 @@
         </div>
       </div>
 
-      <div class="nav-actions"><button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <div class="nav-actions"><button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button>
         <a href="/contact.html" class="header-action" title="Contact us" aria-label="Contact us">&#128222;</a>
         <a href="/cart.html" class="cart-btn" id="cartBtnTop" aria-label="View cart">
           &#128722;
@@ -530,9 +530,6 @@
     })();
 
   </script>
-
-  <!-- Vercel Speed Insights -->
-  <script defer src="/js/speed-insights-init.js"></script>
 
 </body>
 
