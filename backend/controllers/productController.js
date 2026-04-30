@@ -261,6 +261,7 @@ exports.create = async (req, res) => {
     );
 
     res.status(201).json({ success: true, id: result.insertId, message: 'Product created' });
+    require('../utils/autoExport').triggerExport('product-created').catch(() => {});
   } catch (err) {
     serverError(res, err, '[productController.create]');
   }
@@ -344,6 +345,7 @@ exports.update = async (req, res) => {
 
     await db.query(`UPDATE products SET ${setClauses.join(', ')} WHERE id = ?`, params);
     res.json({ success: true, message: 'Product updated' });
+    require('../utils/autoExport').triggerExport('product-updated').catch(() => {});
   } catch (err) {
     if (err.code === 'ER_DATA_TOO_LONG') {
       try {
@@ -367,6 +369,7 @@ exports.remove = async (req, res) => {
     if (!id || isNaN(id)) return sendError(res, 400, 'Invalid product ID');
     await db.query('UPDATE products SET is_active = 0 WHERE id = ?', [id]);
     res.json({ success: true, message: 'Product removed' });
+    require('../utils/autoExport').triggerExport('product-removed').catch(() => {});
   } catch (err) {
     serverError(res, err, '[productController.remove]');
   }

@@ -254,7 +254,7 @@
   <a href="/index.html" class="header-back">←</a>
   <span class="header-title">🛒 Your Cart</span>
   <a href="/index.html" class="header-action" title="Shop">🏠</a>
-<button id="dmToggleBtn" title="Toggle dark/light mode" onclick="(function(){var d=document.documentElement,k='aqualance_theme',dark=d.getAttribute('data-theme')==='dark',next=dark?'light':'dark';d.setAttribute('data-theme',next);document.getElementById('dmToggleBtn').textContent=dark?'🌙':'☀️';try{localStorage.setItem(k,next);}catch(e){};var m=document.querySelector('meta[name=\'theme-color\']');if(m)m.setAttribute('content',dark?'#1565a8':'#060d14');})()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">🌙</button>
+<button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
 </header>
 
 <!-- CART CONTENT -->
@@ -302,7 +302,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
   <!-- Vercel Speed Insights -->
-  <script type="module" src="/js/speed-insights-init.js"></script>
+  <script defer src="/js/speed-insights-init.js"></script>
 
 </body>
 </html>

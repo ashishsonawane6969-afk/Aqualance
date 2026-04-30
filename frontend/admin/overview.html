@@ -422,9 +422,11 @@
     <div class="topnav">
       <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
       <h2>📊 Business Overview</h2>
-      <div style="display:flex;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
         <span id="lastUpdated" style="font-size:.75rem;color:var(--ink-soft)"></span>
         <button onclick="loadOverview()" class="btn btn-outline btn-sm">↻ Refresh</button>
+        <button id="exportSqlBtn" class="btn btn-outline btn-sm" onclick="exportSqlToGithub()" title="Export DB to GitHub">☁️ Export SQL</button>
+        <button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
       </div>
     </div>
 
@@ -797,7 +799,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
   <!-- Vercel Speed Insights -->
-  <script type="module" src="/js/speed-insights-init.js"></script>
+  <script defer src="/js/speed-insights-init.js"></script>
 
 </body>
 </html>

@@ -507,7 +507,10 @@
     <div class="topnav">
       <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleSidebar()" aria-label="Open menu" aria-expanded="false">☰</button>
       <h2>🏆 Delivery Leaderboard</h2>
-      <button onclick="loadLeaderboard()" class="btn btn-outline btn-sm">↻ Refresh</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="loadLeaderboard()" class="btn btn-outline btn-sm">↻ Refresh</button>
+        <button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      </div>
     </div>
 
     <div class="content-area" id="lbContent">
@@ -887,7 +890,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
   <!-- Vercel Speed Insights -->
-  <script type="module" src="/js/speed-insights-init.js"></script>
+  <script defer src="/js/speed-insights-init.js"></script>
 
 </body>
 </html>

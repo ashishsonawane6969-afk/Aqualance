@@ -254,6 +254,7 @@ let httpServer = null;
     app.use('/api/v1/salesman', require('./routes/salesman'));
     app.use('/api/v1/geo',      require('./routes/geo'));
     app.use('/api/v1/ai',       require('./routes/ai'));
+    app.use('/api/v1/export',   require('./routes/export'));
 
     // ✅ SPA catch-all MUST come AFTER API routes.
     // If registered before, it intercepts every /api/* and returns 404 immediately.

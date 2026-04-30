@@ -1072,21 +1072,45 @@ async function editProduct(id) {
 }
 
 
+/* ══ GITHUB SQL EXPORT ══════════════════════════════════════════ */
+async function exportSqlToGithub() {
+  const btn = document.getElementById('exportSqlBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Exporting…'; }
+  try {
+    const res  = await apiFetch(`${API}/export/sql-to-github`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    showToast('✅ SQL exported to GitHub!', 'success');
+  } catch (err) {
+    showToast('Export failed: ' + (err.message || 'Unknown error'), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ Export SQL'; }
+  }
+}
+
 /* ══ DARK MODE TOGGLE ══════════════════════════════════════════ */
 (function(){
   var KEY = 'aqualance_theme';
   function isDark() { return document.documentElement.getAttribute('data-theme')==='dark'; }
   function applyTheme(dark) {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    var btn = document.getElementById('dmToggleBtn');
-    if (btn) btn.textContent = dark ? '☀️' : '🌙';
+    // Update all dm toggle buttons on the page (topnav + any floating)
+    document.querySelectorAll('.dm-toggle').forEach(function(btn) {
+      btn.textContent = dark ? '☀️' : '🌙';
+    });
     try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
   }
   function injectBtn() {
-    if (document.getElementById('dmToggleBtn')) return;
+    // If the page already has a dmToggleBtn in the topnav HTML, wire it up — don't inject a second button
+    var existing = document.getElementById('dmToggleBtn');
+    if (existing) {
+      existing.addEventListener('click', function() { applyTheme(!isDark()); });
+      return;
+    }
+    // No button in HTML — inject a floating one (dashboard and any page without topnav btn)
     var btn = document.createElement('button');
     btn.id = 'dmToggleBtn';
-    btn.className = 'dm-toggle';
+    btn.className = 'dm-toggle dm-float';  // dm-float = position:fixed styling
     btn.title = 'Toggle dark mode';
     btn.setAttribute('aria-label', 'Toggle dark mode');
     btn.textContent = isDark() ? '☀️' : '🌙';
@@ -1098,7 +1122,7 @@ async function editProduct(id) {
   try { saved = localStorage.getItem(KEY); } catch(e){}
   if (!saved) saved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   applyTheme(saved === 'dark');
-  // Inject button after DOM ready
+  // Wire up / inject button after DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', injectBtn);
   } else {

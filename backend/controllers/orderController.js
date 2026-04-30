@@ -184,6 +184,8 @@ exports.create = async (req, res) => {
 
     await conn.commit();
     res.status(201).json({ success: true, order_number: orderNumber, order_id: orderId, total });
+    // Fire-and-forget SQL export to GitHub (non-blocking, won't affect response)
+    require('../utils/autoExport').triggerExport('order-created').catch(() => {});
   } catch (err) {
     await conn.rollback();
     serverError(res, err, '[orderController.create]');
@@ -282,6 +284,7 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
 
     res.json({ success: true, message: 'Status updated' });
+    require('../utils/autoExport').triggerExport('order-status-updated').catch(() => {});
   } catch (err) {
     serverError(res, err, '[orderController.updateStatus]');
   }
