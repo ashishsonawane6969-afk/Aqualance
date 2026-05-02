@@ -51,29 +51,41 @@ window.deliveryAuthRehydrate = deliveryAuthRehydrate;
 
 /* ── Fetch wrapper ────────────────────────────────────────── */
 async function apiFetch(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: { ...authHeader(), ...(options.headers || {}) },
-  });
-  return res;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: { ...authHeader(), ...(options.headers || {}) },
+    });
+    return res;
+  } catch (err) {
+    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+      throw new Error('Network error. Check your connection.');
+    }
+    throw err;
+  }
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
-function showToast(msg, type = 'default') {
+function showToast(msg, type, duration) {
+  type     = type     || 'default';
+  duration = duration || 3500;
   const c = document.getElementById('toastContainer');
   if (!c) return;
   const t = document.createElement('div');
-  t.className = `toast ${type}`;
+  t.className = 'toast ' + type;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), duration);
 }
 
 function openModal(id) { document.getElementById(id)?.classList.add('show'); }
-function closeModal(id){ document.getElementById(id)?.classList.remove('show'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
 
-function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
 function statusBadge(s) { return `<span class="status status-${s}">${s.replace('_',' ')}</span>`; }
 
 /* ─────────────────────────────────────────────────────────────
@@ -328,6 +340,8 @@ async function markInTransit(orderId) {
       btn.textContent = dark ? '☀️' : '🌙';
     });
     try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#060d14' : '#1565a8');
   }
   function injectBtn() {
     var existing = document.getElementById('dmToggleBtn');
