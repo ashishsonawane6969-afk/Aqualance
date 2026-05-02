@@ -541,7 +541,7 @@ if (document.getElementById('productsGrid')) {
     });
     try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute('content', dark ? '#060d14' : '#1565a8');
+    if (m) m.setAttribute('content', dark ? '#08121c' : '#1565a8');
   }
   function injectBtn() {
     var existing = document.getElementById('dmToggleBtn');
