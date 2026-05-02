@@ -11,23 +11,23 @@
 /* ── TOKENS ─────────────────────────────────────────────────── */
 /* ── CSS DESIGN TOKENS — global color, spacing, font, shadow variables used everywhere ── */
 :root {
-  --brand: #1565a8;
-  --brand-mid: #0d4a7a;
-  --brand-light: #2e8ecf;
-  --brand-pale: #e3f0ff;
-  --brand-ultra: #f0f7ff;
-  --gold: #1e7fc2;
-  --gold-light: #4aaee0;
-  --gold-pale: #ddf0fb;
-  --bg: #f0f5fa;
-  --surface: #ffffff;
-  --surface-2: #eef4fb;
-  --border: #c8ddf0;
-  --border-dark: #a0c0e0;
-  --ink: #0d2a45;
-  --ink-mid: #1e4a72;
-  --ink-soft: #4a7a9b;
-  --ink-faint: #80aac8;
+  /* ── Light mode palette ─────────────────────── */
+  --brand:        #1565a8;
+  --brand-mid:    #0d4a7a;
+  --brand-light:  #2e8ecf;
+  --brand-pale:   #e3f0ff;
+  --brand-ultra:  #f0f7ff;
+  --gold:         #c8920a;
+  --gold-pale:    #fef3da;
+  --bg:           #f0f5fa;
+  --surface:      #ffffff;
+  --surface-2:    #eef4fb;
+  --border:       #c8ddf0;
+  --border-dark:  #a0c0e0;
+  --ink:          #0d2a45;
+  --ink-mid:      #1e4a72;
+  --ink-soft:     #4a7a9b;
+  --ink-faint:    #80aac8;
   --success: #1e7d3a;
   --success-pale: #e4f5eb;
   --warn: #d97706;
@@ -75,23 +75,23 @@
 /* ══ DARK MODE ══════════════════════════════════════════════════ */
 /* ── DARK MODE OVERRIDES — all variables for dark theme (toggled via data-theme="dark" on <html>) ── */
 [data-theme="dark"] {
-  --brand: #4aaee0;
-  --brand-mid: #2e8ecf;
-  --brand-light: #6ec6f5;
-  --brand-pale: #0d2a45;
-  --brand-ultra: #0a1e30;
-  --gold: #4aaee0;
-  --gold-light: #6ec6f5;
-  --gold-pale: #0d2a45;
-  --bg: #0a1520;
-  --surface: #111e2b;
-  --surface-2: #162436;
-  --border: #1e3a55;
-  --border-dark: #2a4f72;
-  --ink: #d0e8f8;
-  --ink-mid: #a0c8e8;
-  --ink-soft: #6a9bbf;
-  --ink-faint: #3a6a8a;
+  /* ── Dark mode palette ──────────────────────── */
+  --brand:        #58bcf0;
+  --brand-mid:    #3aa0d8;
+  --brand-light:  #80d4ff;
+  --brand-pale:   #0e2d48;
+  --brand-ultra:  #091e30;
+  --gold:         #f0b429;
+  --gold-pale:    #2a1f05;
+  --bg:           #08121c;
+  --surface:      #0f1d2b;
+  --surface-2:    #152535;
+  --border:       #1c3550;
+  --border-dark:  #284d72;
+  --ink:          #d8eefa;
+  --ink-mid:      #9ec8e8;
+  --ink-soft:     #5f90b0;
+  --ink-faint:    #304f68;
   --success: #34d058;
   --success-pale: #0d2a1a;
   --warn: #f59e0b;
@@ -113,24 +113,54 @@
 }
 
 /* Dark mode toggle button */
+/* Dark mode toggle — inline in brand topbar (light) or dark surface (dark) */
 .dm-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  /* Light mode: topbar is brand-blue, so use white ghost style */
+  border: 1.5px solid rgba(255,255,255,.35);
+  background: rgba(255,255,255,.15);
+  color: rgba(255,255,255,.9);
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .2s, border-color .2s, transform .15s, color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dm-toggle:hover {
+  transform: scale(1.07);
+  background: rgba(255,255,255,.28);
+  border-color: rgba(255,255,255,.6);
+}
+/* Dark mode: topbar is dark surface */
+[data-theme="dark"] .dm-toggle {
+  border: 1.5px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.07);
+  color: var(--ink-mid);
+}
+[data-theme="dark"] .dm-toggle:hover {
+  background: rgba(88,188,240,.18);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+/* Floating fallback for pages without brand topbar (cart, checkout, contact) */
+.dm-toggle.dm-float {
   position: fixed !important;
   bottom: calc(var(--bottom-nav-h,68px) + env(safe-area-inset-bottom,0px) + 14px) !important;
   right: 16px !important;
-  width: 44px; height: 44px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
   border: 1.5px solid var(--border);
   background: var(--surface);
-  color: var(--ink);
-  font-size: 1.25rem;
-  cursor: pointer;
-  display: flex !important; align-items: center; justify-content: center;
-  box-shadow: 0 2px 12px rgba(21,101,168,.18);
-  z-index: 9999 !important;
-  transition: background .2s, border-color .2s, transform .15s;
-  -webkit-tap-highlight-color: transparent;
+  color: var(--ink-soft);
+  font-size: 1.2rem;
+  box-shadow: 0 2px 16px rgba(21,101,168,.2);
+  z-index: 9000 !important;
 }
-.dm-toggle:hover { transform: scale(1.08); border-color: var(--brand); }
 
 /* ── RESET — normalize browser defaults (box-sizing, margin, padding) ── *//* ── RESET ── */
 *,
@@ -776,15 +806,23 @@ textarea {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  color: var(--ink-mid);
-  background: var(--surface-2);
+  /* Light mode: topbar is brand-blue, use white ghost style */
+  color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.25);
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  transition: background .2s, transform .15s;
 }
-
-.header-action:active {
-  background: var(--border);
+.header-action:hover { background: rgba(255,255,255,.25); transform: scale(1.06); }
+.header-action:active { background: rgba(255,255,255,.35); }
+/* Dark mode: surface-based style */
+[data-theme="dark"] .header-action {
+  color: var(--ink-mid);
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
 }
+[data-theme="dark"] .header-action:hover { background: rgba(88,188,240,.15); color: var(--brand); border-color: var(--brand); }
 
 .header-back {
   width: 36px;
@@ -1575,7 +1613,7 @@ footer {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--surface);
+  /* background set by final .topbar rule below */
   border-bottom: 1px solid var(--border);
   box-shadow: var(--sh-xs);
 }
@@ -1631,14 +1669,24 @@ footer {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--brand-pale);
+  /* Light: white ghost on brand topbar */
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.05rem;
-  color: var(--brand);
+  color: rgba(255,255,255,.95);
   -webkit-tap-highlight-color: transparent;
+  transition: background .2s, transform .15s;
 }
+.cart-btn:hover { background: rgba(255,255,255,.28); transform: scale(1.06); }
+[data-theme="dark"] .cart-btn {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
+  color: var(--ink-mid);
+}
+[data-theme="dark"] .cart-btn:hover { background: rgba(88,188,240,.15); color: var(--brand); border-color: var(--brand); }
 
 .cart-btn:active {
   background: var(--brand-pale);
@@ -3919,7 +3967,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 200;
-  background: var(--surface);
+  /* background set by final .topbar rule below */
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 8px rgba(21, 101, 168, .08);
 }
@@ -3945,9 +3993,10 @@ body {
   font-family: var(--font-head);
   font-size: .95rem;
   font-weight: 600;
-  color: var(--brand);
+  color: #fff; /* White on brand topbar */
   line-height: 1.2;
 }
+[data-theme="dark"] .logo-text { color: var(--brand); }
 
 .logo-text span {
   color: var(--gold);
@@ -6162,9 +6211,15 @@ select {
   position: -webkit-sticky;
   top: 0;
   z-index: 200;
+  /* Premium brand gradient topbar in light mode */
+  background: linear-gradient(135deg, var(--brand-mid) 0%, var(--brand) 100%);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 2px 12px rgba(13,74,122,.25);
+}
+[data-theme="dark"] .topbar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 8px rgba(21, 101, 168, .08);
+  box-shadow: 0 1px 8px rgba(0,0,0,.4);
 }
 
 .topbar-inner {
