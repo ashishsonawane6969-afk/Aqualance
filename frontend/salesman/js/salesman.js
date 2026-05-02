@@ -28,9 +28,12 @@ async function salesAuthRehydrate() {
   return !!getSalesUser();
 }
 
-function authH() {
-  // No Authorization header — cookie sent automatically via credentials:'include'
-  return { 'Content-Type': 'application/json' };
+function authHeader() {
+  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  const token = localStorage.getItem('aq_token');
+  return token
+    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    : { 'Content-Type': 'application/json' };
 }
 var _salesLoggingOut = false;
 async function salesLogout() {
@@ -49,13 +52,12 @@ window.salesAuthRehydrate = salesAuthRehydrate;
 
 /* ── Fetch wrapper ────────────────────────────────────────── */
 /* FIX: wraps network errors + auth expiry in one place       */
-async function apiFetch(url, options) {
-  options = options || {};
+async function apiFetch(url, options = {}) {
   try {
     const res = await fetch(url, {
       ...options,
       credentials: 'include',
-      headers: Object.assign({}, authH(), options.headers || {})
+      headers: { ...authHeader(), ...(options.headers || {}) }
     });
     // 401/403 handled centrally by network.js patchApiFetch — do not duplicate here
     return res;
@@ -74,20 +76,21 @@ async function safeJson(res) {
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
-function showToast(msg, type) {
-  type = type || 'default';
+function showToast(msg, type, duration) {
+  type     = type     || 'default';
+  duration = duration || 3500;
   const c = document.getElementById('toastContainer');
   if (!c) return;
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(function() { t.remove(); }, 3500);
+  setTimeout(() => t.remove(), duration);
 }
 
 /* ── Modals ───────────────────────────────────────────────── */
-function openModal(id)  { const el = document.getElementById(id); if (el) el.classList.add('show'); }
-function closeModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('show'); }
+function openModal(id) { document.getElementById(id)?.classList.add('show'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
 
 /* ── Sidebar toggle ──────────────────────────────────────── */
 function toggleSidebar() { const el = document.getElementById('sidebar'); if (el) el.classList.toggle('open'); }
@@ -1191,6 +1194,8 @@ async function exportCSV() {
       btn.textContent = dark ? '☀️' : '🌙';
     });
     try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#060d14' : '#1565a8');
   }
   function injectBtn() {
     var existing = document.getElementById('dmToggleBtn');
