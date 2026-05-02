@@ -105,14 +105,14 @@
 
 /* ── TOKENS ─────────────────────────────────────────────────── */
 :root {
+  /* ── Light mode palette ─────────────────────── */
   --brand:        #1565a8;
   --brand-mid:    #0d4a7a;
   --brand-light:  #2e8ecf;
   --brand-pale:   #e3f0ff;
   --brand-ultra:  #f0f7ff;
-  --gold:         #1e7fc2;
-  --gold-light:   #4aaee0;
-  --gold-pale:    #ddf0fb;
+  --gold:         #c8920a;
+  --gold-pale:    #fef3da;
   --bg:           #f0f5fa;
   --surface:      #ffffff;
   --surface-2:    #eef4fb;
@@ -3821,15 +3821,31 @@ body.net-2g .prod-card-img {
 .dm-toggle {
   width: 36px; height: 36px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.3);
-  background: rgba(255,255,255,.15);
-  color: #fff;
-  font-size: 1.1rem;
+  border: 1.5px solid var(--border-dark);
+  background: var(--surface-2);
+  color: var(--ink-mid);
+  font-size: 1rem;
   cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  transition: background .2s, border-color .2s, transform .15s;
+  transition: background .2s, border-color .2s, color .2s, transform .15s;
   -webkit-tap-highlight-color: transparent;
+}
+.dm-toggle:hover {
+  transform: scale(1.07);
+  background: var(--brand-pale);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+[data-theme="dark"] .dm-toggle {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+  color: var(--ink-mid);
+}
+[data-theme="dark"] .dm-toggle:hover {
+  background: rgba(74,174,224,.15);
+  border-color: var(--brand);
+  color: var(--brand);
 }
 .dm-toggle.dm-float {
   position: fixed !important;
@@ -3838,13 +3854,11 @@ body.net-2g .prod-card-img {
   width: 44px; height: 44px;
   border: 1.5px solid var(--border);
   background: var(--surface);
-  color: var(--ink);
-  font-size: 1.25rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  color: var(--ink-soft);
+  font-size: 1.2rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,.15);
   z-index: 9000 !important;
 }
-.dm-toggle:hover { transform: scale(1.08); }
-[data-theme="light"] .dm-toggle:not(.dm-float) { border-color: rgba(0,0,0,.2); background: rgba(0,0,0,.07); color: var(--ink); }
 
 /* ── Dark mode targeted fixes ─────────────────────────────── */
 [data-theme="dark"] .app-header { background: var(--surface) !important; border-color: var(--border) !important; }
