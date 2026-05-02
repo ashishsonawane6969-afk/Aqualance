@@ -24,14 +24,14 @@ const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
 ───────────────────────────────────────────────────────────── */
 function showToast(msg, type, duration) {
   type     = type     || 'default';
-  duration = duration || 3000;
-  var c = document.getElementById('toastContainer');
+  duration = duration || 3500;
+  const c = document.getElementById('toastContainer');
   if (!c) return;
-  var t = document.createElement('div');
+  const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(function() { t.remove(); }, duration);
+  setTimeout(() => t.remove(), duration);
 }
 
 /* ─────────────────────────────────────────────────────────────
