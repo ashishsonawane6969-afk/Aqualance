@@ -76,32 +76,43 @@ function authHeader() {
 // response here. If network.js is not loaded (e.g. standalone test), the
 // fallback guard below catches it so logout always fires.
 async function apiFetch(url, options = {}) {
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',   // Fix 2: send httpOnly cookie automatically
-    headers: { ...authHeader(), ...(options.headers || {}) },
-  });
-  // 401/403 handled centrally by network.js patchApiFetch — do not duplicate here
-  return res;
+  try {
+    const res = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: { ...authHeader(), ...(options.headers || {}) },
+    });
+    return res;
+  } catch (err) {
+    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+      throw new Error('Network error. Check your connection.');
+    }
+    throw err;
+  }
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
-function showToast(msg, type = 'default') {
+function showToast(msg, type, duration) {
+  type     = type     || 'default';
+  duration = duration || 3500;
   const c = document.getElementById('toastContainer');
   if (!c) return;
   const t = document.createElement('div');
-  t.className = `toast ${type}`;
+  t.className = 'toast ' + type;
   t.textContent = msg;
   c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), duration);
 }
 
 /* ── Modal ────────────────────────────────────────────────── */
 function openModal(id) { document.getElementById(id)?.classList.add('show'); }
-function closeModal(id){ document.getElementById(id)?.classList.remove('show'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
 
 /* ── Format helpers ───────────────────────────────────────── */
-function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }); }
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
 function fmtCurrency(v) { return `₹${parseFloat(v).toFixed(2)}`; }
 function statusBadge(s) { return `<span class="status status-${s}">${s.replace('_',' ')}</span>`; }
 
@@ -1094,11 +1105,12 @@ async function exportSqlToGithub() {
   function isDark() { return document.documentElement.getAttribute('data-theme')==='dark'; }
   function applyTheme(dark) {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    // Update all dm toggle buttons on the page (topnav + any floating)
     document.querySelectorAll('.dm-toggle').forEach(function(btn) {
       btn.textContent = dark ? '☀️' : '🌙';
     });
     try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#060d14' : '#1565a8');
   }
   function injectBtn() {
     // If the page already has a dmToggleBtn in the topnav HTML, wire it up — don't inject a second button
