@@ -346,9 +346,17 @@ input, select, textarea { font-family: var(--font-body); }
 ══════════════════════════════════════ */
 .app-header {
   position:sticky; top:0; z-index:200;
-  background:var(--surface); border-bottom:1px solid var(--border);
-  height:var(--top-bar-h); display:flex; align-items:center; padding:0 14px; gap:10px;
-  box-shadow:var(--sh-xs);
+  background:linear-gradient(135deg, var(--brand-mid) 0%, var(--brand) 100%);
+  border-bottom:1px solid rgba(255,255,255,.12);
+  height:var(--top-bar-h); display:flex; align-items:center;
+  justify-content:space-between;
+  padding:0 14px; gap:10px;
+  box-shadow:0 2px 12px rgba(13,74,122,.25);
+}
+[data-theme="dark"] .app-header {
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 1px 8px rgba(0,0,0,.4);
 }
 .app-header .header-logo {
   font-family:var(--font-head); font-size:1rem; font-weight:600; color:var(--brand);
