@@ -428,6 +428,7 @@
       <a href="/cart.html" class="cart-btn" title="Cart">
         🛒<span class="cart-count" id="cartCount">0</span>
       </a>
+      <button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
     </nav>
   </div>
 </header>
@@ -690,25 +691,5 @@ if ('serviceWorker' in navigator) {
   <!-- Vercel Speed Insights -->
   <script defer src="/js/speed-insights-init.js"></script>
 
-<button id="dmToggleBtn" class="dm-toggle dm-float" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
-<script>
-(function(){
-  var KEY='aqualance_theme';
-  function isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
-  function applyTheme(dark){
-    document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-    var btn=document.getElementById('dmToggleBtn');
-    if(btn)btn.textContent=dark?'☀️':'🌙';
-    try{localStorage.setItem(KEY,dark?'dark':'light');}catch(e){}
-    var m=document.querySelector('meta[name="theme-color"]');
-    if(m)m.setAttribute('content',dark?'#060d14':'#1565a8');
-  }
-  var btn=document.getElementById('dmToggleBtn');
-  if(btn){
-    btn.textContent=isDark()?'☀️':'🌙';
-    btn.addEventListener('click',function(){applyTheme(!isDark());});
-  }
-})();
-</script>
 </body>
 </html>
