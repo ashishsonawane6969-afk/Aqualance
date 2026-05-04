@@ -766,14 +766,20 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 200;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--brand-mid) 0%, var(--brand) 100%);
+  border-bottom: 1px solid rgba(255,255,255,.12);
   height: var(--top-bar-h);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 14px;
   gap: 10px;
-  box-shadow: var(--sh-xs);
+  box-shadow: 0 2px 12px rgba(13,74,122,.25);
+}
+[data-theme="dark"] .app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 8px rgba(0,0,0,.4);
 }
 
 .app-header .header-logo {
@@ -832,17 +838,31 @@ textarea {
   align-items: center;
   justify-content: center;
   font-size: 1.2rem;
-  color: var(--ink);
-  background: var(--surface-2);
+  color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.25);
   flex-shrink: 0;
+  transition: background .2s;
+}
+.header-back:hover { background: rgba(255,255,255,.28); }
+[data-theme="dark"] .header-back {
+  color: var(--ink-mid);
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.12);
 }
 
 .header-title {
   font-size: .95rem;
   font-weight: 700;
-  color: var(--ink);
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 1px 3px rgba(0,0,0,.15);
   flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+[data-theme="dark"] .header-title { color: var(--ink); text-shadow: none; }
 
 .header-badge {
   position: absolute;
