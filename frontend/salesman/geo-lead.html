@@ -33,6 +33,7 @@
     .topbar {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
       padding: 0 14px;
       height: 56px;
@@ -491,6 +492,7 @@ body {
 <div class="topbar">
   <button class="back-btn" onclick="history.back()">←</button>
   <h2>📍 Geo Lead Capture</h2>
+  <button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
 </div>
 
 <!-- GPS Status -->
@@ -1423,7 +1425,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<button id="dmToggleBtn" class="dm-toggle dm-float" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
   <!-- Vercel Speed Insights -->
   <script defer src="/js/speed-insights-init.js"></script>
 
