@@ -288,9 +288,10 @@
 <body class="admin-layout">
 
 <!-- Topbar -->
-<div class="top-bar">
-  <button class="icon-btn" onclick="history.back()">&#8592;</button>
-  <span class="top-bar-title">🔐 MFA Security</span>
+<div class="topnav" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+  <button class="icon-btn" onclick="history.back()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--ink-mid);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;">&#8592;</button>
+  <span style="font-size:.93rem;font-weight:700;color:var(--ink);">🔐 MFA Security</span>
+  <button id="dmToggleBtn" class="dm-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
 </div>
 
 <div class="mfa-card">
@@ -481,7 +482,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<button id="dmToggleBtn" class="dm-toggle dm-float" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
   <!-- Vercel Speed Insights -->
   <script defer src="/js/speed-insights-init.js"></script>
 
