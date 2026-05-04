@@ -9,7 +9,7 @@
   d.setAttribute('data-theme',s);
   // Update theme-color meta for mobile browser chrome
   var m=document.querySelector('meta[name="theme-color"]');
-  if(m)m.setAttribute('content',s==='dark'?'#060d14':'#1565a8');
+  if(m)m.setAttribute('content',s==='dark'?'#08121c':'#1565a8');
 })();
 </script>
 <link rel="manifest" href="/manifest.json" />
@@ -499,7 +499,7 @@
     <h3>📍 Find Us</h3>
     <iframe
       class="map-embed"
-      src="https://maps.google.com/maps?q=Ahilyanagar,Maharashtra&z=13&output=embed"
+      src="https://maps.google.com/maps?q=Sangamner,Ahmednagar,Maharashtra&z=13&output=embed"
       loading="lazy"
       referrerpolicy="no-referrer"
       sandbox="allow-scripts allow-same-origin"
@@ -691,5 +691,31 @@ if ('serviceWorker' in navigator) {
   <!-- Vercel Speed Insights -->
   <script defer src="/js/speed-insights-init.js"></script>
 
+
+<script>
+/* Dark mode toggle wiring */
+(function () {
+  var KEY = 'aqualance_theme';
+  function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+  function applyTheme(dark) {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.querySelectorAll('.dm-toggle').forEach(function(b){ b.textContent = dark ? '☀️' : '🌙'; });
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch(e){}
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#08121c' : '#1565a8');
+  }
+  function wire() {
+    var btn = document.getElementById('dmToggleBtn');
+    if (!btn) return;
+    btn.textContent = isDark() ? '☀️' : '🌙';
+    btn.addEventListener('click', function () { applyTheme(!isDark()); });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wire);
+  } else {
+    wire();
+  }
+})();
+</script>
 </body>
 </html>
