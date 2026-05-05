@@ -93,6 +93,35 @@ if (!mfaKey || mfaKey === 'GENERATE_A_64_CHAR_HEX_KEY') {
     'Run: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
 }
 
+/* ── Rule 8b: MFA_TEMP_SECRET must be independent of JWT_SECRET ─────────── */
+// Previously mfaController derived this as JWT_SECRET + '_mfa_pending'.
+// If JWT_SECRET leaked (e.g. via GitHub SQL dump), an attacker could forge
+// MFA temp tokens and bypass 2FA entirely. This rule ensures they are separate.
+const mfaTempSecret = process.env.MFA_TEMP_SECRET || '';
+if (!mfaTempSecret) {
+  if (isProd) {
+    errors.push(
+      'MFA_TEMP_SECRET is not set. Required in production to keep the MFA temp-token ' +
+      'secret independent of JWT_SECRET. ' +
+      'Generate: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
+    );
+  } else {
+    warnings.push(
+      'MFA_TEMP_SECRET not set — mfaController uses a random in-process key (dev only). ' +
+      'Set this before going to production.'
+    );
+  }
+} else if (process.env.JWT_SECRET && (
+  mfaTempSecret === process.env.JWT_SECRET ||
+  mfaTempSecret.startsWith(process.env.JWT_SECRET)
+)) {
+  errors.push(
+    'MFA_TEMP_SECRET must NOT be derived from or equal to JWT_SECRET. ' +
+    'Generate a completely independent value: ' +
+    'node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
+  );
+}
+
 /* ── Rule 9: ALERT_WEBHOOK_URL — info only ──────────────────────────────── */
 if (!process.env.ALERT_WEBHOOK_URL) {
   // Not a warning — it's optional. Just log at info level so admin knows it's available.

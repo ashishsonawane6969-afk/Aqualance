@@ -107,6 +107,31 @@ Summary:
 `;
 
 
+/**
+ * sanitizeForPrompt — strip characters that could be used to manipulate the system prompt.
+ *
+ * SECURITY FIX: Product names and descriptions are stored by admins and interpolated
+ * directly into the Gemini system prompt. A rogue or compromised admin could inject
+ * prompt-manipulation text (e.g. "Ignore all instructions above") that affects the
+ * public AI chat widget. This sanitizer removes control characters and truncates.
+ *
+ * Strips: backticks, brackets, pipes, backslashes, and leading/trailing whitespace.
+ * Collapses: multiple newlines (common injection separator) into a single space.
+ * Truncates: hard cap prevents oversized injections from bloating the system prompt.
+ *
+ * @param {string} str
+ * @param {number} maxLen
+ * @returns {string}
+ */
+function sanitizeForPrompt(str, maxLen = 200) {
+  return (str || '')
+    .replace(/[`\[\]{}|\\]/g, '')   // strip prompt-control characters
+    .replace(/\n+/g, ' ')            // flatten newlines — common injection separator
+    .replace(/\s{2,}/g, ' ')         // collapse multiple spaces
+    .trim()
+    .slice(0, maxLen);
+}
+
 function buildSystemPrompt(products) {
   // Group by category for a readable catalog
   const byCategory = {};
@@ -123,8 +148,8 @@ function buildSystemPrompt(products) {
         ? ` (${Math.round(((p.mrp - p.price) / p.mrp) * 100)}% off)` : '';
       const stock = p.stock <= 5 ? ' [Low stock]' : '';
       catalogLines.push(
-        `  • ${p.name} — ₹${parseFloat(p.price).toFixed(0)}${disc}${stock}`
-        + (p.description ? ` — ${p.description.slice(0, 80)}` : '')
+        `  • ${sanitizeForPrompt(p.name, 100)} — ₹${parseFloat(p.price).toFixed(0)}${disc}${stock}`
+        + (p.description ? ` — ${sanitizeForPrompt(p.description, 80)}` : '')
       );
     }
   }

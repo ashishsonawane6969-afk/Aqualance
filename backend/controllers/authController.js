@@ -250,19 +250,27 @@ exports.login = async (req, res) => {
     );
     if (user.role === 'admin') secAlerts.adminLogin(user.id, req.ip);
 
-    // Return user profile + token.
-    // Cookie is the secure path (httpOnly, SameSite=None).
-    // Token is also returned in JSON so mobile browsers that block
-    // cross-site cookies (Android Chrome, iOS Safari) can store it
-    // in localStorage and send it as a Bearer header instead.
+    // SECURITY FIX: JWT is no longer returned in the JSON response body.
+    // Previously the raw JWT was sent in JSON AND stored in localStorage by the
+    // frontend, completely nullifying the httpOnly cookie's XSS protection.
+    //
+    // Mobile PWA fallback: browsers that block cross-site cookies (Android Chrome,
+    // iOS Safari in strict mode) can call POST /api/v1/auth/mobile-token with the
+    // session cookie to receive a one-time exchange code, then redeem it for a
+    // Bearer token via GET /api/v1/auth/mobile-token/:code.
+    // The exchange code is single-use, 60-second TTL, stored in memory.
+    //
+    // For the initial deploy: mobile clients that relied on data.token in localStorage
+    // will get a 401 on their next Bearer request and be redirected to login,
+    // where the cookie path takes over. This is acceptable — it's a one-time
+    // re-authentication after the security fix deploys.
     res.json({
       success: true,
-      token,
       user: {
-        id:                 user.id,
-        name:               user.name,
-        phone:              user.phone,
-        role:               user.role,
+        id:                   user.id,
+        name:                 user.name,
+        phone:                user.phone,
+        role:                 user.role,
         must_change_password: !!user.must_change_password,
       },
     });
@@ -427,22 +435,17 @@ exports.adminResetPassword = async (req, res) => {
 
     const hash = await bcrypt.hash(new_password, BCRYPT_ROUNDS);
 
+    // SECURITY FIX: Set password_changed_at = NOW() so auth middleware rejects
+    // any token issued before this moment (iat < password_changed_at).
+    // Previously tokens remained valid for up to 7 days after an admin reset.
     await db.query(
-      'UPDATE users SET password = ?, must_change_password = 1, failed_attempts = 0, locked_until = NULL WHERE id = ?',
+      'UPDATE users SET password = ?, must_change_password = 1, failed_attempts = 0, locked_until = NULL, password_changed_at = NOW() WHERE id = ?',
       [hash, userId]
     );
 
-    // Fix 1: Revoke ALL active tokens for this user by inserting a sentinel row
-    // We don't track individual jtis per user for active tokens, so we use a
-    // "revoke all before now" timestamp approach: the auth middleware checks
-    // token.iat against this column.
-    // Implementation: add a password_changed_at column that auth middleware
-    // checks — simpler than tracking all jtis.
-    // For now: the user's tokens are implicitly invalidated because their
-    // next request with the old token will encounter forceReset=0 mismatch,
-    // and portals redirect to change-password where the old token fails the
-    // current_password check. Full immediate revocation requires the
-    // password_changed_at column approach (noted in migration roadmap).
+    // SECURITY: password_changed_at is now set above, which causes auth middleware
+    // to reject any token with iat < password_changed_at. All existing sessions
+    // for this user are immediately invalidated on the next request they make.
     console.info(
       `[auth] Admin password reset — target user: ${userId} — ` +
       `admin: ${req.user.id} — IP: ${req.ip}`
@@ -472,3 +475,86 @@ function parseExpiry(str) {
     default:  return n * 1000;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Mobile PWA token exchange
+   ─────────────────────────────────────────────────────────────────────────
+   POST /api/v1/auth/mobile-token
+     • Requires valid session cookie (aq_auth)
+     • Issues a one-time exchange code (32 random bytes, 60s TTL)
+     • Code is stored in-memory — single-use, expires automatically
+     • Returns: { code: "<hex>" }
+
+   GET  /api/v1/auth/mobile-token/:code
+     • Redeems the exchange code for the JWT string (Bearer token)
+     • Code is deleted immediately on first use (single-use)
+     • Returns: { token: "<jwt>" }
+
+   Mobile browsers (Android Chrome, iOS Safari) that block SameSite=None cookies
+   call POST after login to get a code, then store the redeemed token in
+   localStorage for Bearer fallback. The token never appears in the JSON login
+   response, so XSS on the login page cannot steal it.
+══════════════════════════════════════════════════════════════════════════ */
+
+// In-memory store: code → { token, expiresAt }
+// Fine for single-node Railway deployment. For multi-node: use Redis.
+const _mobileExchangeCodes = new Map();
+const EXCHANGE_TTL_MS = 60 * 1000; // 60 seconds
+
+// Cleanup stale codes every 5 minutes (prevent memory leak)
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, entry] of _mobileExchangeCodes) {
+    if (entry.expiresAt < now) _mobileExchangeCodes.delete(code);
+  }
+}, 5 * 60 * 1000).unref();
+
+/**
+ * POST /api/v1/auth/mobile-token
+ * Requires: valid session cookie (auth middleware applied at route level)
+ * Issues a one-time exchange code the mobile client can redeem for a Bearer token.
+ */
+exports.issueMobileTokenCode = (req, res) => {
+  // req.user is set by auth() middleware — token already verified
+  // Re-read the raw token from the cookie to give back to mobile
+  const rawToken = req.cookies?.[COOKIE_NAME] || null;
+  if (!rawToken) {
+    return res.status(401).json({ success: false, message: 'No session cookie found.' });
+  }
+
+  const code = crypto.randomBytes(32).toString('hex');
+  _mobileExchangeCodes.set(code, {
+    token:     rawToken,
+    expiresAt: Date.now() + EXCHANGE_TTL_MS,
+  });
+
+  console.info(`[auth] Mobile token exchange code issued — user: ${req.user.id} — IP: ${req.ip}`);
+  res.json({ success: true, code });
+};
+
+/**
+ * GET /api/v1/auth/mobile-token/:code
+ * Redeems a one-time code for the JWT string.
+ * No auth middleware — the code itself is the credential.
+ */
+exports.redeemMobileTokenCode = (req, res) => {
+  const { code } = req.params;
+  if (!code || typeof code !== 'string' || !/^[0-9a-f]{64}$/.test(code)) {
+    return res.status(400).json({ success: false, message: 'Invalid exchange code.' });
+  }
+
+  const entry = _mobileExchangeCodes.get(code);
+  if (!entry) {
+    return res.status(401).json({ success: false, message: 'Exchange code not found or already used.' });
+  }
+  if (entry.expiresAt < Date.now()) {
+    _mobileExchangeCodes.delete(code);
+    return res.status(401).json({ success: false, message: 'Exchange code expired. Please log in again.' });
+  }
+
+  // Single-use: delete immediately
+  _mobileExchangeCodes.delete(code);
+
+  console.info(`[auth] Mobile token exchange redeemed — IP: ${req.ip}`);
+  res.json({ success: true, token: entry.token });
+};

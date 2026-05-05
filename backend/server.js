@@ -155,6 +155,12 @@ app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 /* ── Cookie parser ───────────────────────────────────────────────────────── */
 app.use(cookieParser());
 
+/* ── CSRF protection (double-submit cookie) ─────────────────────────────── */
+// Must run AFTER cookieParser (reads req.cookies) and BEFORE routes.
+// Exempt routes: GET/HEAD/OPTIONS, public order creation, pre-session auth endpoints.
+// See middleware/csrf.js for the full exemption list and implementation notes.
+app.use(require('./middleware/csrf'));
+
 /* ── Global baseline rate limiter ────────────────────────────────────────── */
 app.use(globalLimiter);
 
@@ -218,11 +224,21 @@ app.use('/api/config/maps-key', (req, res) => {
 /* ── Global error handler ────────────────────────────────────────────────── */
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error("🔥 ERROR:", err); // full error
+  // SECURITY FIX: Log the full error server-side ONLY.
+  // Previously sent err.message to the client — MySQL errors expose table names,
+  // column names, and query structure. Node errors expose file paths.
+  logger.error('[unhandled]', {
+    message: err.message,
+    stack:   err.stack?.split('\n').slice(0, 3).join(' | '),
+    path:    req.path,
+    method:  req.method,
+    ip:      req.ip,
+  });
 
-  res.status(500).json({
+  // Never expose internal error details externally
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal server error'
+    message: 'An unexpected error occurred. Please try again.',
   });
 });
 

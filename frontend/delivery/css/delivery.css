@@ -3705,3 +3705,265 @@ img, iframe, canvas { max-width: 100%; height: auto; }
   box-shadow: 0 2px 16px rgba(0,0,0,.15);
   z-index: 9000 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DELIVERY APP — COMPLETE DARK MODE
+   Applied via [data-theme="dark"] on <html> element.
+   Toggle saved to localStorage key "aqualance_theme".
+   Dark mode JS (toggle button, persistence) is in delivery.js.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── CSS variable overrides for dark theme ─────────────────────────────── */
+[data-theme="dark"] {
+  --bg:           #0b1420;
+  --surface:      #111d2e;
+  --surface-2:    #1a2840;
+  --border:       #1e3a55;
+  --border-dark:  #2a4f72;
+  --ink:          #d6e8f5;
+  --ink-mid:      #a8cce0;
+  --ink-soft:     #6a9bbf;
+  --ink-faint:    #3d6a88;
+  --brand:        #4aAEe0;
+  --brand-mid:    #3a8ab8;
+  --brand-light:  #5ec0f0;
+  --brand-pale:   rgba(74,174,224,.12);
+  --brand-ultra:  rgba(74,174,224,.07);
+  --success:      #3dba7a;
+  --success-pale: rgba(61,186,122,.12);
+  --warning:      #f5c842;
+  --warning-pale: rgba(245,200,66,.12);
+  --error:        #ff5f6d;
+  --error-pale:   rgba(255,95,109,.12);
+  --info:         #4aAEe0;
+  --info-pale:    rgba(74,174,224,.12);
+  color-scheme: dark;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--ink);
+}
+[data-theme="dark"] * { box-sizing: border-box; }
+
+/* ── App header / navbar ───────────────────────────────────────────────── */
+[data-theme="dark"] .app-header,
+[data-theme="dark"] .header,
+[data-theme="dark"] .topnav,
+[data-theme="dark"] .nav-bar {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .header-title,
+[data-theme="dark"] .app-title,
+[data-theme="dark"] .nav-title { color: var(--ink) !important; }
+
+/* ── Bottom navigation ─────────────────────────────────────────────────── */
+[data-theme="dark"] .bottom-nav,
+[data-theme="dark"] .bottom-tab-bar {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .bottom-nav a,
+[data-theme="dark"] .tab-item { color: var(--ink-soft) !important; }
+[data-theme="dark"] .bottom-nav a.active,
+[data-theme="dark"] .tab-item.active { color: var(--brand) !important; }
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+[data-theme="dark"] .card,
+[data-theme="dark"] [class*="card"]:not([class*="bottom-nav"]):not([class*="topnav"]),
+[data-theme="dark"] [class*="Card"],
+[data-theme="dark"] [class*="-box"],
+[data-theme="dark"] [class*="panel"],
+[data-theme="dark"] [class*="tile"],
+[data-theme="dark"] [class*="Tile"],
+[data-theme="dark"] .tcard,
+[data-theme="dark"] .twrap,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .kpi-card,
+[data-theme="dark"] .info-card,
+[data-theme="dark"] .order-card,
+[data-theme="dark"] .delivery-card,
+[data-theme="dark"] .filter-section,
+[data-theme="dark"] .controls-bar,
+[data-theme="dark"] .search-pill {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-head {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
+}
+
+/* ── Modals / sheets ───────────────────────────────────────────────────── */
+[data-theme="dark"] .modal,
+[data-theme="dark"] [class*="modal"],
+[data-theme="dark"] [class*="Modal"],
+[data-theme="dark"] [class*="sheet"],
+[data-theme="dark"] [class*="popup"],
+[data-theme="dark"] [class*="drawer"],
+[data-theme="dark"] .modal-body,
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .modal-overlay,
+[data-theme="dark"] .overlay {
+  background: rgba(0,0,0,.65) !important;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────── */
+[data-theme="dark"] table { background: transparent !important; }
+[data-theme="dark"] thead tr,
+[data-theme="dark"] thead th {
+  background: var(--surface-2) !important;
+  color: var(--ink-soft) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] tbody td {
+  color: var(--ink) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] tbody tr:hover td {
+  background: var(--surface-2) !important;
+}
+
+/* ── Forms ─────────────────────────────────────────────────────────────── */
+[data-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=submit]):not([type=button]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--ink-faint) !important; }
+[data-theme="dark"] label { color: var(--ink-mid) !important; }
+[data-theme="dark"] .form-group,
+[data-theme="dark"] .fg { color: var(--ink) !important; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+[data-theme="dark"] .btn-ghost {
+  background: var(--surface-2) !important;
+  color: var(--ink) !important;
+}
+[data-theme="dark"] .btn-outline {
+  border-color: var(--brand) !important;
+  color: var(--brand) !important;
+  background: transparent !important;
+}
+[data-theme="dark"] .btn-outline:hover {
+  background: var(--brand-pale) !important;
+}
+[data-theme="dark"] .header-action {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+/* ── Page layouts ───────────────────────────────────────────────────────── */
+[data-theme="dark"] .main-area,
+[data-theme="dark"] .content-area,
+[data-theme="dark"] .app-layout,
+[data-theme="dark"] .page-wrap,
+[data-theme="dark"] .page-content,
+[data-theme="dark"] .app-content,
+[data-theme="dark"] .tab-panel,
+[data-theme="dark"] .tab-content {
+  background: var(--bg) !important;
+}
+
+/* ── Status badges ──────────────────────────────────────────────────────── */
+[data-theme="dark"] .badge,
+[data-theme="dark"] [class*="badge"],
+[data-theme="dark"] [class*="status"],
+[data-theme="dark"] [class*="tag"] {
+  background: var(--surface-2) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .status-assigned,
+[data-theme="dark"] .badge-brand { background: var(--brand-pale) !important; color: var(--brand) !important; }
+[data-theme="dark"] .status-delivered,
+[data-theme="dark"] .badge-success { background: var(--success-pale) !important; color: var(--success) !important; }
+[data-theme="dark"] .status-pending,
+[data-theme="dark"] .badge-warning { background: var(--warning-pale) !important; color: var(--warning) !important; }
+[data-theme="dark"] .status-failed,
+[data-theme="dark"] .badge-error { background: var(--error-pale) !important; color: var(--error) !important; }
+
+/* ── Product list items ─────────────────────────────────────────────────── */
+[data-theme="dark"] .product-item,
+[data-theme="dark"] .order-item,
+[data-theme="dark"] .item-row,
+[data-theme="dark"] .delivery-item,
+[data-theme="dark"] .order-product-row {
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--ink) !important;
+}
+
+/* ── Loading spinner / overlays ─────────────────────────────────────────── */
+[data-theme="dark"] .loading-overlay {
+  background: rgba(11,20,32,.8) !important;
+}
+[data-theme="dark"] .spinner { border-color: var(--border) !important; border-top-color: var(--brand) !important; }
+
+/* ── Empty states ───────────────────────────────────────────────────────── */
+[data-theme="dark"] .empty-state { color: var(--ink-soft) !important; }
+[data-theme="dark"] .empty-state h3 { color: var(--ink-mid) !important; }
+
+/* ── Photo upload area ──────────────────────────────────────────────────── */
+[data-theme="dark"] .photo-upload-area {
+  background: var(--surface-2) !important;
+  border-color: var(--border-dark) !important;
+  color: var(--ink-soft) !important;
+}
+
+/* ── Map panel ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] .map-card,
+[data-theme="dark"] .map-container { background: var(--surface-2) !important; }
+
+/* ── Text helpers ───────────────────────────────────────────────────────── */
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 {
+  color: var(--ink) !important;
+}
+[data-theme="dark"] p, [data-theme="dark"] span, [data-theme="dark"] li {
+  color: inherit;
+}
+[data-theme="dark"] a { color: var(--brand) !important; }
+[data-theme="dark"] hr,
+[data-theme="dark"] .divider { border-color: var(--border) !important; }
+
+/* ── Universal white/light bg catchers (inline-style overrides) ─────────── */
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:white"],
+[data-theme="dark"] [style*="background: white"],
+[data-theme="dark"] [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background-color:#fff"],
+[data-theme="dark"] [style*="background-color: #fff"],
+[data-theme="dark"] [style*="background-color:white"],
+[data-theme="dark"] [style*="background-color:#ffffff"],
+[data-theme="dark"] [style*="background:#f"],
+[data-theme="dark"] [style*="background: #f"],
+[data-theme="dark"] [style*="background:#e"],
+[data-theme="dark"] [style*="background: #e"],
+[data-theme="dark"] [style*="background-color:#f"] {
+  background-color: var(--surface) !important;
+  background: var(--surface) !important;
+}
+[data-theme="dark"] [style*="color:#000"],
+[data-theme="dark"] [style*="color: #000"],
+[data-theme="dark"] [style*="color:black"],
+[data-theme="dark"] [style*="color:#111"],
+[data-theme="dark"] [style*="color:#222"],
+[data-theme="dark"] [style*="color:#333"] {
+  color: var(--ink) !important;
+}

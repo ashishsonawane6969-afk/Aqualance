@@ -751,6 +751,22 @@
 <script nonce="CSP_NONCE" src="/js/network.js"></script>
 <script nonce="CSP_NONCE" src="/salesman/js/salesman.js"></script>
 <script nonce="CSP_NONCE">
+/* ── Back-button-after-logout prevention ──────────────────── */
+(function() {
+  function isAuthenticated() {
+    try { return !!sessionStorage.getItem('aq_sales_user'); } catch(_) { return false; }
+  }
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted && !isAuthenticated()) {
+      window.location.replace('/salesman/login.html');
+    }
+  });
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({ page: 'salesman-dashboard' }, '', window.location.href);
+  }
+})();
+</script>
+<script nonce="CSP_NONCE">
 /* ── Tab switching ── */
 function switchTab(tab, btn) {
   document.querySelectorAll('.icon-tab').forEach(b => b.classList.remove('active'));

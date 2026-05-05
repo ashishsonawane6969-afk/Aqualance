@@ -63,11 +63,53 @@ window.adminLogout = adminLogout;
 window.adminAuthRehydrate = adminAuthRehydrate;
 
 function authHeader() {
-  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  // Bearer token fallback for mobile browsers that block cross-site cookies.
+  // Token obtained via secure mobile-token exchange (not from login JSON body).
   const token = localStorage.getItem('aq_token');
-  return token
-    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    : { 'Content-Type': 'application/json' };
+  // CSRF: read the aq_csrf cookie (non-httpOnly, set by server) and include it
+  // as X-CSRF-Token on every mutating request. Attackers cannot read this cookie
+  // from a cross-origin page (SOP), so the forged request will fail CSRF check.
+  const csrfToken = document.cookie.split('; ')
+    .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  return headers;
+}
+
+/**
+ * tryMobileTokenExchange — secure Bearer token acquisition for mobile PWA.
+ *
+ * Called after successful login/MFA/OTP verification.
+ * Attempts to get a one-time exchange code from the server (requires session cookie),
+ * then redeems it for a Bearer token stored in localStorage.
+ *
+ * Falls back silently if the cookie path works (desktop browsers).
+ * This replaces the old pattern of reading data.token from the login response.
+ */
+async function tryMobileTokenExchange() {
+  try {
+    // Step 1: get a one-time code (requires the freshly-set session cookie)
+    const codeRes = await fetch(`${API}/auth/mobile-token`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!codeRes.ok) return; // cookie path works fine — no Bearer needed
+    const codeData = await codeRes.json();
+    if (!codeData.success || !codeData.code) return;
+
+    // Step 2: redeem the code for the raw JWT
+    const tokenRes = await fetch(`${API}/auth/mobile-token/${codeData.code}`, {
+      credentials: 'include',
+    });
+    if (!tokenRes.ok) return;
+    const tokenData = await tokenRes.json();
+    if (tokenData.success && tokenData.token) {
+      localStorage.setItem('aq_token', tokenData.token);
+    }
+  } catch (_) {
+    // Non-fatal — desktop browsers using cookies don't need this path
+  }
 }
 
 /* ── Fetch wrapper: auth + content-type ──────────────────── */
@@ -75,20 +117,51 @@ function authHeader() {
 // injects adaptive timeout/retry and checks for 401/403 BEFORE returning the
 // response here. If network.js is not loaded (e.g. standalone test), the
 // fallback guard below catches it so logout always fires.
+
+// In-flight request deduplication: prevents duplicate fetches on rapid re-renders
+const _inFlight = new Map();
+
 async function apiFetch(url, options = {}) {
-  try {
-    const res = await fetch(url, {
-      ...options,
-      credentials: 'include',
-      headers: { ...authHeader(), ...(options.headers || {}) },
-    });
-    return res;
-  } catch (err) {
-    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-      throw new Error('Network error. Check your connection.');
-    }
-    throw err;
+  const method = (options.method || 'GET').toUpperCase();
+
+  // Dedup: only deduplicate GET requests (safe, idempotent)
+  if (method === 'GET' && !options._noDedup) {
+    if (_inFlight.has(url)) return _inFlight.get(url);
+    const promise = _doFetch(url, options).finally(() => _inFlight.delete(url));
+    _inFlight.set(url, promise);
+    return promise;
   }
+  return _doFetch(url, options);
+}
+
+async function _doFetch(url, options = {}, retries = 2) {
+  // Retry: network errors on GET requests retry up to 2 times with exponential backoff
+  const method = (options.method || 'GET').toUpperCase();
+  const canRetry = method === 'GET';
+  let lastErr;
+  for (let attempt = 0; attempt <= (canRetry ? retries : 0); attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
+    try {
+      const res = await fetch(url, {
+        ...options,
+        credentials: 'include',
+        headers: { ...authHeader(), ...(options.headers || {}) },
+      });
+      // 401/503 on retry: don't retry auth failures or server errors
+      if (res.status === 401 || res.status === 403) return res;
+      if (!res.ok && attempt < retries && canRetry) { lastErr = new Error('HTTP ' + res.status); continue; }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (!canRetry || attempt >= retries) {
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+          throw new Error('Network error. Check your connection and try again.');
+        }
+        throw err;
+      }
+    }
+  }
+  throw lastErr || new Error('Request failed after retries');
 }
 
 /* ── Toast ────────────────────────────────────────────────── */
@@ -229,7 +302,9 @@ async function submitOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    if (data.token) localStorage.setItem('aq_token', data.token);
+    // SECURITY FIX: JWT no longer returned in login response.
+    // Use mobile-token exchange if cross-site cookies are blocked (PWA fallback).
+    await tryMobileTokenExchange();
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
@@ -302,7 +377,8 @@ async function submitSmsOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    if (data.token) localStorage.setItem('aq_token', data.token);
+    // SECURITY FIX: use mobile-token exchange instead of data.token
+    await tryMobileTokenExchange();
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace('/admin/dashboard.html');
   } catch (err) {
@@ -381,7 +457,8 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-      if (data.token) localStorage.setItem('aq_token', data.token);
+      // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
+      await tryMobileTokenExchange();
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;

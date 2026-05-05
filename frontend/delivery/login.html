@@ -53,5 +53,14 @@ if ('serviceWorker' in navigator) {
   <!-- Vercel Speed Insights -->
   <script defer src="/js/speed-insights-init.js"></script>
 
+<script>
+/* Dark mode — must run before body paints to prevent flash */
+(function(){
+  var KEY='aqualance_theme';
+  var saved; try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(!saved) saved=(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+  document.documentElement.setAttribute('data-theme',saved);
+})();
+</script>
 </body>
 </html>

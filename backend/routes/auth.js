@@ -87,4 +87,22 @@ router.post( '/mfa/setup',   authenticatedLimiter, auth(['admin']), mfaCtrl.setu
 router.post( '/mfa/enable',  authenticatedLimiter, auth(['admin']), validate(mfaOtpSchema), mfaCtrl.enable);
 router.post( '/mfa/disable', authenticatedLimiter, auth(['admin']), validate(mfaOtpSchema), mfaCtrl.disable);
 
+// ── Mobile PWA Bearer token exchange ─────────────────────────────────────
+// Mobile browsers that block SameSite=None cookies use this flow:
+//   1. Login → cookie is set
+//   2. POST /mobile-token (with cookie) → one-time exchange code (60s TTL)
+//   3. GET  /mobile-token/:code         → raw JWT for localStorage Bearer fallback
+// The JWT never appears in the login JSON response, protecting against XSS token theft.
+router.post(
+  '/mobile-token',
+  authenticatedLimiter,
+  auth([]),                           // requires valid session cookie
+  ctrl.issueMobileTokenCode
+);
+router.get(
+  '/mobile-token/:code',
+  authenticatedLimiter,               // rate-limited — brute-forcing 64 hex chars is infeasible
+  ctrl.redeemMobileTokenCode          // no auth middleware — code itself is the credential
+);
+
 module.exports = router;

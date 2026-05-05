@@ -30,8 +30,14 @@ const {
 } = require('../validation/schemas');
 
 // POST /api/orders — public guest endpoint (no auth required)
+// SECURITY FIX: Override the global 30MB body limit with a tight 50KB cap.
+// Order JSON (customer fields + up to 50 product refs) is at most a few KB.
+// Without this, any IP can hammer the server with 30MB payloads at the rate
+// limit (20/hr) before the publicWriteLimiter can respond — forcing expensive
+// JSON parsing on each request.
 router.post(
   '/',
+  express.json({ limit: '50kb' }),  // tight cap — order payload is always tiny
   publicWriteLimiter,               // 20 orders/hr per IP
   validate(orderCreateSchema),      // validates all customer fields + products array
   ctrl.create

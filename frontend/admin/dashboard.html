@@ -443,6 +443,29 @@
 <div class="toast-container" id="toastContainer"></div>
 <script src="/js/network.js"></script>
 <script src="/admin/js/admin.js"></script>
+<script>
+/* ── Back-button-after-logout prevention ────────────────────────────────
+ * After logout, browser may serve the dashboard from bfcache (back-forward cache).
+ * The pageshow event fires with persisted=true in that case — we re-check auth
+ * and redirect to login if the session is gone.
+ * history.replaceState on the login redirect ensures this page is not in history.
+ */
+(function() {
+  function isAuthenticated() {
+    try { return !!sessionStorage.getItem('aq_admin_user'); } catch(_) { return false; }
+  }
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted && !isAuthenticated()) {
+      // Served from bfcache after logout — hard redirect to login
+      window.location.replace('/admin/login.html');
+    }
+  });
+  // Push a state so the back button hits this entry, not the login page
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({ page: 'admin-dashboard' }, '', window.location.href);
+  }
+})();
+</script>
 
 <!-- SIDEBAR OVERLAY -->
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>

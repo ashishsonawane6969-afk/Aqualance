@@ -65,7 +65,24 @@ function decryptSecret(stored) {
 // ── Temporary MFA tokens (pending second-factor verification) ────────────────
 // Short-lived signed JWT. Contains user id only — no role — so it cannot be
 // used to access any protected route. Valid for 5 minutes.
-const MFA_TEMP_SECRET  = (process.env.JWT_SECRET || '') + '_mfa_pending';
+//
+// SECURITY FIX: MFA_TEMP_SECRET must be independent of JWT_SECRET.
+// Previously derived as JWT_SECRET + '_mfa_pending' — if JWT_SECRET was ever
+// compromised (e.g. via the SQL dump), an attacker could also forge MFA temp
+// tokens and bypass 2FA. Now uses a dedicated env var with an in-process
+// random fallback so dev environments still work without configuration.
+const MFA_TEMP_SECRET  = process.env.MFA_TEMP_SECRET
+  || (() => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MFA_TEMP_SECRET env var is required in production. ' +
+        'Generate with: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+    }
+    // Dev-only fallback: random per process restart (MFA sessions won't survive restarts, acceptable in dev)
+    const crypto = require('crypto');
+    const devKey = crypto.randomBytes(48).toString('hex');
+    console.warn('[mfaController] ⚠  MFA_TEMP_SECRET not set — using random in-process key (dev only)');
+    return devKey;
+  })();
 const MFA_TEMP_EXPIRY  = '5m';
 
 function issueMfaTempToken(userId) {

@@ -3,7 +3,19 @@
  * utils/buildSqlDump.js
  * Builds a mysqldump-style SQL string from the live DB.
  * Used by both export route and autoExport utility.
+ *
+ * SECURITY: Tables containing credentials or session tokens are NEVER exported.
+ * Exporting password hashes, MFA secrets, or JTI revocations to an external
+ * repository is a critical credential exposure risk.
  */
+
+// Tables that must NEVER appear in the exported dump.
+// Adding a table here is permanent — do not remove entries.
+const EXCLUDED_TABLES = new Set([
+  'users',             // bcrypt hashes, encrypted MFA secrets, phone numbers
+  'token_revocations', // active JTI values — leaks session state
+  'otp_pending',       // live bcrypt-hashed OTP codes
+]);
 
 async function buildSqlDump(db) {
   const lines = [];
@@ -11,6 +23,7 @@ async function buildSqlDump(db) {
 
   lines.push(`-- Aqualance DB export — generated ${ts}`);
   lines.push(`-- Auto-exported by Aqualance backend`);
+  lines.push(`-- NOTE: Security-sensitive tables (users, token_revocations, otp_pending) are excluded.`);
   lines.push('');
   lines.push('SET FOREIGN_KEY_CHECKS=0;');
   lines.push('SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";');
@@ -20,6 +33,13 @@ async function buildSqlDump(db) {
   const tableNames = tables.map(r => Object.values(r)[0]);
 
   for (const table of tableNames) {
+    // SECURITY FIX: skip credential/session tables entirely
+    if (EXCLUDED_TABLES.has(table)) {
+      lines.push(`-- Table \`${table}\` excluded from export (security-sensitive — contains credentials or session tokens)`);
+      lines.push('');
+      continue;
+    }
+
     const [[, createRow]] = await db.query(`SHOW CREATE TABLE \`${table}\``);
     const ddl = Object.values(createRow)[1];
     lines.push(`-- Table: ${table}`);

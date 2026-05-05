@@ -1173,83 +1173,194 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-/* ══════════ CAMERA ══════════ */
+/* ══════════ CAMERA ══════════
+ *
+ * ANDROID WEBVIEW FIX:
+ * navigator.mediaDevices.getUserMedia() triggers a browser-style permission dialog
+ * in Android WebView instead of the native OS permission flow. On many Android
+ * versions (10+) this fails silently or requires extra WebView flags to enable.
+ *
+ * The correct approach for a WebView/PWA app is input[capture="environment"] —
+ * this triggers the native Android camera app directly, uses OS-level permissions
+ * that the user already granted to the app, and returns the captured image as a File.
+ *
+ * Strategy:
+ *   1. Detect Android WebView (or any environment where getUserMedia is unavailable)
+ *   2. Use native <input type="file" capture="environment"> for camera
+ *   3. Use native <input type="file" accept="image/*"> for gallery
+ *   4. Apply GPS watermark via canvas after capture (same as before)
+ *   5. Fall back to getUserMedia on desktop/non-Android where it works fine
+ */
+
+function _isAndroidWebView() {
+  var ua = navigator.userAgent || '';
+  // Android WebView: contains "wv" or "Version/X.X" in Chrome UA with Android
+  return /Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\.\d+/.test(ua));
+}
+
+function _useNativeCamera() {
+  // Use native input[capture] when: Android WebView, OR getUserMedia unavailable
+  if (_isAndroidWebView()) return true;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+  return false;
+}
+
+// Hidden native camera input — appended to body once, reused
+var _nativeCameraInput = null;
+var _nativeGalleryInput = null;
+
+function _ensureNativeInputs() {
+  if (!_nativeCameraInput) {
+    _nativeCameraInput = document.createElement('input');
+    _nativeCameraInput.type    = 'file';
+    _nativeCameraInput.accept  = 'image/jpeg,image/png,image/webp';
+    _nativeCameraInput.capture = 'environment'; // rear camera
+    _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    _nativeCameraInput.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(_nativeCameraInput);
+    _nativeCameraInput.addEventListener('change', function() {
+      var file = this.files && this.files[0];
+      if (file) _processPhotoFile(file, 'camera');
+      this.value = '';
+    });
+  }
+  if (!_nativeGalleryInput) {
+    _nativeGalleryInput = document.createElement('input');
+    _nativeGalleryInput.type   = 'file';
+    _nativeGalleryInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    _nativeGalleryInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    _nativeGalleryInput.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(_nativeGalleryInput);
+    _nativeGalleryInput.addEventListener('change', function() {
+      var file = this.files && this.files[0];
+      if (file) _processPhotoFile(file, 'gallery');
+      this.value = '';
+    });
+  }
+}
+
+/**
+ * _processPhotoFile — shared handler for both camera capture and gallery selection.
+ * Validates, compresses to max 1200px JPEG 0.82, applies GPS watermark.
+ * @param {File} file
+ * @param {'camera'|'gallery'} source
+ */
+function _processPhotoFile(file, source) {
+  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  if (!ALLOWED.includes(file.type)) {
+    showToast('Only JPEG, PNG, WebP images are allowed.', 'error'); return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    showToast('Photo too large (max 20MB). Please choose a smaller image.', 'error'); return;
+  }
+
+  var statusEl = document.getElementById('photoStatus');
+  if (statusEl) statusEl.textContent = '⏳ Processing photo…';
+
+  var reader = new FileReader();
+  reader.onerror = function() { showToast('Failed to read image file.', 'error'); };
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onerror = function() { showToast('Failed to load image.', 'error'); };
+    img.onload = function() {
+      // Compress: max 1200px on longest side, JPEG 0.82
+      var MAX = 1200, QUALITY = 0.82;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.getElementById('captureCanvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      drawWatermark(ctx, w, h);
+      _photoData = canvas.toDataURL('image/jpeg', QUALITY);
+
+      var preview = document.getElementById('photoPreview');
+      preview.src = _photoData;
+      preview.classList.add('show');
+
+      // Hide camera UI elements if visible
+      var camWrap = document.getElementById('camWrap');
+      if (camWrap) { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
+      if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
+
+      document.getElementById('captureBtn').style.display  = 'none';
+      document.getElementById('retakeBtn').style.display   = '';
+      document.getElementById('startCamBtn').style.display = 'none';
+      document.getElementById('camPlaceholder').style.display = 'none';
+
+      var label = source === 'camera' ? '📸 Photo captured with GPS watermark' : '🖼️ Photo selected with GPS watermark';
+      if (statusEl) statusEl.textContent = '✅ ' + label.replace('📸 ','').replace('🖼️ ','');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 async function startCamera() {
+  _ensureNativeInputs();
+
+  if (_useNativeCamera()) {
+    // Android WebView path: trigger native camera app via input[capture]
+    // This uses OS-level permissions — no browser permission popup
+    _nativeCameraInput.click();
+    return;
+  }
+
+  // Desktop / mobile browser path: use getUserMedia (live preview in video element)
   try {
     _stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
     });
     document.getElementById('videoEl').srcObject = _stream;
-    // Show the camera view, hide the placeholder
     document.getElementById('camWrap').classList.add('active');
     document.getElementById('camPlaceholder').style.display = 'none';
     document.getElementById('startCamBtn').style.display = 'none';
     document.getElementById('captureBtn').style.display  = '';
   } catch (e) {
-    const msg = e.name === 'NotAllowedError'
-      ? 'Camera permission denied — allow camera access in browser settings, or use Gallery'
-      : 'Camera unavailable — use Gallery to choose a photo';
-    showToast(msg, 'error');
+    // getUserMedia failed — fall back to native input[capture]
+    console.warn('[camera] getUserMedia failed (' + e.name + '), falling back to native input');
+    _nativeCameraInput.click();
   }
 }
 
+function selectPhoto() {
+  _ensureNativeInputs();
+  // FIX: Appended to DOM (above) so Android WebView file chooser works reliably.
+  // Previously created a detached <input> that Android WebView GC'd before the
+  // file chooser returned, dropping the result silently.
+  _nativeGalleryInput.click();
+}
+/* retakePhoto — resets camera UI so user can try again */
+function retakePhoto() {
+  _photoData = null;
+  document.getElementById('photoPreview').classList.remove('show');
+  var camWrap = document.getElementById('camWrap');
+  if (camWrap) camWrap.style.display = 'none'; // hide video (native path doesn't use it)
+  document.getElementById('retakeBtn').style.display   = 'none';
+  document.getElementById('startCamBtn').style.display = '';
+  document.getElementById('camPlaceholder').style.display = '';
+  document.getElementById('photoStatus').textContent   = '';
+}
+
+/* capturePhoto — only used on desktop getUserMedia path (video element is live) */
 function capturePhoto() {
-  const video  = document.getElementById('videoEl');
-  const canvas = document.getElementById('captureCanvas');
+  var video  = document.getElementById('videoEl');
+  var canvas = document.getElementById('captureCanvas');
   canvas.width = video.videoWidth || 640; canvas.height = video.videoHeight || 480;
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   drawWatermark(ctx, canvas.width, canvas.height);
-  _photoData = canvas.toDataURL('image/jpeg', 0.85);
+  _photoData = canvas.toDataURL('image/jpeg', 0.82);
   document.getElementById('photoPreview').src = _photoData;
   document.getElementById('photoPreview').classList.add('show');
   document.getElementById('camWrap').style.display = 'none';
   document.getElementById('captureBtn').style.display = 'none';
   document.getElementById('retakeBtn').style.display  = '';
   document.getElementById('photoStatus').textContent = '✅ Photo captured with GPS watermark';
-  if (_stream) { _stream.getTracks().forEach(t => t.stop()); _stream = null; }
-}
-
-function retakePhoto() {
-  _photoData = null;
-  document.getElementById('photoPreview').classList.remove('show');
-  document.getElementById('camWrap').style.display = '';
-  document.getElementById('retakeBtn').style.display   = 'none';
-  document.getElementById('startCamBtn').style.display = '';
-  document.getElementById('photoStatus').textContent   = '';
-}
-
-function selectPhoto() {
-  const input = document.createElement('input');
-  input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp,image/gif';
-  input.onchange = e => {
-    const file = e.target.files[0]; if (!file) return;
-    // Client-side MIME check (UX layer — server validates magic bytes)
-    const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!ALLOWED.includes(file.type)) {
-      showToast('Only JPEG, PNG, WebP, and GIF images are allowed.', 'error');
-      return;
-    }
-    if (file.size > 15 * 1024 * 1024) { showToast('Photo too large. Max 15MB.', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.getElementById('captureCanvas');
-        canvas.width = img.width; canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        drawWatermark(ctx, img.width, img.height);
-        _photoData = canvas.toDataURL('image/jpeg', 0.85);
-        document.getElementById('photoPreview').src = _photoData;
-        document.getElementById('photoPreview').classList.add('show');
-        document.getElementById('photoStatus').textContent = '✅ Photo selected with GPS watermark';
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
+  if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
 }
 
 function drawWatermark(ctx, W, H) {

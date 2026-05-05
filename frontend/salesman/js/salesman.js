@@ -29,11 +29,34 @@ async function salesAuthRehydrate() {
 }
 
 function authHeader() {
-  // Send Bearer token as fallback for mobile browsers that block cross-site cookies
+  // Bearer token fallback for mobile browsers that block cross-site cookies.
+  // Token obtained via secure mobile-token exchange (not from login JSON body).
   const token = localStorage.getItem('aq_token');
-  return token
-    ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    : { 'Content-Type': 'application/json' };
+  const csrfToken = document.cookie.split('; ')
+    .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  return headers;
+}
+
+/** Secure mobile Bearer token acquisition via one-time exchange code. */
+async function tryMobileTokenExchange() {
+  try {
+    const codeRes = await fetch('/api/v1/auth/mobile-token', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!codeRes.ok) return;
+    const codeData = await codeRes.json();
+    if (!codeData.success || !codeData.code) return;
+    const tokenRes = await fetch(`/api/v1/auth/mobile-token/${codeData.code}`, { credentials: 'include' });
+    if (!tokenRes.ok) return;
+    const tokenData = await tokenRes.json();
+    if (tokenData.success && tokenData.token) {
+      try { localStorage.setItem('aq_token', tokenData.token); } catch(_) {}
+    }
+  } catch (_) {}
 }
 var _salesLoggingOut = false;
 async function salesLogout() {
@@ -52,21 +75,37 @@ window.salesAuthRehydrate = salesAuthRehydrate;
 
 /* ── Fetch wrapper ────────────────────────────────────────── */
 /* FIX: wraps network errors + auth expiry in one place       */
+const _inFlight = new Map();
 async function apiFetch(url, options = {}) {
-  try {
-    const res = await fetch(url, {
-      ...options,
-      credentials: 'include',
-      headers: { ...authHeader(), ...(options.headers || {}) }
-    });
-    // 401/403 handled centrally by network.js patchApiFetch — do not duplicate here
-    return res;
-  } catch (err) {
-    if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-      throw new Error('Network error. Check your connection.');
-    }
-    throw err;
+  const method = (options.method || 'GET').toUpperCase();
+  if (method === 'GET') {
+    if (_inFlight.has(url)) return _inFlight.get(url);
+    const p = _doFetch(url, options).finally(() => _inFlight.delete(url));
+    _inFlight.set(url, p); return p;
   }
+  return _doFetch(url, options);
+}
+async function _doFetch(url, options = {}, retries = 2) {
+  const method = (options.method || 'GET').toUpperCase();
+  const canRetry = method === 'GET';
+  let lastErr;
+  for (let attempt = 0; attempt <= (canRetry ? retries : 0); attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
+    try {
+      const res = await fetch(url, { ...options, credentials: 'include', headers: { ...authHeader(), ...(options.headers || {}) } });
+      // 401/403 handled centrally by network.js patchApiFetch — do not duplicate here
+      if (res.status === 401 || res.status === 403) return res;
+      if (!res.ok && attempt < retries && canRetry) { lastErr = new Error('HTTP ' + res.status); continue; }
+      return res;
+    } catch (err) {
+      lastErr = err;
+      if (!canRetry || attempt >= retries) {
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') throw new Error('Network error. Check your connection.');
+        throw err;
+      }
+    }
+  }
+  throw lastErr || new Error('Request failed after retries');
 }
 
 /* Safe JSON parse from a fetch response */
@@ -156,9 +195,9 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
-        // Store token for cross-site Bearer auth (mobile browsers block httpOnly cookies cross-origin)
-        if (data.token) { try { localStorage.setItem('aq_token', data.token); } catch(_){} }
-        // Fix 2: Token is in httpOnly cookie — store only the user profile
+        // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
+        await tryMobileTokenExchange();
+        // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
         // Fix 4: Force password change if required
         if (data.user.must_change_password) {
@@ -853,30 +892,72 @@ function closeLead() {
 }
 
 /* ── Photo handling ───────────────────────────────────────── */
+
+// Persistent hidden file input for gallery — appended to DOM so Android WebView
+// doesn't GC it before the file chooser returns. (FIX: detached <input> bug)
+var _leadPhotoInput = null;
+function _ensureLeadPhotoInput() {
+  if (_leadPhotoInput) return _leadPhotoInput;
+  _leadPhotoInput = document.createElement('input');
+  _leadPhotoInput.type   = 'file';
+  _leadPhotoInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+  _leadPhotoInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  _leadPhotoInput.setAttribute('aria-hidden','true');
+  document.body.appendChild(_leadPhotoInput);
+  _leadPhotoInput.addEventListener('change', function() {
+    var f = this.files && this.files[0];
+    if (f) handlePhotoFile(f);
+    this.value = '';
+  });
+  return _leadPhotoInput;
+}
+
 function handlePhoto(input) {
-  const file = input.files[0];
+  // Called from inline input[type=file] in the lead modal HTML
+  var file = input && input.files && input.files[0];
   if (!file) return;
+  handlePhotoFile(file);
+}
 
-  // Client-side validation (UX only — server re-validates with magic bytes):
-  // 1. MIME type allowlist — rejects PDFs, docs, etc. renamed as images
-  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    showToast('Only JPEG, PNG, WebP, and GIF images are allowed.', 'error');
-    input.value = '';
-    return;
+/**
+ * handlePhotoFile — validates, compresses (max 1000px, JPEG 0.82), previews.
+ * Used by both the lead modal file input and the programmatic picker.
+ */
+function handlePhotoFile(file) {
+  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  if (!ALLOWED.includes(file.type)) {
+    showToast('Only JPEG, PNG, WebP images are allowed.', 'error'); return;
   }
-  // 2. Size limit — generous 3 MB client-side; server enforces 200 KB base64 cap
-  if (file.size > 15 * 1024 * 1024) { showToast('Photo too large. Max 15MB.', 'error'); input.value = ''; return; }
+  if (file.size > 20 * 1024 * 1024) {
+    showToast('Photo too large (max 20MB).', 'error'); return;
+  }
 
-  const reader = new FileReader();
+  var reader = new FileReader();
+  reader.onerror = function() { showToast('Failed to read image.', 'error'); };
   reader.onload = function(e) {
-    const data = e.target.result;
-    document.getElementById('lPhotoData').value = data;
-    document.getElementById('photoPreview').src = data;
-    const ppb = document.getElementById('photoPreviewBox');
-    const ua  = document.getElementById('uploadArea');
-    if (ppb) ppb.classList.remove('hidden');
-    if (ua)  ua.style.display = 'none';
+    var img = new Image();
+    img.onerror = function() { showToast('Failed to load image.', 'error'); };
+    img.onload = function() {
+      // Compress: max 1000px, JPEG 0.82
+      var MAX = 1000, QUALITY = 0.82;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var b64 = canvas.toDataURL('image/jpeg', QUALITY);
+
+      document.getElementById('lPhotoData').value = b64;
+      document.getElementById('photoPreview').src  = b64;
+      var ppb = document.getElementById('photoPreviewBox');
+      var ua  = document.getElementById('uploadArea');
+      if (ppb) ppb.classList.remove('hidden');
+      if (ua)  ua.style.display = 'none';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }

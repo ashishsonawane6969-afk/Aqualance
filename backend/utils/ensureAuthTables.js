@@ -134,6 +134,9 @@ async function ensureAuthTables() {
     // MFA columns (admin TOTP — P2 fix)
     ['mfa_secret',           'VARCHAR(255) DEFAULT NULL'],
     ['mfa_enabled',          'TINYINT(1)   NOT NULL DEFAULT 0'],
+    // Token invalidation on admin password reset (security fix)
+    // Any token with iat < password_changed_at is rejected by auth middleware
+    ['password_changed_at',  'TIMESTAMP NULL DEFAULT NULL'],
   ];
 
   for (const [col, def] of userColumns) {

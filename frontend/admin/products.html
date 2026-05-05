@@ -619,25 +619,42 @@ function _setProductTypeDropdown(productType,unit){
 /* ── 3-Image slots ───────────────────────────────────────────── */
 var _imgSlotData=[null,null,null]; // {b64, url} or null
 
-/* ── Image compression: resize to max 400px, JPEG quality 0.65 ── */
+/* ── Image compression: resize to max 800px, JPEG quality 0.80 ──
+ * FIX: was 400px/0.65 — too aggressive, product images looked blurry in listings.
+ * FIX: replaced alert() with showToast() — alert() blocks the UI thread on mobile.
+ * FIX: Added DOM-appended hidden input for Android WebView gallery compatibility.
+ */
 function _compressImage(file, cb) {
-  var MAX = 400, QUALITY = 0.65;
+  var MAX = 800, QUALITY = 0.80;
+  var ALLOWED = ['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
+  if (!ALLOWED.includes(file.type)) {
+    if (typeof showToast === 'function') showToast('Only JPEG, PNG, WebP images are allowed.', 'error');
+    return;
+  }
   var r = new FileReader();
+  r.onerror = function() {
+    if (typeof showToast === 'function') showToast('Failed to read image file.', 'error');
+  };
   r.onload = function(e) {
     var img = new Image();
+    img.onerror = function() {
+      if (typeof showToast === 'function') showToast('Failed to load image.', 'error');
+    };
     img.onload = function() {
       var w = img.width, h = img.height;
       if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else { w = Math.round(w * MAX / h); h = MAX; }
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
       }
       var canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       var b64 = canvas.toDataURL('image/jpeg', QUALITY);
-      // ~4MB limit per image (base64 ~1.33x raw)
-      if (b64.length > 4_000_000) {
-        alert('Image still too large after compression. Please use a smaller image or paste a URL instead.');
+      // ~5MB base64 limit per image (accounts for 800px JPEG)
+      if (b64.length > 5_000_000) {
+        if (typeof showToast === 'function') {
+          showToast('Image still too large after compression. Please use a smaller image or paste a URL instead.', 'error');
+        }
         return;
       }
       cb(b64);
@@ -647,20 +664,54 @@ function _compressImage(file, cb) {
   r.readAsDataURL(file);
 }
 
-(function(){
-  for(var i=0;i<3;i++){
-    (function(idx){
-      document.getElementById('imgFile'+idx).addEventListener('change',function(){
-        var file=this.files[0];if(!file)return;
-        _compressImage(file, function(b64){
-          _imgSlotData[idx]={b64:b64,url:null};
-          _applySlot(idx,b64);
-          document.getElementById('imgUrl'+idx).value='';
-        });
-        this.value='';
+/* Persistent per-slot hidden inputs — appended to DOM for Android WebView compatibility.
+ * FIX: Using input[type=file] with position:fixed off-screen instead of opacity:0 overlay,
+ * because overlay approach blocks clicks on the img-slot in some Android browsers. */
+var _slotFileInputs = [null, null, null];
+function _ensureSlotInput(idx) {
+  if (_slotFileInputs[idx]) return _slotFileInputs[idx];
+  var inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = 'image/jpeg,image/jpg,image/png,image/webp,image/gif';
+  inp.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;';
+  inp.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(inp);
+  inp.addEventListener('change', (function(i) {
+    return function() {
+      var file = this.files && this.files[0];
+      if (!file) return;
+      _compressImage(file, function(b64) {
+        _imgSlotData[i] = { b64: b64, url: null };
+        _applySlot(i, b64);
+        var urlEl = document.getElementById('imgUrl' + i);
+        if (urlEl) urlEl.value = '';
       });
-    })(i);
+      this.value = '';
+    };
+  })(idx));
+  _slotFileInputs[idx] = inp;
+  return inp;
+}
+
+}
+
+/* Wire slot clicks to open the persistent file picker (Android WebView safe) */
+(function() {
+  function wireSlot(i) {
+    var slot = document.getElementById('imgSlot' + i);
+    if (!slot) return;
+    // Disable the overlay input — we use persistent DOM inputs via _ensureSlotInput
+    var overlayInp = document.getElementById('imgFile' + i);
+    if (overlayInp) { overlayInp.style.pointerEvents = 'none'; overlayInp.tabIndex = -1; }
+    slot.addEventListener('click', function(e) {
+      if (e.target.classList.contains('slot-remove') || e.target.closest('.slot-remove')) return;
+      if (slot.classList.contains('has-image')) return;
+      _ensureSlotInput(i).click();
+    });
   }
+  function init() { for (var i = 0; i < 3; i++) wireSlot(i); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
 
 function _applySlot(idx,src){

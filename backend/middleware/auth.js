@@ -65,6 +65,24 @@ function auth(roles = []) {
         }
       }
 
+      // SECURITY FIX: Check password_changed_at to invalidate tokens issued
+      // before an admin password reset. This covers the case where an admin
+      // resets a compromised account — old tokens are immediately rejected.
+      // Only runs when the token has an iat claim (all tokens we issue do).
+      if (decoded.iat && decoded.id) {
+        const [pwRows] = await db.query(
+          'SELECT password_changed_at FROM users WHERE id = ? LIMIT 1',
+          [decoded.id]
+        );
+        const changedAt = pwRows[0]?.password_changed_at;
+        if (changedAt && decoded.iat * 1000 < new Date(changedAt).getTime()) {
+          return res.status(401).json({
+            success: false,
+            message: 'Session invalidated. Please log in again.',
+          });
+        }
+      }
+
       req.user = decoded;
 
       // RBAC: check role if the route requires one

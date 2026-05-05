@@ -358,6 +358,23 @@
 <script src="/delivery/js/delivery.js"></script>
 
 <script>
+/* ── Back-button-after-logout prevention ──────────────────── */
+(function() {
+  function isAuthenticated() {
+    try { return !!sessionStorage.getItem('aq_delivery_user'); } catch(_) { return false; }
+  }
+  window.addEventListener('pageshow', function(e) {
+    if (e.persisted && !isAuthenticated()) {
+      window.location.replace('/delivery/login.html');
+    }
+  });
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({ page: 'delivery-dashboard' }, '', window.location.href);
+  }
+})();
+</script>
+
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
