@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
+
 /* ---- Responsive button overlap guard (proper fix) ---- */
 @media (max-width: 767px) {
   :where(
@@ -101,7 +103,6 @@
    Design: Organic Luxury · Deep forest greens · Warm gold accents
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
 
 /* ── TOKENS ─────────────────────────────────────────────────── */
 :root {
