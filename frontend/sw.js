@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v4';  // bumped — forces SW update, clears all stale JS/CSS/API cache
+const CACHE_NAME    = 'aqualence-v5';  // bumped — evicts stale cached /auth/me responses
 const OFFLINE_URL   = '/offline.html';
 
 // Read API_BASE from the service worker URL query parameter (set during registration)
@@ -76,11 +76,8 @@ self.addEventListener('fetch', (event) => {
                     (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
 
   if (isApiCall) {
-    // For cross-origin API calls, construct a clean Request.
-    // CRITICAL: Do NOT spread the original Request object into new Request() when
-    // changing the URL to a cross-origin destination — the original request may have
-    // mode:'same-origin' or mode:'navigate' which throws a TypeError when used
-    // cross-origin. Instead, build a clean init object with only the fields we need.
+    // Build a clean cross-origin Request — never pass the original Request object
+    // to a different origin (its mode:'same-origin' throws a TypeError cross-origin).
     let fetchUrl = request.url;
     if (SW_API_BASE && url.origin !== new URL(SW_API_BASE).origin) {
       fetchUrl = SW_API_BASE + url.pathname + url.search;
@@ -89,21 +86,27 @@ self.addEventListener('fetch', (event) => {
     const cleanInit = {
       method:      request.method,
       headers:     request.headers,
-      mode:        'cors',           // required for cross-origin fetch from SW
-      credentials: 'include',        // send cookies for auth
+      mode:        'cors',
+      credentials: 'include',
       redirect:    'follow',
     };
-    // Body only on non-GET/HEAD requests (cloning is needed since body is a stream)
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       cleanInit.body = request.clone().body;
-      cleanInit.duplex = 'half';     // required when body is a ReadableStream
+      cleanInit.duplex = 'half';
     }
-
     const cleanRequest = new Request(fetchUrl, cleanInit);
 
-    // Exclude authenticated/mutating endpoints from SW cache
-    const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
-    if (isAuthEndpoint || request.method !== 'GET') {
+    // ── NEVER cache auth endpoints ─────────────────────────────────────────
+    // Serving a stale cached 200 for /auth/me after logout makes the auth gate
+    // think the session is still valid → user gets auto-relogged in.
+    // /auth/login and /auth/logout must also bypass the cache.
+    const isAuthPath = url.pathname.includes('/auth/');
+    const isSessionSensitive = url.pathname.includes('/orders') ||
+                               url.pathname.includes('/salesman/') ||
+                               url.pathname.includes('/delivery/') ||
+                               url.pathname.includes('/export');
+
+    if (isAuthPath || isSessionSensitive || request.method !== 'GET') {
       event.respondWith(fetch(cleanRequest));
     } else {
       event.respondWith(networkFirst(cleanRequest));
