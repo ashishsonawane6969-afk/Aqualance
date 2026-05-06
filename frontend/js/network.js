@@ -41,6 +41,9 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.removeItem('aq_sales_user');
       sessionStorage.removeItem('aq_delivery_user');
       sessionStorage.removeItem('aq_admin_user');
+      // Explicit logout flag — prevents auto-relogin during this page lifecycle.
+      // Checked by _runAuthGate and the visibilitychange handler.
+      sessionStorage.setItem('aq_logged_out', '1');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════
@@ -85,13 +88,29 @@ console.log("✅ NEW network.js LOADED");
     }
 
     if (isLoginPage) {
+      // The user navigated to login intentionally — clear any stale logout flag
+      // so a fresh login can succeed without being blocked.
+      try { sessionStorage.removeItem('aq_logged_out'); } catch(_) {}
       fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
         .then(function(res) {
           if (res.ok) {
             return res.json().then(function(data) {
               if (data && data.user) {
-                // Cookie is valid — go straight to dashboard, skip login form
-                window.location.replace(portalPrefix + '/dashboard.html');
+                // ── BUG FIX: role must match the portal the user is visiting.
+                // Old code redirected to portalPrefix+/dashboard.html for ANY valid
+                // session — so a logged-in salesman visiting /admin/login would be
+                // sent to /admin/dashboard, fail the role check there, and loop.
+                var userRole  = data.user.role; // 'admin' | 'salesman' | 'delivery'
+                var portal    = portalPrefix.replace('/', ''); // 'admin' | 'salesman' | 'delivery'
+                if (userRole === portal) {
+                  // Cookie valid AND correct portal — skip login form
+                  window.location.replace(portalPrefix + '/dashboard.html');
+                } else {
+                  // Valid session but wrong portal — clear stale state,
+                  // show this portal's login form (don't cross-redirect)
+                  _clearAuthState();
+                  _authGateResolve(null);
+                }
                 return;
               }
               _authGateResolve(null);
@@ -511,9 +530,11 @@ window.fetch = function(url, options) {
         var _path = window.location.pathname;
         var _isPortal = /^\/(admin|salesman|delivery)/.test(_path);
         if (!_isPortal) return; // no auth needed on customer storefront
-        // Silently re-validate the cookie without hiding the page.
-        // If the cookie expired while the tab was inactive, the next
-        // apiFetch will return 401 and logout() will handle the redirect.
+        // Do NOT re-validate if the user explicitly logged out this lifecycle.
+        // Without this guard, the visibilitychange fires on the login page after
+        // logout, sees no sessionStorage user, then re-fetches /auth/me which
+        // still has a valid cookie → auto-relogs the user in.
+        if (sessionStorage.getItem('aq_logged_out') === '1') return;
         fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
           .then(function(res) {
             if (!res.ok) {
