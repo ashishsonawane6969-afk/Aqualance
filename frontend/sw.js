@@ -64,12 +64,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // Handle API calls — Network-First (same-origin when frontend served by backend)
-  // For cross-origin setups, set window.API_BASE or meta[name="api-base"] in index.html
-  const API_ORIGIN = (function() {
-    const meta = document.querySelector('meta[name="api-base"]');
-    const base = window.API_BASE || (meta && meta.content) || location.origin;
-    return new URL(base).origin;
-  })();
+  // For same-origin deployments (backend serves frontend), API origin = location.origin.
+  // For cross-origin setups, add an API config endpoint:
+  //   GET /api/config → { api_base: "https://api.example.com" }
+  //   SW fetches this on install and caches the value.
+  const API_ORIGIN = location.origin;
   if (url.origin === API_ORIGIN) {
     // Exclude authenticated endpoints from service worker cache
     const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
