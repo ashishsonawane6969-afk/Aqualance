@@ -82,21 +82,15 @@ require('./utils/bcrypt');
 require('./utils/validateEnv');
 
 /* ── Helmet: secure HTTP response headers ────────────────────────────────── */
+// NOTE: contentSecurityPolicy is intentionally disabled on the backend.
+// This is a pure JSON API server — CSP only applies to HTML pages served to browsers.
+// The frontend (Vercel) sets its own CSP via vercel.json headers. A CSP sent by the
+// backend on API responses has no effect on the browser page's security posture and
+// previously caused confusion when its connect-src was interpreted as blocking fetch
+// calls originating from the Vercel frontend.
 app.use((req, res, next) => {
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc:    ["'self'"],
-        scriptSrc:     ["'self'", 'https://maps.googleapis.com', 'https://unpkg.com', 'https://cdnjs.cloudflare.com'],
-        scriptSrcAttr: ["'none'"],
-        styleSrc:      ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
-        fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc:        ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc:    ["'self'", 'https://maps.googleapis.com', 'https://nominatim.openstreetmap.org', 'https://*.tile.openstreetmap.org', 'https://aqualance-production.up.railway.app', 'https://aqualance.vercel.app'],
-        frameSrc:      ['https://maps.google.com', 'https://www.google.com'],
-        objectSrc:     ["'none'"],
-      },
-    },
+    contentSecurityPolicy: false,
     hsts: process.env.NODE_ENV === 'production'
       ? { maxAge: 31_536_000, includeSubDomains: true, preload: true }
       : false,
