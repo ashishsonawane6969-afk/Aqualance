@@ -11,7 +11,7 @@ function _esc(str) {
    Fixes: loadLeads targets correct element, robust apiFetch,
    proper error states, no silent null-returns
 ══════════════════════════════════════════════════════════════ */
-const API = (window.API_BASE || (function(){ var m = document.querySelector('meta[name="api-base"]'); return m ? m.content : ''; })()) + '/api/v1';
+const API = '/api/v1';
 
 /* ── Auth helpers ─────────────────────────────────────────── */
 // Fix 2: Token is in httpOnly cookie — JS cannot read it.
@@ -41,9 +41,18 @@ async function salesLogout() {
   if (_salesLoggingOut) return;
   _salesLoggingOut = true;
   try {
+    // Revoke the httpOnly cookie on the server — without this the cookie
+    // persists and _runAuthGate will auto-relogin on the next page load.
+    await fetch(API + '/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch (_) { /* best-effort — always redirect */ }
+  try {
     sessionStorage.removeItem('aq_sales_user');
-  } catch(_){}
-  window.location.replace('login.html');
+    sessionStorage.removeItem('aq_admin_user');
+    sessionStorage.removeItem('aq_delivery_user');
+    // Explicit flag read by network.js to suppress auto-relogin
+    sessionStorage.setItem('aq_logged_out', '1');
+  } catch (_) {}
+  window.location.replace('/salesman/login.html');
 }
 function salesmanLogout() { salesLogout(); }
 window.salesLogout = salesLogout;
@@ -138,7 +147,11 @@ function spinnerRow(cols, msg) {
    PAGE: LOGIN
 ══════════════════════════════════════════════════════════════ */
 if (page === 'login') {
-  if (getSalesUser()) window.location.replace('dashboard.html');  // fast UX redirect
+  // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
+  // On mobile/PWA, sessionStorage persists across tab navigations, so getSalesUser()
+  // may return a stale object after session expiry → causes login ↔ dashboard loop.
+  // network.js _runAuthGate() validates the httpOnly cookie via /auth/me AND checks
+  // that the role matches this portal before redirecting to dashboard.
 
   const loginForm = document.getElementById('salesmanLoginForm');
   if (loginForm) {
