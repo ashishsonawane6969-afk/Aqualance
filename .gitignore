@@ -1,24 +1,41 @@
-# SECURITY: Never commit secrets or local config
+# ── Secrets / local config ─────────────────────────────────────
 .env
 *.env
 .env.*
 !.env.example
+frontend/.env
+frontend/.env.*
 
-# Dependencies
+# ── Dependencies ───────────────────────────────────────────────
 node_modules/
+backend/node_modules/
+frontend/node_modules/
 npm-debug.log*
+yarn-error.log*
 
-# OS / editor
+# ── Build / logs ───────────────────────────────────────────────
+backend/logs/
+dist/
+build/
+*.tmp.js
+*.log
+
+# ── OS / editor ───────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .vscode/
 *.swp
+*.swo
+*.kate-swp
 
-# Debug / temp files
+# ── Scripts / temp dev files ───────────────────────────────────
 tmp-db-test.js
-*.tmp.js
 debug-*.js
+*.ps1
 
-# Database dumps (contain PII and credentials)
+# ── Database dumps (contain PII and credentials) ──────────────
 *.sql
 database/*.sql
+backend/node_modules/
+frontend/.env
+*.ps1
