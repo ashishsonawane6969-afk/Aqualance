@@ -76,17 +76,37 @@ self.addEventListener('fetch', (event) => {
                     (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
 
   if (isApiCall) {
-    // For cross-origin API calls, construct the proper URL
+    // For cross-origin API calls, construct a clean Request.
+    // CRITICAL: Do NOT spread the original Request object into new Request() when
+    // changing the URL to a cross-origin destination — the original request may have
+    // mode:'same-origin' or mode:'navigate' which throws a TypeError when used
+    // cross-origin. Instead, build a clean init object with only the fields we need.
     let fetchUrl = request.url;
-    if (SW_API_BASE && !url.pathname.startsWith('/api/')) {
+    if (SW_API_BASE && url.origin !== new URL(SW_API_BASE).origin) {
       fetchUrl = SW_API_BASE + url.pathname + url.search;
     }
-    // Exclude authenticated endpoints from service worker cache
+
+    const cleanInit = {
+      method:      request.method,
+      headers:     request.headers,
+      mode:        'cors',           // required for cross-origin fetch from SW
+      credentials: 'include',        // send cookies for auth
+      redirect:    'follow',
+    };
+    // Body only on non-GET/HEAD requests (cloning is needed since body is a stream)
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      cleanInit.body = request.clone().body;
+      cleanInit.duplex = 'half';     // required when body is a ReadableStream
+    }
+
+    const cleanRequest = new Request(fetchUrl, cleanInit);
+
+    // Exclude authenticated/mutating endpoints from SW cache
     const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
-    if (isAuthEndpoint) {
-      event.respondWith(fetch(fetchUrl, request));
+    if (isAuthEndpoint || request.method !== 'GET') {
+      event.respondWith(fetch(cleanRequest));
     } else {
-      event.respondWith(networkFirst(new Request(fetchUrl, request)));
+      event.respondWith(networkFirst(cleanRequest));
     }
     return;
   }
