@@ -11,7 +11,7 @@ function _esc(str) {
    Fixes: loadLeads targets correct element, robust apiFetch,
    proper error states, no silent null-returns
 ══════════════════════════════════════════════════════════════ */
-const API = '/api/v1';
+const API = (window.API_BASE || (function(){ var m = document.querySelector('meta[name="api-base"]'); return m ? m.content : ''; })()) + '/api/v1';
 
 /* ── Auth helpers ─────────────────────────────────────────── */
 // Fix 2: Token is in httpOnly cookie — JS cannot read it.
