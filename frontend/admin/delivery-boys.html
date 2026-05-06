@@ -19,6 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Delivery Boys — Admin | Aqualence Ventures</title>
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
@@ -617,10 +618,12 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeSidebar();closeModal('addModal');closeModal('removeModal');}});
 </script>
 
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    var apiBase = window.API_BASE || '';
+    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
       .catch(err => console.warn('SW registration failed:', err));
   });
 }

@@ -20,6 +20,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <meta name="description"
     content="iKrish Wellness Products — Premium skincare, haircare & daily essentials from Aqualence Ventures, Sangamner." />
   <title>Aqualence Ventures — iKrish Wellness</title>
@@ -489,15 +490,17 @@
   
   <script src="/js/network.js"></script>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .catch(err => console.warn('SW registration failed:', err));
-      });
-    }
+   <script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
+   <script>
+     if ('serviceWorker' in navigator) {
+       window.addEventListener('load', () => {
+         var apiBase = window.API_BASE || '';
+         navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
+           .catch(err => console.warn('SW registration failed:', err));
+       });
+     }
 
-    /* ── Bottom nav active circle animation ─────────────────────── */
+     /* ── Bottom nav active circle animation ─────────────────────── */
     (function () {
       const items = document.querySelectorAll('.bnav-item');
 

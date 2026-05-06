@@ -18,6 +18,11 @@
 const CACHE_NAME    = 'aqualence-v4';  // bumped — forces SW update, clears all stale JS/CSS/API cache
 const OFFLINE_URL   = '/offline.html';
 
+// Read API_BASE from the service worker URL query parameter (set during registration)
+// This allows cross-origin API calls when frontend is on Vercel and backend on Railway
+const urlParams = new URL(self.location.href).searchParams;
+const SW_API_BASE = urlParams.get('api_base') || '';
+
 // Static assets to pre-cache on install
 // frontend/sw.js
 const PRECACHE_URLS = [
@@ -63,19 +68,25 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle API calls — Network-First (same-origin when frontend served by backend)
+  // Handle API calls — Network-First
   // For same-origin deployments (backend serves frontend), API origin = location.origin.
-  // For cross-origin setups, add an API config endpoint:
-  //   GET /api/config → { api_base: "https://api.example.com" }
-  //   SW fetches this on install and caches the value.
-  const API_ORIGIN = location.origin;
-  if (url.origin === API_ORIGIN) {
+  // For cross-origin setups (frontend on Vercel, backend on Railway), use SW_API_BASE.
+  const API_ORIGIN = SW_API_BASE || location.origin;
+  const isApiCall = url.pathname.startsWith('/api/') ||
+                    (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
+
+  if (isApiCall) {
+    // For cross-origin API calls, construct the proper URL
+    let fetchUrl = request.url;
+    if (SW_API_BASE && !url.pathname.startsWith('/api/')) {
+      fetchUrl = SW_API_BASE + url.pathname + url.search;
+    }
     // Exclude authenticated endpoints from service worker cache
     const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
     if (isAuthEndpoint) {
-      event.respondWith(fetch(request));
+      event.respondWith(fetch(fetchUrl, request));
     } else {
-      event.respondWith(networkFirst(request));
+      event.respondWith(networkFirst(new Request(fetchUrl, request)));
     }
     return;
   }

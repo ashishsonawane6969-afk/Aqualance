@@ -19,6 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Products — Admin | Aqualence Ventures</title>
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
@@ -780,9 +781,10 @@ var _compProductsCache=null;
 </script>
 
 <script src="/js/network.js"></script>
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});
+  window.addEventListener('load',function(){var apiBase = window.API_BASE || ''; navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase)).catch(function(){});});
 }
 </script>
 

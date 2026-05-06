@@ -19,6 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Contact Us — Aqualence Ventures</title>
   <link rel="stylesheet" href="/customer.css" />
 
@@ -716,6 +717,16 @@ if ('serviceWorker' in navigator) {
     wire();
   }
 })();
+</script>
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    var apiBase = window.API_BASE || '';
+    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>

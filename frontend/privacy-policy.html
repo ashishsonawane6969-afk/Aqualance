@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
 <link rel="manifest" href="/manifest.json" />
 <title>Privacy Policy — Aqualence Ventures</title>
   <link rel="stylesheet" href="/customer.css" />
@@ -102,10 +103,12 @@
   </div>
 </div>
 
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    var apiBase = window.API_BASE || '';
+    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
       .catch(err => console.warn('SW registration failed:', err));
   });
 }

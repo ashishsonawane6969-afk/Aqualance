@@ -18,6 +18,7 @@
   <meta name="theme-color" content="#0d2210" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Geo Intelligence Map — Admin | Aqualence</title>
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
@@ -1442,10 +1443,12 @@ function _lfRenderZones() {
 }
 </script>
 
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    var apiBase = window.API_BASE || '';
+    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
       .catch(err => console.warn('SW registration failed:', err));
   });
 }

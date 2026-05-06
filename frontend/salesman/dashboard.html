@@ -19,6 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>My Leads — Aqualence Ventures</title>
   <link rel="stylesheet" href="/salesman/css/salesman.css" />
 
@@ -885,10 +886,12 @@ async function loadSalesmanList() {
 
 </script>
 
+<script nonce="CSP_NONCE">window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script nonce="CSP_NONCE">
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    var apiBase = window.API_BASE || '';
+    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
