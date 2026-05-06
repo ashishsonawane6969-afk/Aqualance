@@ -174,8 +174,18 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // 5a. MFA check — admin accounts with mfa_enabled=1 get a temp token
-    //     instead of a full JWT. The frontend must submit OTP to /mfa/verify-login.
+    // 5a. MFA check — admin accounts REQUIRE MFA (enforced as of security hardening).
+    //     If mfa_enabled=0, login succeeds but returns mfa_setup_required: true so
+    //     the frontend can redirect to the MFA setup page immediately.
+    if (!user.mfa_enabled && user.role === 'admin') {
+      console.warn(`[auth] Admin login without MFA — user: ${user.id} — IP: ${req.ip}`);
+      return res.json({
+        success: true,
+        mfa_setup_required: true,
+        message: 'MFA setup is required for admin accounts. Please set up authenticator app.',
+      });
+    }
+
     if (user.mfa_enabled) {
       const mfaTempToken = issueMfaTempToken(user.id);
       console.info(`[auth] MFA required — user: ${user.id} — IP: ${req.ip}`);
@@ -556,5 +566,5 @@ exports.redeemMobileTokenCode = (req, res) => {
   _mobileExchangeCodes.delete(code);
 
   console.info(`[auth] Mobile token exchange redeemed — IP: ${req.ip}`);
-  res.json({ success: true, token: entry.token });
+  res.json({ success: true, message: 'Token redeemed. Use Bearer auth for subsequent requests.' });
 };

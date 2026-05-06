@@ -18,7 +18,7 @@ async function connectDB() {
 
       connectTimeout: 10000,
 
-      ssl: false   // ✅ IMPORTANT: Railway MySQL doesn't need SSL
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false
     });
 
     // 🔥 TEST CONNECTION

@@ -5,19 +5,11 @@
 
 'use strict';
 
-// 🔥 FORCE all fetch calls to use Railway backend
-const ORIGINAL_FETCH = window.fetch;
-
-window.fetch = function (url, options = {}) {
-  if (typeof url === 'string' && url.startsWith('/api')) {
-    url = 'https://aqualance-production-9e22.up.railway.app' + url;
-  }
-  return ORIGINAL_FETCH(url, options);
-};
-
-
-
-const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
+// API base URL: uses relative path (frontend served by same backend)
+// Override by setting window.API_BASE before this script loads, or via meta tag:
+// <meta name="api-base" content="https://custom-domain.com">
+const API_META = document.querySelector('meta[name="api-base"]');
+const API = (window.API_BASE || (API_META && API_META.content) || '') + '/api/v1';
 
 /* ─────────────────────────────────────────────────────────────
    TOAST
@@ -157,7 +149,7 @@ function _productCardHTML(p) {
 
   // Safe JSON for inline onclick — prevents HTML injection
   var pJSON = JSON.stringify(p)
-    .replace(/"/g, '&quot;').replace(/</g, '&#60;').replace(/>/g, '&#62;');
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&#60;').replace(/>/g, '&#62;').replace(/'/g, '&#39;').replace(/\\/g, '&#92;');
 
   // Image with lazy loading
   var imgHTML = p.image && p.image.trim()

@@ -9,7 +9,7 @@ function _esc(str) {
 }
 
 /* ─── admin.js ─────────────────────────────────────────────── */
-const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
+const API = (window.API_BASE || '') + '/api/v1';
 
 /* ── Safe image src (A05:2025 — Injection) ──────────────────── */
 // Prevents javascript: URI injection through product image fields.
@@ -54,7 +54,6 @@ async function adminLogout() {
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort — always redirect */ }
   sessionStorage.removeItem('aq_admin_user');
-  localStorage.removeItem('aq_token');
   window.location.replace('/admin/login.html');
 }
 // Expose on window so network.js auth-guard (patchApiFetch) can call it
@@ -63,53 +62,14 @@ window.adminLogout = adminLogout;
 window.adminAuthRehydrate = adminAuthRehydrate;
 
 function authHeader() {
-  // Bearer token fallback for mobile browsers that block cross-site cookies.
-  // Token obtained via secure mobile-token exchange (not from login JSON body).
-  const token = localStorage.getItem('aq_token');
   // CSRF: read the aq_csrf cookie (non-httpOnly, set by server) and include it
   // as X-CSRF-Token on every mutating request. Attackers cannot read this cookie
   // from a cross-origin page (SOP), so the forged request will fail CSRF check.
   const csrfToken = document.cookie.split('; ')
     .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
   return headers;
-}
-
-/**
- * tryMobileTokenExchange — secure Bearer token acquisition for mobile PWA.
- *
- * Called after successful login/MFA/OTP verification.
- * Attempts to get a one-time exchange code from the server (requires session cookie),
- * then redeems it for a Bearer token stored in localStorage.
- *
- * Falls back silently if the cookie path works (desktop browsers).
- * This replaces the old pattern of reading data.token from the login response.
- */
-async function tryMobileTokenExchange() {
-  try {
-    // Step 1: get a one-time code (requires the freshly-set session cookie)
-    const codeRes = await fetch(`${API}/auth/mobile-token`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!codeRes.ok) return; // cookie path works fine — no Bearer needed
-    const codeData = await codeRes.json();
-    if (!codeData.success || !codeData.code) return;
-
-    // Step 2: redeem the code for the raw JWT
-    const tokenRes = await fetch(`${API}/auth/mobile-token/${codeData.code}`, {
-      credentials: 'include',
-    });
-    if (!tokenRes.ok) return;
-    const tokenData = await tokenRes.json();
-    if (tokenData.success && tokenData.token) {
-      localStorage.setItem('aq_token', tokenData.token);
-    }
-  } catch (_) {
-    // Non-fatal — desktop browsers using cookies don't need this path
-  }
 }
 
 /* ── Fetch wrapper: auth + content-type ──────────────────── */
@@ -302,9 +262,6 @@ async function submitOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    // SECURITY FIX: JWT no longer returned in login response.
-    // Use mobile-token exchange if cross-site cookies are blocked (PWA fallback).
-    await tryMobileTokenExchange();
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
@@ -377,8 +334,6 @@ async function submitSmsOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    // SECURITY FIX: use mobile-token exchange instead of data.token
-    await tryMobileTokenExchange();
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace('/admin/dashboard.html');
   } catch (err) {
@@ -457,8 +412,6 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-      // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
-      await tryMobileTokenExchange();
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;

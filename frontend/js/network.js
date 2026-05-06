@@ -21,17 +21,17 @@ console.log("✅ NEW network.js LOADED");
 (function (global) {
   'use strict';
 
-  const API_BASE = 'https://aqualance-production-9e22.up.railway.app';
+  const API_BASE = (function() {
+    // Allow override via window.API_BASE or meta tag
+    const meta = document.querySelector('meta[name="api-base"]');
+    return window.API_BASE || (meta && meta.content) || '';
+  })();
 
   // Helper: build headers for /auth/me and other direct fetch() calls.
   // On mobile, cross-site cookies are blocked so we fall back to Bearer token
   // stored in localStorage after login.
   function _mobileAuthHeaders() {
-    var token = '';
-    try { token = localStorage.getItem('aq_token') || ''; } catch (_) {}
-    var headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    return headers;
+    return { 'Content-Type': 'application/json' };
   }
 
   // Helper: clear ALL auth state (sessionStorage + localStorage)
@@ -40,7 +40,7 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.removeItem('aq_admin_user');
       sessionStorage.removeItem('aq_sales_user');
       sessionStorage.removeItem('aq_delivery_user');
-      localStorage.removeItem('aq_token');
+      sessionStorage.removeItem('aq_admin_user');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════

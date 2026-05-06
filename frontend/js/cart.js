@@ -1,5 +1,10 @@
 /* ─── cart.js — Mobile-first ───────────────────────────────── */
 
+function _cartEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
 // catEmoji is defined in app.js
 const _cartCatEmoji = {
   'Face Care':'💆','Hair Care':'💇','Body Care':'🧴',
@@ -35,7 +40,7 @@ function renderCart() {
               : `<span style="font-size:1.5rem">${_cartCatEmoji[item.category]||'📦'}</span>`}
           </div>
           <div class="cart-item-info">
-            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-name">${_cartEsc(item.name)}</div>
             <div class="cart-item-price">₹${parseFloat(item.price).toFixed(2)} / ${item.unit||'pc'}</div>
             <div class="cart-item-controls">
               <div class="qty-row">
@@ -57,7 +62,7 @@ function renderCart() {
       <div class="summary-row" style="padding:12px 14px 8px;font-weight:700;font-size:.85rem;color:var(--ink);border-bottom:1px solid var(--border);">🧾 Order Summary</div>
       ${cart.map(i=>`
         <div class="summary-row">
-          <span>${i.name} × ${i.quantity}</span>
+          <span>${_cartEsc(i.name)} × ${i.quantity}</span>
           <span>₹${(i.price*i.quantity).toFixed(2)}</span>
         </div>`).join('')}
       <div class="summary-row">

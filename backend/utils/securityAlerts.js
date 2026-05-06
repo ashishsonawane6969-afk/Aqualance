@@ -51,20 +51,27 @@ async function alert(event, severity, details = {}) {
   //   ALERT_WEBHOOK_URL=https://hooks.slack.com/services/xxx/yyy/zzz
   const webhookUrl = process.env.ALERT_WEBHOOK_URL;
   if (webhookUrl) {
-    const emoji   = severity === SEVERITY.CRITICAL ? '🚨' : severity === SEVERITY.WARNING ? '⚠️' : 'ℹ️';
-    const message = `${emoji} *[${severity}] ${event}*\n` +
-      Object.entries(details)
-        .filter(([k]) => !['password', 'token', 'secret'].includes(k)) // never leak secrets
-        .map(([k, v]) => `  • ${k}: ${v}`)
-        .join('\n');
+    // SSRF mitigation: validate webhook URL is in the allowlist
+    const { validateOutboundUrl } = require('./ssrfGuard');
+    const ssrfCheck = validateOutboundUrl(webhookUrl, 'security webhook');
+    if (!ssrfCheck.valid) {
+      logger.warn('[securityAlerts] Webhook blocked by SSRF guard:', { reason: ssrfCheck.reason });
+    } else {
+      const emoji   = severity === SEVERITY.CRITICAL ? '🚨' : severity === SEVERITY.WARNING ? '⚠️' : 'ℹ️';
+      const message = `${emoji} *[${severity}] ${event}*\n` +
+        Object.entries(details)
+          .filter(([k]) => !['password', 'token', 'secret'].includes(k)) // never leak secrets
+          .map(([k, v]) => `  • ${k}: ${v}`)
+          .join('\n');
 
-    // Fire-and-forget — never block the HTTP response waiting for the webhook
-    fetch(webhookUrl, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text: message }),
-      signal:  AbortSignal.timeout(5000), // 5 s timeout
-    }).catch(err => logger.warn('[securityAlerts] Webhook delivery failed:', { error: err.message }));
+      // Fire-and-forget — never block the HTTP response waiting for the webhook
+      fetch(webhookUrl, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: message }),
+        signal:  AbortSignal.timeout(5000), // 5 s timeout
+      }).catch(err => logger.warn('[securityAlerts] Webhook delivery failed:', { error: err.message }));
+    }
   }
 }
 
@@ -90,3 +97,6 @@ exports.mfaDisabled = (userId, ip) =>
 
 exports.rateLimitHit = (ip, route) =>
   alert('RATE_LIMIT_HIT', SEVERITY.WARNING, { ip, route });
+
+exports.accessDenied = (userId, userRole, requiredRoles, ip, path) =>
+  alert('ACCESS_DENIED', SEVERITY.WARNING, { userId, userRole, requiredRoles: requiredRoles.join(','), ip, path });

@@ -127,8 +127,27 @@ exports.getAll = async (req, res) => {
       params.push(like, like, like);
     }
 
-    sql += ' ORDER BY category, name';
-    const [rows] = await db.query(sql, params);
+    // Pagination
+    const page    = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const perPage = Math.min(200, Math.max(1, parseInt(req.query.per_page, 10) || 50));
+    const offset  = (page - 1) * perPage;
+
+    // Count query
+    const countSql = `SELECT COUNT(*) AS total FROM products WHERE is_active = 1${
+      category && category !== 'All' ? ' AND category = ?' : ''
+    }${
+      search && search.trim() ? ' AND (name LIKE ? OR category LIKE ? OR description LIKE ?)' : ''
+    }`;
+    const countParams = [];
+    if (category && category !== 'All') countParams.push(category);
+    if (search && search.trim()) {
+      const like = '%' + search.trim() + '%';
+      countParams.push(like, like, like);
+    }
+    const [[{ total }]] = await db.query(countSql, countParams);
+
+    sql += ' ORDER BY category, name LIMIT ? OFFSET ?';
+    const [rows] = await db.query(sql, [...params, perPage, offset]);
 
     const ids        = rows.map(r => r.id);
     const variantMap = await _attachVariantCounts(ids);
@@ -139,7 +158,7 @@ exports.getAll = async (req, res) => {
       r.variant_count = variantMap[r.id] || 0;
     });
 
-    res.json({ success: true, data: rows, count: rows.length });
+    res.json({ success: true, data: rows, count: rows.length, pagination: { total, page, per_page: perPage } });
   } catch (err) {
     serverError(res, err, '[productController.getAll]');
   }

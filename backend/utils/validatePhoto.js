@@ -28,8 +28,9 @@
 
 'use strict';
 
-// Maximum allowed base64 length (characters). 27,000,000 chars ≈ 20 MB binary.
-const MAX_BASE64_CHARS = 27_000_000;
+// Maximum allowed base64 length (characters). 5,000,000 chars ≈ 3.75 MB binary.
+// Matches the stricter Joi schema limit for geo photos; lead photos are capped at 200k chars.
+const MAX_BASE64_CHARS = 5_000_000;
 
 // Magic byte signatures for each allowed image type
 const SIGNATURES = {

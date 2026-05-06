@@ -165,7 +165,8 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async e => {
     const _ctrl    = new AbortController();
     const _tid     = setTimeout(() => _ctrl.abort(), _timeout);
     const _fetcher = (window.AqNet && window.AqNet.fetch) ? window.AqNet.fetch : fetch;
-    const res = await _fetcher('https://aqualance-production-9e22.up.railway.app/api/v1/orders', {
+    const API = (window.API_BASE || '') + '/api/v1';
+    const res = await _fetcher(API + '/orders', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
@@ -177,7 +178,7 @@ document.getElementById('checkoutForm')?.addEventListener('submit', async e => {
     saveCart([]);
     window.location.href = `order-success.html?ref=${encodeURIComponent(data.order_number)}`;
   } catch (err) {
-    errDiv.textContent = err.message || 'Something went wrong. Please try again.';
+    errDiv.textContent = 'Failed to place order. Please try again.';
     errDiv.classList.remove('hidden');
     btn.textContent = '✅ Place Order';
     btn.disabled    = false;

@@ -18,3 +18,7 @@ Thumbs.db
 tmp-db-test.js
 *.tmp.js
 debug-*.js
+
+# Database dumps (contain PII and credentials)
+*.sql
+database/*.sql

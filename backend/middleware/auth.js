@@ -87,6 +87,10 @@ function auth(roles = []) {
 
       // RBAC: check role if the route requires one
       if (roles.length && !roles.includes(decoded.role)) {
+        // A09: Log access denied events for security monitoring
+        const secAlerts = require('../utils/securityAlerts');
+        secAlerts.accessDenied?.(decoded.id, decoded.role, roles, req.ip, req.path) ||
+          console.warn(`[auth] 403 Access Denied — user: ${decoded.id} role: ${decoded.role} required: ${roles.join(',')} path: ${req.path} IP: ${req.ip}`);
         return res.status(403).json({
           success: false,
           message: 'Access denied: insufficient role',

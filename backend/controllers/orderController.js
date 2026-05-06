@@ -230,11 +230,17 @@ exports.getOne = async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (!id || isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid order ID' });
 
-    const [orders] = await db.query(
-      `SELECT o.*, u.name AS delivery_name, u.phone AS delivery_phone
-       FROM orders o LEFT JOIN users u ON o.delivery_id = u.id WHERE o.id = ?`,
-      [id]
-    );
+    let sql = `SELECT o.*, u.name AS delivery_name, u.phone AS delivery_phone
+                 FROM orders o LEFT JOIN users u ON o.delivery_id = u.id WHERE o.id = ?`;
+    const params = [id];
+
+    // A01 fix: delivery personnel can only view orders assigned to them
+    if (req.user.role === 'delivery') {
+      sql += ' AND o.delivery_id = ?';
+      params.push(req.user.id);
+    }
+
+    const [orders] = await db.query(sql, params);
     if (!orders.length) return res.status(404).json({ success: false, message: 'Order not found' });
 
     const [items] = await db.query(

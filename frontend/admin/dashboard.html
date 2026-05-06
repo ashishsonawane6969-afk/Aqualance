@@ -507,6 +507,9 @@ function closeSidebar(){
   });
 })();
 
+/* ── XSS guard ─────────────────────────────────── */
+function _esc(s){var d=document.createElement('div');d.appendChild(document.createTextNode(s!=null?String(s):''));return d.innerHTML;}
+
 /* ── Helpers ─────────────────────────────────────── */
 function fmtINR(v){ return '₹'+parseFloat(v||0).toLocaleString('en-IN',{maximumFractionDigits:0}); }
 function fmtNum(v){ return parseInt(v||0).toLocaleString('en-IN'); }
@@ -554,12 +557,12 @@ async function loadDashboard(){
     var rows = recent.length
       ? recent.map(function(o){
           return '<tr>'
-            +'<td><strong style="color:var(--brand)">'+o.order_number+'</strong></td>'
-            +'<td>'+o.shop_name+'</td>'
-            +'<td>'+o.phone+'</td>'
-            +'<td>'+o.city+'</td>'
+            +'<td><strong style="color:var(--brand)">'+_esc(o.order_number)+'</strong></td>'
+            +'<td>'+_esc(o.shop_name)+'</td>'
+            +'<td>'+_esc(o.phone)+'</td>'
+            +'<td>'+_esc(o.city)+'</td>'
             +'<td style="font-weight:600">'+fmtINR(o.total_price)+'</td>'
-            +'<td>'+badge(o.status)+'</td>'
+            +'<td>'+badge(_esc(o.status))+'</td>'
             +'<td style="color:var(--ink-soft)">'+fmtDate(o.created_at)+'</td>'
             +'</tr>';
         }).join('')

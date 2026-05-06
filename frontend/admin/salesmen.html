@@ -2039,11 +2039,8 @@ const MAHARASHTRA_TALUKAS = [
 
 /* ── Safe fetch — cookie-based auth (credentials:include) ── */
 async function areasFetch(url, opts = {}) {
-  // Send Bearer token as fallback for mobile (cross-site cookies blocked on Android/iOS)
-  const token = localStorage.getItem('aq_token') || '';
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
     ...(opts.headers || {})
   };
   const res = await fetch(url, {
@@ -2052,7 +2049,7 @@ async function areasFetch(url, opts = {}) {
     headers
   });
   if (res.status === 401 || res.status === 403) {
-    try { localStorage.removeItem('aq_token'); sessionStorage.removeItem('aq_admin_user'); } catch(_) {}
+    try { sessionStorage.removeItem('aq_admin_user'); } catch(_) {}
     window.location.href = '/admin/login.html';
     throw new Error('Session expired');
   }
@@ -2372,10 +2369,8 @@ window.onGMapsLoaded = function() {
        If no valid key is configured, Maps is not loaded at all — prevents
        anonymous quota consumption on the Google Maps billing account. */
     /* SECURITY: maps-key requires auth — cookie + Bearer token for mobile */
-    const _mkt = localStorage.getItem('aq_token') || '';
     const r   = await fetch('/api/v1/config/maps-key', {
       credentials: 'include',
-      headers: _mkt ? { 'Authorization': 'Bearer ' + _mkt } : {}
     });
 
     if (!r.ok) {

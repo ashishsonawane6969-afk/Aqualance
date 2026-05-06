@@ -63,26 +63,21 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle Railway API calls (cross-origin) — Network-First
-  const RAILWAY_API = 'https://aqualance-production-9e22.up.railway.app';
-  if (url.origin === RAILWAY_API) {
-    // ✅ FIX (Login Loop): Auth endpoints must NEVER be served from cache.
-    // On mobile/PWA, a stale cached 200 from /auth/me tricks network.js into
-    // thinking the session is still valid, causing the login ↔ dashboard loop.
-    const isAuthEndpoint = url.pathname.includes('/auth/');
+  // Handle API calls — Network-First (same-origin when frontend served by backend)
+  // For cross-origin setups, set window.API_BASE or meta[name="api-base"] in index.html
+  const API_ORIGIN = (function() {
+    const meta = document.querySelector('meta[name="api-base"]');
+    const base = window.API_BASE || (meta && meta.content) || location.origin;
+    return new URL(base).origin;
+  })();
+  if (url.origin === API_ORIGIN) {
+    // Exclude authenticated endpoints from service worker cache
+    const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
     if (isAuthEndpoint) {
-      // Pass through to network with no caching — if offline, return a clear error
-      event.respondWith(
-        fetch(request).catch(() =>
-          new Response(
-            JSON.stringify({ success: false, message: 'You are offline.' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          )
-        )
-      );
-      return;
+      event.respondWith(fetch(request));
+    } else {
+      event.respondWith(networkFirst(request));
     }
-    event.respondWith(networkFirst(request));
     return;
   }
 

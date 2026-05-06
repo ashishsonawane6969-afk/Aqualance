@@ -29,44 +29,20 @@ async function salesAuthRehydrate() {
 }
 
 function authHeader() {
-  // Bearer token fallback for mobile browsers that block cross-site cookies.
-  // Token obtained via secure mobile-token exchange (not from login JSON body).
-  const token = localStorage.getItem('aq_token');
   const csrfToken = document.cookie.split('; ')
     .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
   return headers;
 }
 
-/** Secure mobile Bearer token acquisition via one-time exchange code. */
-async function tryMobileTokenExchange() {
-  try {
-    const codeRes = await fetch('/api/v1/auth/mobile-token', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!codeRes.ok) return;
-    const codeData = await codeRes.json();
-    if (!codeData.success || !codeData.code) return;
-    const tokenRes = await fetch(`/api/v1/auth/mobile-token/${codeData.code}`, { credentials: 'include' });
-    if (!tokenRes.ok) return;
-    const tokenData = await tokenRes.json();
-    if (tokenData.success && tokenData.token) {
-      try { localStorage.setItem('aq_token', tokenData.token); } catch(_) {}
-    }
-  } catch (_) {}
-}
 var _salesLoggingOut = false;
 async function salesLogout() {
   if (_salesLoggingOut) return;
   _salesLoggingOut = true;
   try {
-    await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-  } catch (_) { /* best-effort */ }
-  sessionStorage.removeItem('aq_sales_user');
-  try { localStorage.removeItem('aq_token'); } catch(_){}
+    sessionStorage.removeItem('aq_sales_user');
+  } catch(_){}
   window.location.replace('login.html');
 }
 function salesmanLogout() { salesLogout(); }
@@ -195,8 +171,6 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
-        // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
-        await tryMobileTokenExchange();
         // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
         // Fix 4: Force password change if required

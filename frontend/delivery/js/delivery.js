@@ -1,5 +1,5 @@
 /* ─── delivery.js ─────────────────────────────────────────── */
-const API = 'https://aqualance-production-9e22.up.railway.app/api/v1';
+const API = (window.API_BASE || '') + '/api/v1';
 
 /* ── XSS Guard: escape all DB values before inserting into innerHTML ────── */
 function _esc(str) {
@@ -20,33 +20,13 @@ async function deliveryAuthRehydrate() {
 }
 
 function authHeader() {
-  // Bearer token fallback for mobile browsers that block cross-site cookies.
-  // Token obtained via secure mobile-token exchange (not from login JSON body).
-  const token = localStorage.getItem('aq_token');
   const csrfToken = document.cookie.split('; ')
     .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
   const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
   return headers;
 }
 
-/** Secure mobile Bearer token acquisition via one-time exchange code. */
-async function tryMobileTokenExchange() {
-  try {
-    const codeRes = await fetch(`${API}/auth/mobile-token`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!codeRes.ok) return;
-    const codeData = await codeRes.json();
-    if (!codeData.success || !codeData.code) return;
-    const tokenRes = await fetch(`${API}/auth/mobile-token/${codeData.code}`, { credentials: 'include' });
-    if (!tokenRes.ok) return;
-    const tokenData = await tokenRes.json();
-    if (tokenData.success && tokenData.token) localStorage.setItem('aq_token', tokenData.token);
-  } catch (_) {}
-}
 
 var _deliveryLoggingOut = false;
 async function deliveryLogout() {
@@ -59,12 +39,11 @@ async function deliveryLogout() {
   // The delivery session key is 'aq_delivery_user'. Removing the wrong key
   // meant sessionStorage still had the user on the login page, which then
   // redirected straight back to the dashboard — causing an infinite loop.
-  try {
-    sessionStorage.removeItem('aq_delivery_user');
-    sessionStorage.removeItem('aq_sales_user');  // belt-and-suspenders
-    sessionStorage.removeItem('aq_admin_user');
-    localStorage.removeItem('aq_token');
-  } catch (_) {}
+    try {
+      sessionStorage.removeItem('aq_delivery_user');
+      sessionStorage.removeItem('aq_sales_user');
+      sessionStorage.removeItem('aq_admin_user');
+    } catch (_) {}
   window.location.replace('/delivery/login.html');
 }
 window.deliveryLogout = deliveryLogout;
@@ -166,8 +145,6 @@ if (page === 'login') {
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
-      // SECURITY FIX: use mobile-token exchange instead of data.token
-      await tryMobileTokenExchange();
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;

@@ -24,7 +24,7 @@ const secAlerts        = require('../utils/securityAlerts');
 
 const COOKIE_NAME  = 'aq_auth';
 const MAX_ATTEMPTS = 3;
-const OTP_TEMP_SECRET = (process.env.JWT_SECRET || '') + '_mfa_pending'; // same as mfaController
+const OTP_TEMP_SECRET = process.env.OTP_TEMP_SECRET || (process.env.JWT_SECRET || '') + '_otp_pending_v2'; // independent secret
 
 function verifyOtpTempToken(token) {
   try {

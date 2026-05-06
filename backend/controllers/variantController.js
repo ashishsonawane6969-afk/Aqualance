@@ -65,14 +65,21 @@ exports.list = async (req, res) => {
     ].join('');
     const orderBy    = cols.has('sort_order') ? 'ORDER BY sort_order, id' : 'ORDER BY id';
 
+    const [[{ total }]] = await db.query(
+      'SELECT COUNT(*) AS total FROM product_variants WHERE product_id = ? AND is_active = 1',
+      [productId]
+    );
+    const page    = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const perPage = Math.min(50, Math.max(1, parseInt(req.query.per_page, 10) || 20));
+    const offset  = (page - 1) * perPage;
     const [rows] = await db.query(
       `SELECT id, product_id, variant_name, size_value, size_unit,
               price${mrpCol}${distCol}${bundleCols}, stock, sku, is_active
        FROM product_variants
-       WHERE product_id = ? AND is_active = 1 ${orderBy}`,
-      [productId]
+       WHERE product_id = ? AND is_active = 1 ${orderBy} LIMIT ? OFFSET ?`,
+      [productId, perPage, offset]
     );
-    res.json({ success: true, data: rows });
+    res.json({ success: true, data: rows, pagination: { total, page, per_page: perPage } });
   } catch (err) {
     serverError(res, err, '[variantController.list]');
   }

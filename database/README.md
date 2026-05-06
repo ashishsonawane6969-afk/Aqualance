@@ -38,14 +38,9 @@ This re-hashes all passwords with the configured `BCRYPT_ROUNDS` and upserts use
 
 ## Default Credentials
 
-| Role     | Phone      | Password     |
-|----------|------------|--------------|
-| Admin    | 9000000001 | Admin@123    |
-| Delivery | 9000000002 | Delivery@123 |
-| Delivery | 9000000003 | Delivery@123 |
-| Salesman | 9000000004 | Sales@123    |
+Default credentials are generated on first startup. Contact your administrator for initial login details.
 
-> **Change all passwords before any real deployment.**
+> **Change all default passwords before any production deployment.**
 
 ## Bug History
 
