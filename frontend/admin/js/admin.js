@@ -53,7 +53,13 @@ async function adminLogout() {
     // Fix 1+2: Tell the server to revoke the jti and clear the httpOnly cookie
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort — always redirect */ }
-  sessionStorage.removeItem('aq_admin_user');
+  try {
+    sessionStorage.removeItem('aq_admin_user');
+    sessionStorage.removeItem('aq_sales_user');
+    sessionStorage.removeItem('aq_delivery_user');
+    sessionStorage.setItem('aq_logged_out', '1');
+    localStorage.removeItem('aq_mobile_token'); // ANDROID: clear Bearer fallback
+  } catch(_) {}
   window.location.replace('/admin/login.html');
 }
 // Expose on window so network.js auth-guard (patchApiFetch) can call it
@@ -412,6 +418,20 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+      // ── ANDROID WEBVIEW: Bearer token fallback (see salesman.js for full comment) ──
+      try {
+        const codeRes = await fetch(`${API}/auth/mobile-token`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (codeRes.ok) {
+          const cd = await codeRes.json();
+          if (cd.success && cd.code) {
+            const tr = await fetch(`${API}/auth/mobile-token/${cd.code}`, { credentials: 'include' });
+            if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+          }
+        }
+      } catch(_) {}
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
