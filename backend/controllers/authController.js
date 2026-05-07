@@ -283,8 +283,36 @@ exports.login = async (req, res) => {
     // will get a 401 on their next Bearer request and be redirected to login,
     // where the cookie path takes over. This is acceptable — it's a one-time
     // re-authentication after the security fix deploys.
+    //
+    // ANDROID WEBVIEW FIX: Generate the mobile exchange code HERE, inside login(),
+    // and include it in the login JSON response as `mobile_code`.
+    //
+    // WHY: The previous flow required a separate POST /auth/mobile-token immediately
+    // after login. That endpoint requires auth() middleware (reads the aq_auth cookie).
+    // On Android WebView, the Set-Cookie from the login response is processed
+    // asynchronously by the WebView's cookie manager — the cookie is NOT yet committed
+    // to the synchronous cookie store when the next JavaScript fetch() fires in the
+    // same Promise chain. Auth middleware finds no cookie, returns 401, the exchange
+    // fails silently (try/catch), and localStorage never gets the Bearer token.
+    // All subsequent /auth/me calls then return 401, causing a login loop on Android.
+    //
+    // FIX: Include the one-time exchange code in the login response itself.
+    // The client redeems it via GET /auth/mobile-token/:code (no auth required —
+    // the code IS the credential). This removes the dependency on the cookie being
+    // present immediately after login, breaking the Android timing deadlock.
+    //
+    // Security: the code is single-use, 60-second TTL, 256-bit entropy (64 hex chars).
+    // Including it in the login JSON does not expose the raw JWT — only a short-lived
+    // opaque code that is useless after first redemption or 60 seconds, whichever comes first.
+    const mobileCode = crypto.randomBytes(32).toString('hex');
+    _mobileExchangeCodes.set(mobileCode, {
+      token:     token,
+      expiresAt: Date.now() + EXCHANGE_TTL_MS,
+    });
+
     res.json({
       success: true,
+      mobile_code: mobileCode, // single-use, 60s TTL — Android WebView Bearer fallback
       user: {
         id:                   user.id,
         name:                 user.name,
