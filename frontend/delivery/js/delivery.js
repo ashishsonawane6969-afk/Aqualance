@@ -44,6 +44,7 @@ async function deliveryLogout() {
       sessionStorage.removeItem('aq_sales_user');
       sessionStorage.removeItem('aq_admin_user');
     } catch (_) {}
+  try { localStorage.removeItem('aq_mobile_token'); sessionStorage.setItem('aq_logged_out','1'); } catch(_){}
   window.location.replace('/delivery/login.html');
 }
 window.deliveryLogout = deliveryLogout;
@@ -145,6 +146,11 @@ if (page === 'login') {
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
+      // ANDROID WEBVIEW: Bearer token fallback
+      try {
+        const cr = await fetch(`${API}/auth/mobile-token`, { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'} });
+        if (cr.ok) { const cd = await cr.json(); if (cd.code) { const tr = await fetch(`${API}/auth/mobile-token/${cd.code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) localStorage.setItem('aq_mobile_token',td.token);} } }
+      } catch(_){}
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;
