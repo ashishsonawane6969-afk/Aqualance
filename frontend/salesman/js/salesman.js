@@ -201,32 +201,18 @@ if (page === 'login') {
         // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
         // ── ANDROID WEBVIEW: Bearer token fallback ────────────────────────────────
-        // Android WebView blocks third-party cookies by default (SameSite=None is
-        // often ignored in embedded WebView contexts). The httpOnly session cookie
-        // set by the server may never be stored, so every subsequent /auth/me call
-        // returns 401 even though login succeeded.
-        //
-        // Fix: immediately after login (while the Set-Cookie is still being
-        // processed), request a one-time exchange code and redeem it for the raw
-        // JWT. Store the JWT in localStorage as 'aq_mobile_token'. The auth
-        // middleware on the server accepts this token via the Authorization header.
-        // _mobileAuthHeaders() in network.js already injects it on every request.
+        // Redeem the mobile_code included in the login response directly.
+        // This eliminates the POST /mobile-token step that required the aq_auth cookie
+        // — which may not be committed to the Android WebView cookie store yet.
         try {
-          const codeRes = await fetch(API + '/auth/mobile-token', {
-            method: 'POST', credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-          });
-          if (codeRes.ok) {
-            const codeData = await codeRes.json();
-            if (codeData.success && codeData.code) {
-              const tokenRes = await fetch(API + '/auth/mobile-token/' + codeData.code, {
-                credentials: 'include',
-              });
-              if (tokenRes.ok) {
-                const tokenData = await tokenRes.json();
-                if (tokenData.success && tokenData.token) {
-                  localStorage.setItem('aq_mobile_token', tokenData.token);
-                }
+          if (data.mobile_code) {
+            const tokenRes = await fetch(API + '/auth/mobile-token/' + data.mobile_code, {
+              credentials: 'include',
+            });
+            if (tokenRes.ok) {
+              const tokenData = await tokenRes.json();
+              if (tokenData.success && tokenData.token) {
+                localStorage.setItem('aq_mobile_token', tokenData.token);
               }
             }
           }
