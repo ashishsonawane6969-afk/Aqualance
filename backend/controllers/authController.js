@@ -68,9 +68,18 @@ function cookieOptions(maxAgeMs) {
   return {
     httpOnly: true,
     secure:   isProduction,
+    // SameSite=None is required for cross-origin requests (Vercel frontend → Railway API).
+    // In development we use 'Lax' so cookies work on localhost without HTTPS.
+    // ANDROID WEBVIEW: SameSite=None + Secure is also required for WebView cross-origin.
+    // Older Android WebViews (Chrome < 80) don't support SameSite=None — they treat it
+    // as SameSite=Strict. Those clients MUST use the Bearer token fallback via
+    // /auth/mobile-token exchange (which is why that endpoint exists).
     sameSite: isProduction ? 'None' : 'Lax',
     maxAge:   maxAgeMs,
     path:     '/',
+    // Do NOT set domain — omitting domain means the cookie is scoped to the exact
+    // host (railway.app subdomain). Setting domain='.railway.app' would scope it
+    // too broadly and browsers may reject it.
   };
 }
 
@@ -566,5 +575,9 @@ exports.redeemMobileTokenCode = (req, res) => {
   _mobileExchangeCodes.delete(code);
 
   console.info(`[auth] Mobile token exchange redeemed — IP: ${req.ip}`);
-  res.json({ success: true, message: 'Token redeemed. Use Bearer auth for subsequent requests.' });
+  // ✅ FIX: Return the actual JWT so the mobile client can store it in localStorage.
+  // Previously this returned only { success: true, message } — the frontend's
+  // `if (td.token) localStorage.setItem('aq_mobile_token', td.token)` check
+  // always failed silently, meaning Android WebView never got the Bearer fallback.
+  res.json({ success: true, token: entry.token });
 };
