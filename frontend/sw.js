@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v5';  // bumped — evicts stale cached /auth/me responses
+const CACHE_NAME    = 'aqualence-v6';  // Android fix: all API calls bypass cache
 const OFFLINE_URL   = '/offline.html';
 
 // Read API_BASE from the service worker URL query parameter (set during registration)
@@ -76,16 +76,21 @@ self.addEventListener('fetch', (event) => {
                     (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
 
   if (isApiCall) {
-    // Build a clean cross-origin Request — never pass the original Request object
-    // to a different origin (its mode:'same-origin' throws a TypeError cross-origin).
+    // Build a clean cross-origin Request.
+    // Never re-use the original Request object cross-origin: its mode may be
+    // 'same-origin' or 'navigate', which throws TypeError cross-origin.
     let fetchUrl = request.url;
     if (SW_API_BASE && url.origin !== new URL(SW_API_BASE).origin) {
       fetchUrl = SW_API_BASE + url.pathname + url.search;
     }
 
+    // Clone headers so we can safely read them
+    const headersCopy = {};
+    request.headers.forEach((v, k) => { headersCopy[k] = v; });
+
     const cleanInit = {
       method:      request.method,
-      headers:     request.headers,
+      headers:     headersCopy,
       mode:        'cors',
       credentials: 'include',
       redirect:    'follow',
@@ -96,21 +101,19 @@ self.addEventListener('fetch', (event) => {
     }
     const cleanRequest = new Request(fetchUrl, cleanInit);
 
-    // ── NEVER cache auth endpoints ─────────────────────────────────────────
-    // Serving a stale cached 200 for /auth/me after logout makes the auth gate
-    // think the session is still valid → user gets auto-relogged in.
-    // /auth/login and /auth/logout must also bypass the cache.
-    const isAuthPath = url.pathname.includes('/auth/');
-    const isSessionSensitive = url.pathname.includes('/orders') ||
-                               url.pathname.includes('/salesman/') ||
-                               url.pathname.includes('/delivery/') ||
-                               url.pathname.includes('/export');
-
-    if (isAuthPath || isSessionSensitive || request.method !== 'GET') {
-      event.respondWith(fetch(cleanRequest));
-    } else {
-      event.respondWith(networkFirst(cleanRequest));
-    }
+    // ── NEVER CACHE ANY API CALL ─────────────────────────────────────────────
+    // 1. /auth/* (login, logout, me) must never be cached — stale /auth/me
+    //    causes ghost sessions after logout on every platform including Android.
+    // 2. All other /api/v1/* calls go network-only too. The SW has no business
+    //    caching business data (orders, products, leads) — staleness causes
+    //    incorrect UI state and is the source of most "data not loading" bugs.
+    //    Caching is handled at the application layer (DataCache in network.js).
+    //
+    // ANDROID WEBVIEW: The SW also acts as a CORS proxy here — it rewrites
+    // relative /api/* requests to the full Railway URL. If the WebView fires a
+    // fetch that hits the SW with a relative URL (before window.fetch is patched),
+    // this ensures it still reaches the backend.
+    event.respondWith(fetch(cleanRequest));
     return;
   }
 
