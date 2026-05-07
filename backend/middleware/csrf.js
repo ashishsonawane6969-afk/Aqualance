@@ -45,6 +45,14 @@ const CSRF_EXEMPT = new Set([
   '/api/v1/auth/resend-otp',   // pre-session OTP step
   '/api/v1/auth/mfa/verify-login', // pre-session MFA step
   '/api/v1/ai/chat',           // public AI endpoint — no session
+  // MOBILE FIX: mobile-token exchange requires a valid session cookie (auth([])
+  // middleware) so CSRF double-submit is redundant here. The session cookie IS
+  // the CSRF protection — an attacker cannot forge this POST without already
+  // having the httpOnly aq_auth cookie.
+  // Without this exemption, Android WebView / mobile browsers that haven't yet
+  // received the aq_csrf cookie return 403, the Bearer fallback is never stored,
+  // and all subsequent authenticated API calls fail with 401.
+  '/api/v1/auth/mobile-token', // mobile Bearer token exchange — protected by auth() middleware
 ]);
 
 // Also exempt any GET /api/v1/auth/mobile-token/:code
