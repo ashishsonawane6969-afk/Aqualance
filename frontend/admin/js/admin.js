@@ -418,18 +418,15 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-      // ── ANDROID WEBVIEW: Bearer token fallback (see salesman.js for full comment) ──
+      // ── ANDROID WEBVIEW: Bearer token fallback ──────────────────────────────────
+      // The login response now includes `mobile_code` — a single-use 60s exchange
+      // code generated server-side during login. Redeem it directly for the JWT
+      // without needing the aq_auth cookie (which may not be committed to the
+      // Android WebView cookie store yet at this point in the Promise chain).
       try {
-        const codeRes = await fetch(`${API}/auth/mobile-token`, {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (codeRes.ok) {
-          const cd = await codeRes.json();
-          if (cd.success && cd.code) {
-            const tr = await fetch(`${API}/auth/mobile-token/${cd.code}`, { credentials: 'include' });
-            if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
-          }
+        if (data.mobile_code) {
+          const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
+          if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
         }
       } catch(_) {}
       if (data.user.must_change_password) {
