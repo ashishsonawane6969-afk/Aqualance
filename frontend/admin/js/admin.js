@@ -267,6 +267,12 @@ async function submitOtp() {
     sessionStorage.removeItem('aq_mfa_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
+    if (data.mobile_code) {
+      try {
+        const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
+        if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+      } catch (_) {}
+    }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
@@ -339,6 +345,12 @@ async function submitSmsOtp() {
     sessionStorage.removeItem('aq_otp_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
+    if (data.mobile_code) {
+      try {
+        const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
+        if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+      } catch (_) {}
+    }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace('/admin/dashboard.html');
