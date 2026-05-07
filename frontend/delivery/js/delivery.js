@@ -148,7 +148,10 @@ if (page === 'login') {
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
       // ANDROID WEBVIEW: Bearer token fallback — redeem mobile_code from login response directly
       try {
-        if (data.mobile_code) { const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) localStorage.setItem('aq_mobile_token',td.token);} }
+        if (data.mobile_code) { const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) {
+          localStorage.setItem('aq_mobile_token',td.token);
+          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
+        }} }
       } catch(_){}
       // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
       // the localStorage write before page teardown. Without this, location.replace()
