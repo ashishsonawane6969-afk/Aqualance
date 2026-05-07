@@ -11,7 +11,19 @@ function _esc(str) {
    Fixes: loadLeads targets correct element, robust apiFetch,
    proper error states, no silent null-returns
 ══════════════════════════════════════════════════════════════ */
-const API = '/api/v1';
+/* ── API Base ─────────────────────────────────────────────── */
+// Read from meta[name="api-base"] or window.API_BASE (set before this script loads).
+// Falls back to '' (relative) so localhost dev still works without configuration.
+// ANDROID WEBVIEW: window.API_BASE must be set before this script OR the meta tag
+// must be present in <head> — both are now ensured on every HTML page.
+const API = (function() {
+  var base = window.API_BASE;
+  if (!base) {
+    var m = document.querySelector('meta[name="api-base"]');
+    base = m ? m.content : '';
+  }
+  return base;
+})() + '/api/v1';
 
 /* ── Auth helpers ─────────────────────────────────────────── */
 // Fix 2: Token is in httpOnly cookie — JS cannot read it.
@@ -49,8 +61,10 @@ async function salesLogout() {
     sessionStorage.removeItem('aq_sales_user');
     sessionStorage.removeItem('aq_admin_user');
     sessionStorage.removeItem('aq_delivery_user');
-    // Explicit flag read by network.js to suppress auto-relogin
+    // Suppress auto-relogin in network.js visibilitychange handler
     sessionStorage.setItem('aq_logged_out', '1');
+    // ANDROID: clear Bearer token fallback
+    localStorage.removeItem('aq_mobile_token');
   } catch (_) {}
   window.location.replace('/salesman/login.html');
 }
@@ -186,12 +200,44 @@ if (page === 'login') {
 
         // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
-        // Fix 4: Force password change if required
+        // ── ANDROID WEBVIEW: Bearer token fallback ────────────────────────────────
+        // Android WebView blocks third-party cookies by default (SameSite=None is
+        // often ignored in embedded WebView contexts). The httpOnly session cookie
+        // set by the server may never be stored, so every subsequent /auth/me call
+        // returns 401 even though login succeeded.
+        //
+        // Fix: immediately after login (while the Set-Cookie is still being
+        // processed), request a one-time exchange code and redeem it for the raw
+        // JWT. Store the JWT in localStorage as 'aq_mobile_token'. The auth
+        // middleware on the server accepts this token via the Authorization header.
+        // _mobileAuthHeaders() in network.js already injects it on every request.
+        try {
+          const codeRes = await fetch(API + '/auth/mobile-token', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (codeRes.ok) {
+            const codeData = await codeRes.json();
+            if (codeData.success && codeData.code) {
+              const tokenRes = await fetch(API + '/auth/mobile-token/' + codeData.code, {
+                credentials: 'include',
+              });
+              if (tokenRes.ok) {
+                const tokenData = await tokenRes.json();
+                if (tokenData.success && tokenData.token) {
+                  localStorage.setItem('aq_mobile_token', tokenData.token);
+                }
+              }
+            }
+          }
+        } catch (_) { /* non-fatal — cookie path works in browser/Chrome */ }
+        // ─────────────────────────────────────────────────────────────────────────
+
         if (data.user.must_change_password) {
-          window.location.replace('change-password.html');
+          window.location.replace('/salesman/change-password.html');
           return;
         }
-        window.location.replace('dashboard.html');
+        window.location.replace('/salesman/dashboard.html');
       } catch (ex) {
         if (err) { err.textContent = ex.message; err.classList.remove('hidden'); }
         btn.textContent = 'Login to Field App'; btn.disabled = false;
