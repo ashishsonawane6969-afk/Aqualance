@@ -270,7 +270,13 @@ async function submitOtp() {
     if (data.mobile_code) {
       try {
         const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-        if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+        if (tr.ok) { const td = await tr.json(); if (td.token) {
+          localStorage.setItem('aq_mobile_token', td.token);
+          // ANDROID WEBVIEW: sessionStorage mirror — synchronously visible on new page
+          // after location.replace(); localStorage SQLite flush may not be. See network.js
+          // _mobileAuthHeaders() which reads this mirror first.
+          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
+        }}
       } catch (_) {}
     }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
@@ -352,7 +358,10 @@ async function submitSmsOtp() {
     if (data.mobile_code) {
       try {
         const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-        if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+        if (tr.ok) { const td = await tr.json(); if (td.token) {
+          localStorage.setItem('aq_mobile_token', td.token);
+          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
+        }}
       } catch (_) {}
     }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
@@ -446,7 +455,10 @@ if (document.getElementById('loginForm')) {
       try {
         if (data.mobile_code) {
           const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-          if (tr.ok) { const td = await tr.json(); if (td.token) localStorage.setItem('aq_mobile_token', td.token); }
+          if (tr.ok) { const td = await tr.json(); if (td.token) {
+            localStorage.setItem('aq_mobile_token', td.token);
+            try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
+          }}
         }
       } catch(_) {}
       // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
