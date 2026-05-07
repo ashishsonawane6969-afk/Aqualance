@@ -547,6 +547,8 @@ function parseExpiry(str) {
 // Fine for single-node Railway deployment. For multi-node: use Redis.
 const _mobileExchangeCodes = new Map();
 const EXCHANGE_TTL_MS = 60 * 1000; // 60 seconds
+exports._mobileExchangeCodes = _mobileExchangeCodes;
+exports.EXCHANGE_TTL_MS      = EXCHANGE_TTL_MS;
 
 // Cleanup stale codes every 5 minutes (prevent memory leak)
 setInterval(() => {
