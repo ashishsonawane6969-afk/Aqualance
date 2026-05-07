@@ -150,6 +150,10 @@ if (page === 'login') {
       try {
         if (data.mobile_code) { const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) localStorage.setItem('aq_mobile_token',td.token);} }
       } catch(_){}
+      // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
+      // the localStorage write before page teardown. Without this, location.replace()
+      // fires in the same microtask tick and the new page reads a null token → 401 loop.
+      await new Promise(r => setTimeout(r, 50));
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;
