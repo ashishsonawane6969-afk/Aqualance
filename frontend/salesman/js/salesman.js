@@ -213,6 +213,7 @@ if (page === 'login') {
               const tokenData = await tokenRes.json();
               if (tokenData.success && tokenData.token) {
                 localStorage.setItem('aq_mobile_token', tokenData.token);
+                try { sessionStorage.setItem('aq_mobile_token_mirror', tokenData.token); } catch(_) {}
               }
             }
           }
