@@ -125,10 +125,17 @@ if (allowedOrigins.length === 0) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow no-origin requests (mobile PWA, server-to-server, curl, Postman)
-    // Also allow origin: 'null' which is sent by Android WebView, file:// pages,
-    // and Flutter InAppWebView when using custom URL schemes or local assets.
-    if (!origin || origin === 'null') return callback(null, true);
+    // MOBILE FIX: When origin is absent (server-to-server, curl, Postman) allow it.
+    // When origin is 'null' (Android WebView loading via file:// or custom scheme),
+    // do NOT reflect 'null' as Access-Control-Allow-Origin — browsers block credentialed
+    // responses where ACAO is 'null' (Fetch spec §3.2.3). Instead reflect the first
+    // allowed origin so the browser accepts the credentialed response.
+    // Flutter apps loading the HTTPS Railway URL send the real origin (not null),
+    // so this path only triggers for file:// or custom-scheme WebView loads.
+    if (!origin) return callback(null, true);
+    if (origin === 'null') {
+      return callback(null, allowedOrigins[0] || allowedOrigins);
+    }
 
     // Case-insensitive exact match against the allowed list
     const normalizedOrigin = origin.toLowerCase();
