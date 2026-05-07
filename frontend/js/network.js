@@ -30,8 +30,17 @@ console.log("✅ NEW network.js LOADED");
   // Helper: build headers for /auth/me and other direct fetch() calls.
   // On mobile, cross-site cookies are blocked so we fall back to Bearer token
   // stored in localStorage after login.
+  // Build auth headers for direct fetch() calls (auth gate, visibilitychange).
+  // On Android WebView, cross-origin httpOnly cookies are blocked by the system
+  // WebView settings. We fall back to the Bearer token stored in localStorage
+  // by the mobile-token exchange that runs immediately after login.
   function _mobileAuthHeaders() {
-    return { 'Content-Type': 'application/json' };
+    var headers = { 'Content-Type': 'application/json' };
+    try {
+      var token = localStorage.getItem('aq_mobile_token');
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+    } catch(_) {}
+    return headers;
   }
 
   // Helper: clear ALL auth state (sessionStorage + localStorage)
@@ -44,6 +53,8 @@ console.log("✅ NEW network.js LOADED");
       // Explicit logout flag — prevents auto-relogin during this page lifecycle.
       // Checked by _runAuthGate and the visibilitychange handler.
       sessionStorage.setItem('aq_logged_out', '1');
+      // ANDROID: clear Bearer fallback token so stale token doesn't re-auth
+      localStorage.removeItem('aq_mobile_token');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════
@@ -394,10 +405,15 @@ console.log("✅ NEW network.js LOADED");
         // Build a new options object with adaptive timeout
         var adaptedOpts = Object.assign({}, options, { _timeout: NetQ.timeout() });
 
-        return adaptiveFetch(url, Object.assign({
+        // Merge caller headers with auth headers (Bearer + Content-Type).
+        // Object.assign order: _mobileAuthHeaders() provides defaults,
+        // adaptedOpts.headers override (e.g. caller supplies X-CSRF-Token).
+        var _mergedHeaders = Object.assign({}, _mobileAuthHeaders(), adaptedOpts.headers || {});
+        var _mergedOpts    = Object.assign({}, adaptedOpts, {
           credentials: 'include',
-          headers: _mobileAuthHeaders()
-        }, adaptedOpts))
+          headers:     _mergedHeaders,
+        });
+        return adaptiveFetch(url, _mergedOpts)
         .then(function (res) {
           Progress.done();
 
@@ -476,12 +492,44 @@ console.log("✅ NEW network.js LOADED");
 
   // frontend/js/network.js — add this block inside the IIFE, before the init() call
 // Patch native window.fetch so every portal benefits without touching 30+ call sites
+// Patch native window.fetch:
+//  1. Prepend API_BASE for relative /api/* paths (so calls work cross-origin in WebView)
+//  2. Inject Authorization: Bearer header if aq_mobile_token present (Android WebView
+//     blocks httpOnly cross-origin cookies — Bearer token in localStorage is the fallback)
+//
+// IMPORTANT: This patch does NOT override explicit Authorization headers set by callers.
 const _nativeFetch = window.fetch.bind(window);
 window.fetch = function(url, options) {
+  var opts = options ? Object.assign({}, options) : {};
+
+  // 1. Absolute URL fix for /api/* paths
   if (typeof url === 'string' && url.startsWith('/api')) {
-    url = API_BASE + url;  // API_BASE = 'https://aqualance-production-9e22.up.railway.app'
+    url = API_BASE + url;
   }
-  return _nativeFetch(url, options);
+
+  // 2. Bearer token injection for Android WebView
+  try {
+    var mobileToken = localStorage.getItem('aq_mobile_token');
+    if (mobileToken) {
+      var existingHeaders = opts.headers;
+      // Don't override an explicit Authorization already set
+      var hasAuth = existingHeaders &&
+        (existingHeaders['Authorization'] || existingHeaders['authorization']);
+      if (!hasAuth) {
+        // Merge into headers — handle both plain object and Headers instance
+        if (existingHeaders instanceof Headers) {
+          if (!existingHeaders.has('Authorization')) {
+            existingHeaders.set('Authorization', 'Bearer ' + mobileToken);
+          }
+        } else {
+          opts.headers = Object.assign({ 'Authorization': 'Bearer ' + mobileToken },
+                                       existingHeaders || {});
+        }
+      }
+    }
+  } catch(_) {}
+
+  return _nativeFetch(url, opts);
 };
 
   
