@@ -219,6 +219,10 @@ if (page === 'login') {
         } catch (_) { /* non-fatal — cookie path works in browser/Chrome */ }
         // ─────────────────────────────────────────────────────────────────────────
 
+        // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
+        // the localStorage write before page teardown. Without this, location.replace()
+        // fires in the same microtask tick and the new page reads a null token → 401 loop.
+        await new Promise(r => setTimeout(r, 50));
         if (data.user.must_change_password) {
           window.location.replace('/salesman/change-password.html');
           return;
