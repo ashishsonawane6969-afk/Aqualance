@@ -32,7 +32,6 @@
     window.onGMapsLoaded = function() { window._gmapsReady = true; initMap(); };
   </script>
   <style>
-  <style>
     @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
     :root {
@@ -637,6 +636,7 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script src="/js/network.js"></script>
 <script src="/admin/js/admin.js"></script>
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -1443,7 +1443,6 @@ function _lfRenderZones() {
 }
 </script>
 
-<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
