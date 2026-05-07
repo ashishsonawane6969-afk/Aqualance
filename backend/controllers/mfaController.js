@@ -337,18 +337,26 @@ exports.verifyLogin = async (req, res) => {
 
     const maxAgeMs = parseExpiry(expiresIn);
 
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
     res.cookie('aq_auth', token, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
+      secure:   isProduction,
+      sameSite: isProduction ? 'None' : 'Lax',
       maxAge:   maxAgeMs,
       path:     '/',
     });
 
+    // Android WebView: generate single-use exchange code so mobile client can
+    // redeem a Bearer token without depending on the async cookie commit.
+    const { _mobileExchangeCodes, EXCHANGE_TTL_MS } = require('./authController');
+    const mobileCode = crypto.randomBytes(32).toString('hex');
+    _mobileExchangeCodes.set(mobileCode, { token, expiresAt: Date.now() + EXCHANGE_TTL_MS });
+
     console.info(`[mfa] Login verified — user: ${user.id} role: ${user.role} — IP: ${req.ip}`);
 
     res.json({
-      success: true,
+      success:     true,
+      mobile_code: mobileCode,
       user: {
         id:                   user.id,
         name:                 user.name,
