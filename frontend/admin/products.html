@@ -533,7 +533,6 @@
         <div style="background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-lg,12px);padding:16px 16px 10px;margin-bottom:14px">
           <div class="form-section-title" style="margin-bottom:14px;padding-bottom:8px">📐 Variants <span style="font-weight:400;text-transform:none;font-size:.7rem;letter-spacing:0;color:var(--ink-faint)">— one product, multiple sizes/prices</span></div>
 
-          <!-- Variant rows injected by variants-admin.js -->
           <div id="vaAnchor"></div>
 
           <!-- Per-variant field legend -->
@@ -555,8 +554,10 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+<script src="/js/network.js"></script>
 <script src="/admin/js/admin.js"></script>
 <script src="/admin/js/variants-admin.js"></script>
+          <!-- Variant rows injected by variants-admin.js -->
 <div id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <nav id="adminBottomNav">
@@ -694,7 +695,6 @@ function _ensureSlotInput(idx) {
   return inp;
 }
 
-}
 
 /* Wire slot clicks to open the persistent file picker (Android WebView safe) */
 (function() {
@@ -780,7 +780,6 @@ function _ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').re
 var _compProductsCache=null;
 </script>
 
-<script src="/js/network.js"></script>
 <script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if('serviceWorker' in navigator){
