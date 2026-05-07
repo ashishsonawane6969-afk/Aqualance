@@ -37,10 +37,13 @@
     </form>
   </div>
 </div>
+<!-- MOBILE FIX: window.API_BASE must be set BEFORE network.js and admin.js load.
+     Previously set after both scripts, causing const API = (window.API_BASE||'') + '/api/v1'
+     to capture an empty string. The network.js meta-tag fallback rescued it on desktop;
+     on Android WebView the race was real. -->
+<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script src="/js/network.js"></script>
 <script src="/admin/js/admin.js"></script>
-
-<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
