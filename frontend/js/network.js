@@ -37,7 +37,13 @@ console.log("✅ NEW network.js LOADED");
   function _mobileAuthHeaders() {
     var headers = { 'Content-Type': 'application/json' };
     try {
-      var token = localStorage.getItem('aq_mobile_token');
+      // ANDROID WEBVIEW: sessionStorage is synchronously visible across same-origin
+      // navigation (browser process holds session context, restores it to new renderer).
+      // localStorage flush is async SQLite — may not be readable on first getItem after
+      // location.replace(). Read the sessionStorage mirror first as the deterministic
+      // source; fall back to localStorage for sessions pre-dating this mirror.
+      var token = sessionStorage.getItem('aq_mobile_token_mirror') ||
+                  localStorage.getItem('aq_mobile_token');
       if (token) headers['Authorization'] = 'Bearer ' + token;
     } catch(_) {}
     return headers;
@@ -55,6 +61,7 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.setItem('aq_logged_out', '1');
       // ANDROID: clear Bearer fallback token so stale token doesn't re-auth
       localStorage.removeItem('aq_mobile_token');
+      sessionStorage.removeItem('aq_mobile_token_mirror');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════
@@ -509,7 +516,8 @@ window.fetch = function(url, options) {
 
   // 2. Bearer token injection for Android WebView
   try {
-    var mobileToken = localStorage.getItem('aq_mobile_token');
+    var mobileToken = sessionStorage.getItem('aq_mobile_token_mirror') ||
+                      localStorage.getItem('aq_mobile_token');
     if (mobileToken) {
       var existingHeaders = opts.headers;
       // Don't override an explicit Authorization already set
