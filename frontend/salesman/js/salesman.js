@@ -64,7 +64,7 @@ async function salesLogout() {
     // Suppress auto-relogin in network.js visibilitychange handler
     sessionStorage.setItem('aq_logged_out', '1');
     // ANDROID: clear Bearer token fallback
-    localStorage.removeItem('aq_mobile_token');
+    AqAuth.clearMobileAuth();
   } catch (_) {}
   window.location.replace('/salesman/login.html');
 }
@@ -198,40 +198,13 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
-        // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
-        // ── ANDROID WEBVIEW: Bearer token fallback ────────────────────────────────
-        // Redeem the mobile_code included in the login response directly.
-        // This eliminates the POST /mobile-token step that required the aq_auth cookie
-        // — which may not be committed to the Android WebView cookie store yet.
-        var _bearerToken = '';
-        try {
-          if (data.mobile_code) {
-            const tokenRes = await fetch(API + '/auth/mobile-token/' + data.mobile_code, {
-              credentials: 'include',
-            });
-            if (tokenRes.ok) {
-              const tokenData = await tokenRes.json();
-              if (tokenData.success && tokenData.token) {
-                _bearerToken = tokenData.token;
-                localStorage.setItem('aq_mobile_token', tokenData.token);
-                try { sessionStorage.setItem('aq_mobile_token_mirror', tokenData.token); } catch(_) {}
-              }
-            }
-          }
-        } catch (_) { /* non-fatal — cookie path works in browser/Chrome */ }
-        // ─────────────────────────────────────────────────────────────────────────
-
-        // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
-        // the localStorage write before page teardown. Without this, location.replace()
-        // fires in the same microtask tick and the new page reads a null token → 401 loop.
-        await new Promise(r => setTimeout(r, 50));
+        const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
         if (data.user.must_change_password) {
           window.location.replace('/salesman/change-password.html');
           return;
         }
-        console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-        window.location.replace('/salesman/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
+        window.location.replace(AqAuth.buildRedirectUrl('/salesman/dashboard.html', bearer));
       } catch (ex) {
         if (err) { err.textContent = ex.message; err.classList.remove('hidden'); }
         btn.textContent = 'Login to Field App'; btn.disabled = false;
