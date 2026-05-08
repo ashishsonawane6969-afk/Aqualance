@@ -147,8 +147,10 @@ if (page === 'login') {
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
       // ANDROID WEBVIEW: Bearer token fallback — redeem mobile_code from login response directly
+      var _bearerToken = '';
       try {
         if (data.mobile_code) { const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) {
+          _bearerToken = td.token;
           localStorage.setItem('aq_mobile_token',td.token);
           try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
         }} }
@@ -161,9 +163,8 @@ if (page === 'login') {
         window.location.replace('/delivery/change-password.html');
         return;
       }
-      var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
-        console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt);
-        window.location.replace('/delivery/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
+      console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken);
+      window.location.replace('/delivery/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
