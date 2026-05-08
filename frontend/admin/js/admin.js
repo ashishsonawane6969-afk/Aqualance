@@ -288,7 +288,11 @@ async function submitOtp() {
       window.location.replace('/admin/change-password.html');
       return;
     }
-    window.location.replace('/admin/dashboard.html');
+    // FORENSIC + ANDROID: pass token in URL hash so dashboard can read it
+    // even if sessionStorage/localStorage don't survive the navigation.
+    var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
+    console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+    window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -370,7 +374,9 @@ async function submitSmsOtp() {
     // fires in the same microtask tick and the new page reads a null token → 401 loop.
     await new Promise(r => setTimeout(r, 50));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
-    window.location.replace('/admin/dashboard.html');
+    var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
+    console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+    window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -469,7 +475,9 @@ if (document.getElementById('loginForm')) {
         window.location.replace('/admin/change-password.html');
         return;
       }
-      window.location.replace('/admin/dashboard.html');
+      var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
+      console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+      window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
