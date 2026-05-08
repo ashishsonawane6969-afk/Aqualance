@@ -58,7 +58,7 @@ async function adminLogout() {
     sessionStorage.removeItem('aq_sales_user');
     sessionStorage.removeItem('aq_delivery_user');
     sessionStorage.setItem('aq_logged_out', '1');
-    localStorage.removeItem('aq_mobile_token'); // ANDROID: clear Bearer fallback
+    AqAuth.clearMobileAuth(); // ANDROID: clear Bearer fallback
   } catch(_) {}
   window.location.replace('/admin/login.html');
 }
@@ -267,29 +267,13 @@ async function submitOtp() {
     sessionStorage.removeItem('aq_mfa_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
-    // Hoist token to outer variable — in-memory, not storage-dependent.
-    // Android WebView: localStorage SQLite flush and sessionStorage transfer across
-    // location.replace() are both unreliable. Reading storage at redirect time may
-    // return empty even though we just wrote. Capture in JS heap instead.
-    var _bearerToken = '';
-    if (data.mobile_code) {
-      try {
-        const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-        if (tr.ok) { const td = await tr.json(); if (td.token) {
-          _bearerToken = td.token;
-          localStorage.setItem('aq_mobile_token', td.token);
-          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
-        }}
-      } catch (_) {}
-    }
+    const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    await new Promise(r => setTimeout(r, 50));
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
     }
-    console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-    window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
+    window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -356,22 +340,10 @@ async function submitSmsOtp() {
     sessionStorage.removeItem('aq_otp_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
-    var _bearerToken = '';
-    if (data.mobile_code) {
-      try {
-        const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-        if (tr.ok) { const td = await tr.json(); if (td.token) {
-          _bearerToken = td.token;
-          localStorage.setItem('aq_mobile_token', td.token);
-          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
-        }}
-      } catch (_) {}
-    }
+    const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    await new Promise(r => setTimeout(r, 50));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
-    console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-    window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
+    window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -457,29 +429,12 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-      // ── ANDROID WEBVIEW: Bearer token fallback ──────────────────────────────────
-      // The login response now includes `mobile_code` — a single-use 60s exchange
-      // code generated server-side during login. Redeem it directly for the JWT
-      // without needing the aq_auth cookie (which may not be committed to the
-      // Android WebView cookie store yet at this point in the Promise chain).
-      var _bearerToken = '';
-      try {
-        if (data.mobile_code) {
-          const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
-          if (tr.ok) { const td = await tr.json(); if (td.token) {
-            _bearerToken = td.token;
-            localStorage.setItem('aq_mobile_token', td.token);
-            try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
-          }}
-        }
-      } catch(_) {}
-      await new Promise(r => setTimeout(r, 50));
+      const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
       }
-      console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-      window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
+      window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
     } catch (err) {
       window.isLoggingIn = false; // 🔓 Release lock on error so gate resumes normally
       errDiv.textContent = err.message;
