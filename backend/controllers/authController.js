@@ -364,8 +364,12 @@ exports.logout = async (req, res) => {
       );
     }
 
-    // Fix 2: Clear the cookie
-    res.clearCookie(COOKIE_NAME, cookieOptions(0));
+    // Fix 2: Clear the cookie.
+    // clearCookie must pass the SAME path/secure/sameSite/httpOnly that were
+    // used in Set-Cookie — some mobile browsers (Chrome Android, Samsung Internet)
+    // silently ignore a clear if the attributes don't match the stored cookie.
+    const { maxAge: _ignored, ...clearOpts } = cookieOptions(0);
+    res.clearCookie(COOKIE_NAME, clearOpts);
 
     console.info(
       `[auth] Logout — user: ${req.user.id} — IP: ${req.ip} — ${new Date().toISOString()}`
