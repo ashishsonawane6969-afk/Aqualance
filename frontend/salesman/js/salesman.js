@@ -204,6 +204,7 @@ if (page === 'login') {
         // Redeem the mobile_code included in the login response directly.
         // This eliminates the POST /mobile-token step that required the aq_auth cookie
         // — which may not be committed to the Android WebView cookie store yet.
+        var _bearerToken = '';
         try {
           if (data.mobile_code) {
             const tokenRes = await fetch(API + '/auth/mobile-token/' + data.mobile_code, {
@@ -212,6 +213,7 @@ if (page === 'login') {
             if (tokenRes.ok) {
               const tokenData = await tokenRes.json();
               if (tokenData.success && tokenData.token) {
+                _bearerToken = tokenData.token;
                 localStorage.setItem('aq_mobile_token', tokenData.token);
                 try { sessionStorage.setItem('aq_mobile_token_mirror', tokenData.token); } catch(_) {}
               }
@@ -228,9 +230,8 @@ if (page === 'login') {
           window.location.replace('/salesman/change-password.html');
           return;
         }
-        var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
-        console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt);
-        window.location.replace('/salesman/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
+        console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+        window.location.replace('/salesman/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
       } catch (ex) {
         if (err) { err.textContent = ex.message; err.classList.remove('hidden'); }
         btn.textContent = 'Login to Field App'; btn.disabled = false;
