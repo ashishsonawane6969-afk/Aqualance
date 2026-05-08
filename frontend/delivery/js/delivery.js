@@ -44,7 +44,7 @@ async function deliveryLogout() {
       sessionStorage.removeItem('aq_sales_user');
       sessionStorage.removeItem('aq_admin_user');
     } catch (_) {}
-  try { localStorage.removeItem('aq_mobile_token'); sessionStorage.setItem('aq_logged_out','1'); } catch(_){}
+  try { AqAuth.clearMobileAuth(); sessionStorage.setItem('aq_logged_out','1'); } catch(_){}
   window.location.replace('/delivery/login.html');
 }
 window.deliveryLogout = deliveryLogout;
@@ -146,25 +146,12 @@ if (page === 'login') {
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
-      // ANDROID WEBVIEW: Bearer token fallback — redeem mobile_code from login response directly
-      var _bearerToken = '';
-      try {
-        if (data.mobile_code) { const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, {credentials:'include'}); if(tr.ok){const td=await tr.json(); if(td.token) {
-          _bearerToken = td.token;
-          localStorage.setItem('aq_mobile_token',td.token);
-          try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
-        }} }
-      } catch(_){}
-      // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
-      // the localStorage write before page teardown. Without this, location.replace()
-      // fires in the same microtask tick and the new page reads a null token → 401 loop.
-      await new Promise(r => setTimeout(r, 50));
+      const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
       if (data.user.must_change_password) {
         window.location.replace('/delivery/change-password.html');
         return;
       }
-      console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken);
-      window.location.replace('/delivery/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
+      window.location.replace(AqAuth.buildRedirectUrl('/delivery/dashboard.html', bearer));
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
