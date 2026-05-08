@@ -133,6 +133,10 @@ console.log("✅ NEW network.js LOADED");
       try { sessionStorage.removeItem('aq_logged_out'); } catch(_) {}
       fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
         .then(function(res) {
+          // 🔒 Login race guard: if the user just submitted the login form,
+          // abort this delayed /auth/me check — the cookie isn't committed yet,
+          // so res.ok will be false and _clearAuthState() would wipe the new session.
+          if (window.isLoggingIn) return;
           if (res.ok) {
             return res.json().then(function(data) {
               if (data && data.user) {
