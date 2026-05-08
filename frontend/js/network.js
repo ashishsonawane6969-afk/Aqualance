@@ -37,14 +37,36 @@ console.log("✅ NEW network.js LOADED");
   function _mobileAuthHeaders() {
     var headers = { 'Content-Type': 'application/json' };
     try {
-      // ANDROID WEBVIEW: sessionStorage is synchronously visible across same-origin
-      // navigation (browser process holds session context, restores it to new renderer).
-      // localStorage flush is async SQLite — may not be readable on first getItem after
-      // location.replace(). Read the sessionStorage mirror first as the deterministic
-      // source; fall back to localStorage for sessions pre-dating this mirror.
-      var token = sessionStorage.getItem('aq_mobile_token_mirror') ||
-                  localStorage.getItem('aq_mobile_token');
-      if (token) headers['Authorization'] = 'Bearer ' + token;
+      var ssMirror = sessionStorage.getItem('aq_mobile_token_mirror');
+      var lsToken  = localStorage.getItem('aq_mobile_token');
+      // URL-hash token handoff: login page writes token to hash before navigating.
+      // This is the ONLY channel that reliably survives Android WebView navigation
+      // when both localStorage SQLite flush and sessionStorage context transfer
+      // are unreliable across location.replace() in certain WebView configurations.
+      var urlToken = null;
+      try {
+        var hashMatch = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/);
+        if (hashMatch) urlToken = decodeURIComponent(hashMatch[1]);
+      } catch(_) {}
+      var token = urlToken || ssMirror || lsToken;
+      console.log('[AqNet] _mobileAuthHeaders — ss_mirror:', !!ssMirror, 'ls_token:', !!lsToken, 'url_token:', !!urlToken, 'has_auth:', !!token, 'path:', window.location.pathname);
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+        // Hydrate persistent storage from URL token so subsequent requests work
+        if (urlToken && !ssMirror) {
+          try { sessionStorage.setItem('aq_mobile_token_mirror', urlToken); } catch(_) {}
+        }
+        if (urlToken && !lsToken) {
+          try { localStorage.setItem('aq_mobile_token', urlToken); } catch(_) {}
+        }
+        // Clean the token from the URL bar so it's not visible / bookmarkable
+        if (urlToken && window.history && window.history.replaceState) {
+          try {
+            var cleanHash = window.location.hash.replace(/[#&]?aqt=[A-Za-z0-9._%-]+/, '').replace(/^#$/, '');
+            window.history.replaceState(null, '', window.location.pathname + window.location.search + cleanHash);
+          } catch(_) {}
+        }
+      }
     } catch(_) {}
     return headers;
   }
@@ -151,6 +173,7 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
+    console.log('[AqNet] _runAuthGate DASHBOARD — token_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls_token:', !!localStorage.getItem('aq_mobile_token'), 'hash:', window.location.hash.slice(0,20));
     fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
         if (!res.ok) {
@@ -516,7 +539,10 @@ window.fetch = function(url, options) {
 
   // 2. Bearer token injection for Android WebView
   try {
-    var mobileToken = sessionStorage.getItem('aq_mobile_token_mirror') ||
+    var urlTok = null;
+    try { var hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/); if (hm) urlTok = decodeURIComponent(hm[1]); } catch(_) {}
+    var mobileToken = urlTok ||
+                      sessionStorage.getItem('aq_mobile_token_mirror') ||
                       localStorage.getItem('aq_mobile_token');
     if (mobileToken) {
       var existingHeaders = opts.headers;
