@@ -22,7 +22,10 @@
 
 'use strict';
 
-var AqAuth = (function () {
+// FIX: Assign to window explicitly so the object is accessible across all <script> tags.
+// `var` at top-level IS window property, but being explicit prevents edge cases
+// in strict module environments and makes the intent clear.
+var AqAuth = window.AqAuth = (function () {
 
   /* ── WebView Detection ─────────────────────────────────────────────────
    * Android WebView user-agent contains 'wv)' in the UA string.
@@ -98,11 +101,21 @@ var AqAuth = (function () {
   }
 
   /* ── Public API ─────────────────────────────────────────────────────── */
-  return {
+  var _api = {
     isWebView:        _isWebView,
     redeemMobileCode: redeemMobileCode,
     buildRedirectUrl: buildRedirectUrl,
     clearMobileAuth:  clearMobileAuth,
   };
+
+  // FIX: Expose on window so all portal scripts (admin.js / salesman.js / delivery.js)
+  // can access AqAuth regardless of whether they share the same script scope.
+  // Previously this IIFE returned into `var AqAuth` which is fine when the script
+  // and its callers are in the same scope — but since each portal script is loaded
+  // as a separate <script> tag, the var is not visible across tags unless it is
+  // attached to window. This was the root cause of "AqAuth is not defined".
+  window.AqAuth = _api;
+
+  return _api;
 
 })();
