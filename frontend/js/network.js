@@ -34,6 +34,8 @@ console.log("✅ NEW network.js LOADED");
   // On Android WebView, cross-origin httpOnly cookies are blocked by the system
   // WebView settings. We fall back to the Bearer token stored in localStorage
   // by the mobile-token exchange that runs immediately after login.
+  var _memToken = null; // in-memory fallback: survives location.replace() within same JS heap
+
   function _mobileAuthHeaders() {
     var headers = { 'Content-Type': 'application/json' };
     try {
@@ -48,9 +50,10 @@ console.log("✅ NEW network.js LOADED");
         var hashMatch = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/);
         if (hashMatch) urlToken = decodeURIComponent(hashMatch[1]);
       } catch(_) {}
-      var token = urlToken || ssMirror || lsToken;
+      var token = urlToken || _memToken || ssMirror || lsToken;
       console.log('[AqNet] _mobileAuthHeaders — ss_mirror:', !!ssMirror, 'ls_token:', !!lsToken, 'url_token:', !!urlToken, 'has_auth:', !!token, 'path:', window.location.pathname);
       if (token) {
+        _memToken = token; // cache in RAM — survives WebView localStorage/sessionStorage flush
         headers['Authorization'] = 'Bearer ' + token;
         // Hydrate persistent storage from URL token so subsequent requests work
         if (urlToken && !ssMirror) {
@@ -136,7 +139,7 @@ console.log("✅ NEW network.js LOADED");
           // 🔒 Login race guard: if the user just submitted the login form,
           // abort this delayed /auth/me check — the cookie isn't committed yet,
           // so res.ok will be false and _clearAuthState() would wipe the new session.
-          if (window.isLoggingIn) return;
+          if (window.isLoggingIn) { _authGateResolve(null); return; }
           if (res.ok) {
             return res.json().then(function(data) {
               if (data && data.user) {
@@ -621,6 +624,9 @@ window.fetch = function(url, options) {
         // logout, sees no sessionStorage user, then re-fetches /auth/me which
         // still has a valid cookie → auto-relogs the user in.
         if (sessionStorage.getItem('aq_logged_out') === '1') return;
+        // Do NOT re-validate if login form just submitted — password manager autofill
+        // can trigger visibilitychange which would wipe the in-flight session.
+        if (window.isLoggingIn) return;
         fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
           .then(function(res) {
             if (!res.ok) {
