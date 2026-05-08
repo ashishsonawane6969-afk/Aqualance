@@ -59,27 +59,37 @@ const DUMMY_HASH = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbNXQ9Dey
 /* ── Cookie config ───────────────────────────────────────────────────────── */
 // backend/controllers/authController.js
 function cookieOptions(maxAgeMs) {
-  // Railway injects RAILWAY_ENVIRONMENT automatically, but NOT NODE_ENV.
-  // Check both so the cookie works whether or not NODE_ENV is manually set.
-  // SameSite=None + Secure is required because the frontend (Vercel) and
-  // the API (Railway) are on different origins.
+  // ── Production detection ────────────────────────────────────────────────
+  // Railway injects RAILWAY_ENVIRONMENT; Render injects RENDER; Fly injects
+  // FLY_APP_NAME. Check all so the cookie works across cloud platforms.
   const isProduction = process.env.NODE_ENV === 'production'
-                    || !!process.env.RAILWAY_ENVIRONMENT;
+                    || !!process.env.RAILWAY_ENVIRONMENT
+                    || !!process.env.RENDER
+                    || !!process.env.FLY_APP_NAME;
+
+  // ── Cross-origin detection ──────────────────────────────────────────────
+  // ALLOWED_ORIGINS is REQUIRED (server throws at startup if missing), so if
+  // it is set we are always in a cross-origin deployment (Vercel + Railway).
+  // This is the fallback in case the cloud-platform env vars above are absent.
+  // SameSite=None + Secure is required for:
+  //   • Cross-origin fetch from Vercel frontend → Railway API
+  //   • Android WebView cross-origin requests (Chrome 80+ enforces SameSite)
+  //   • iOS Safari ITP (Intelligent Tracking Prevention)
+  // Chrome 80+ rule: SameSite=None MUST be paired with Secure=true or the
+  // browser silently drops the cookie. Brave/Opera are more lenient — this is
+  // why the loop only reproduces in Chrome and Android WebView.
+  const isCrossOrigin = !!(process.env.ALLOWED_ORIGINS || '').trim();
+  const useSameSiteNone = isProduction || isCrossOrigin;
+
   return {
     httpOnly: true,
-    secure:   isProduction,
-    // SameSite=None is required for cross-origin requests (Vercel frontend → Railway API).
-    // In development we use 'Lax' so cookies work on localhost without HTTPS.
-    // ANDROID WEBVIEW: SameSite=None + Secure is also required for WebView cross-origin.
-    // Older Android WebViews (Chrome < 80) don't support SameSite=None — they treat it
-    // as SameSite=Strict. Those clients MUST use the Bearer token fallback via
-    // /auth/mobile-token exchange (which is why that endpoint exists).
-    sameSite: isProduction ? 'None' : 'Lax',
+    secure:   useSameSiteNone,           // Secure MUST accompany SameSite=None
+    sameSite: useSameSiteNone ? 'None' : 'Lax',
     maxAge:   maxAgeMs,
     path:     '/',
-    // Do NOT set domain — omitting domain means the cookie is scoped to the exact
-    // host (railway.app subdomain). Setting domain='.railway.app' would scope it
-    // too broadly and browsers may reject it.
+    // Do NOT set domain — omitting domain scopes the cookie to the exact host
+    // (railway.app subdomain). Setting domain='.railway.app' scopes it too
+    // broadly and browsers may reject it.
   };
 }
 
