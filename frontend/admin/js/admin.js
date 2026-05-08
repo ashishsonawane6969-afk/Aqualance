@@ -267,32 +267,29 @@ async function submitOtp() {
     sessionStorage.removeItem('aq_mfa_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
+    // Hoist token to outer variable — in-memory, not storage-dependent.
+    // Android WebView: localStorage SQLite flush and sessionStorage transfer across
+    // location.replace() are both unreliable. Reading storage at redirect time may
+    // return empty even though we just wrote. Capture in JS heap instead.
+    var _bearerToken = '';
     if (data.mobile_code) {
       try {
         const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
         if (tr.ok) { const td = await tr.json(); if (td.token) {
+          _bearerToken = td.token;
           localStorage.setItem('aq_mobile_token', td.token);
-          // ANDROID WEBVIEW: sessionStorage mirror — synchronously visible on new page
-          // after location.replace(); localStorage SQLite flush may not be. See network.js
-          // _mobileAuthHeaders() which reads this mirror first.
           try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
         }}
       } catch (_) {}
     }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
-    // the localStorage write before page teardown. Without this, location.replace()
-    // fires in the same microtask tick and the new page reads a null token → 401 loop.
     await new Promise(r => setTimeout(r, 50));
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
     }
-    // FORENSIC + ANDROID: pass token in URL hash so dashboard can read it
-    // even if sessionStorage/localStorage don't survive the navigation.
-    var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
-    console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-    window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
+    console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+    window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -359,24 +356,22 @@ async function submitSmsOtp() {
     sessionStorage.removeItem('aq_otp_token');
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
+    var _bearerToken = '';
     if (data.mobile_code) {
       try {
         const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
         if (tr.ok) { const td = await tr.json(); if (td.token) {
+          _bearerToken = td.token;
           localStorage.setItem('aq_mobile_token', td.token);
           try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
         }}
       } catch (_) {}
     }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-    // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
-    // the localStorage write before page teardown. Without this, location.replace()
-    // fires in the same microtask tick and the new page reads a null token → 401 loop.
     await new Promise(r => setTimeout(r, 50));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
-    var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
-    console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-    window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
+    console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+    window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -458,26 +453,24 @@ if (document.getElementById('loginForm')) {
       // code generated server-side during login. Redeem it directly for the JWT
       // without needing the aq_auth cookie (which may not be committed to the
       // Android WebView cookie store yet at this point in the Promise chain).
+      var _bearerToken = '';
       try {
         if (data.mobile_code) {
           const tr = await fetch(`${API}/auth/mobile-token/${data.mobile_code}`, { credentials: 'include' });
           if (tr.ok) { const td = await tr.json(); if (td.token) {
+            _bearerToken = td.token;
             localStorage.setItem('aq_mobile_token', td.token);
             try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch(_) {}
           }}
         }
       } catch(_) {}
-      // ANDROID WEBVIEW: yield a macrotask so the WebView storage layer can commit
-      // the localStorage write before page teardown. Without this, location.replace()
-      // fires in the same microtask tick and the new page reads a null token → 401 loop.
       await new Promise(r => setTimeout(r, 50));
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
       }
-      var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
-      console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
-      window.location.replace('/admin/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
+      console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
+      window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
