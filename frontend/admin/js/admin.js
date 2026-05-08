@@ -403,6 +403,11 @@ function cancelSmsOtp() {
 /* ─────────────────────────────────────────────────────────────
    LOGIN PAGE
 ───────────────────────────────────────────────────────────── */
+/* ── Login race-condition lock ─────────────────────────────── */
+// Prevents the auth gate in network.js from calling _clearAuthState()
+// while a login fetch is already in-flight on mobile/PWA.
+window.isLoggingIn = false;
+
 if (document.getElementById('loginForm')) {
   // ✅ FIX (Login Loop): Do NOT redirect based on sessionStorage alone.
   // On mobile/PWA, sessionStorage can survive tab navigations, so getAdminUser()
@@ -417,13 +422,17 @@ if (document.getElementById('loginForm')) {
     const btn = document.getElementById('loginBtn');
     btn.textContent = 'Logging in…'; btn.disabled = true;
 
+    // 🔒 Acquire login lock — network.js auth gate checks this before
+    // calling _clearAuthState(), preventing race on slow mobile connections.
+    window.isLoggingIn = true;
+
     try {
       const res = await fetch(`${API}/auth/login`, {
         method:      'POST',
         credentials: 'include',
         headers:     { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone:    (document.getElementById('phone')?.value || '').trim(),
+          phone:    (document.getElementById('phone')?.value || '').replace(/[^0-9]/g, ''),
           password: document.getElementById('password')?.value || '',
         }),
       });
@@ -472,6 +481,7 @@ if (document.getElementById('loginForm')) {
       console.log('[Aqualance] PRE-REDIRECT _bearerToken:', !!_bearerToken, 'ss_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls:', !!localStorage.getItem('aq_mobile_token'));
       window.location.replace('/admin/dashboard.html' + (_bearerToken ? '#aqt=' + encodeURIComponent(_bearerToken) : ''));
     } catch (err) {
+      window.isLoggingIn = false; // 🔓 Release lock on error so gate resumes normally
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
       btn.textContent = 'Login'; btn.disabled = false;
