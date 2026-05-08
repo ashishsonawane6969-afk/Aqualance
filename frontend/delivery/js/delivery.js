@@ -161,7 +161,9 @@ if (page === 'login') {
         window.location.replace('/delivery/change-password.html');
         return;
       }
-      window.location.replace('/delivery/dashboard.html');
+      var _aqt = sessionStorage.getItem('aq_mobile_token_mirror') || localStorage.getItem('aq_mobile_token') || '';
+        console.log('[Aqualance] PRE-REDIRECT token exists:', !!_aqt);
+        window.location.replace('/delivery/dashboard.html' + (_aqt ? '#aqt=' + encodeURIComponent(_aqt) : ''));
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
