@@ -126,15 +126,17 @@ if (allowedOrigins.length === 0) {
 app.use(cors({
   origin: (origin, callback) => {
     // MOBILE FIX: When origin is absent (server-to-server, curl, Postman) allow it.
-    // When origin is 'null' (Android WebView loading via file:// or custom scheme),
-    // do NOT reflect 'null' as Access-Control-Allow-Origin — browsers block credentialed
-    // responses where ACAO is 'null' (Fetch spec §3.2.3). Instead reflect the first
-    // allowed origin so the browser accepts the credentialed response.
-    // Flutter apps loading the HTTPS Railway URL send the real origin (not null),
-    // so this path only triggers for file:// or custom-scheme WebView loads.
     if (!origin) return callback(null, true);
+
+    // ANDROID WEBVIEW (file:// or custom scheme): origin is the string 'null'.
+    // Chrome BLOCKS credentialed responses where ACAO='null' (Fetch spec §3.2.3).
+    // Reflect the first allowed origin instead — this is safe because:
+    //   a) The exchange code in the URL is single-use + 60s TTL (no CSRF risk)
+    //   b) The real session cookie is httpOnly and not accessible to JS
+    // NOTE: If your WebView loads from a custom https:// URL, origin will be
+    // that URL (not 'null') — ensure it is in ALLOWED_ORIGINS env var.
     if (origin === 'null') {
-      return callback(null, allowedOrigins[0] || allowedOrigins);
+      return callback(null, allowedOrigins[0] || true);
     }
 
     // Case-insensitive exact match against the allowed list
@@ -149,8 +151,27 @@ app.use(cors({
     console.warn(`[CORS] Blocked origin: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
-  credentials: true,
+  credentials:    true,
+  // ── Explicit allowedHeaders ─────────────────────────────────────────────
+  // Chrome sends an OPTIONS preflight for ANY non-simple header, including
+  // 'Authorization'. Without allowedHeaders, express-cors reflects back
+  // Access-Control-Request-Headers — but Chrome can be strict about the
+  // response being explicit. Listing headers here removes the ambiguity.
+  // Brave/Opera are more lenient about missing explicit allowedHeaders, which
+  // is why the Bearer token fallback works in those browsers but fails in Chrome.
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
+  exposedHeaders: ['X-CSRF-Token'],
+  methods:        ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
+
+// Vary: Origin — required when ACAO is dynamic (per-request).
+// Without this, a CDN or proxy may cache a CORS response for one origin and
+// serve it to another, causing Chrome to see a mismatched ACAO and block the
+// request while Brave/Opera ignore the cached header.
+app.use((req, res, next) => {
+  res.vary('Origin');
+  next();
+});
 /* ── Body parsers ────────────────────────────────────────────────────────── */
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
