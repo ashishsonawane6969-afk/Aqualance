@@ -2,6 +2,25 @@
 <html lang="en">
 <head>
 <script>
+
+<script>
+(function(){
+  var d = [];
+  var _log = console.log.bind(console);
+  console.log = function() { d.push(Array.from(arguments).join(' ')); _log.apply(console, arguments); };
+  window.onerror = function(m,s,l){ d.push('ERROR:'+m); };
+  window.addEventListener('load', function() {
+    var ls = '', ss = '', hash = window.location.hash.slice(0,30);
+    try { ls = localStorage.getItem('aq_mobile_token') ? 'YES('+localStorage.getItem('aq_mobile_token').slice(0,10)+')' : 'NO'; } catch(e){ ls='ERR'; }
+    try { ss = sessionStorage.getItem('aq_mobile_token_mirror') ? 'YES' : 'NO'; } catch(e){ ss='ERR'; }
+    var msg = 'AQ_DEBUG: ls='+ls+' ss='+ss+' hash='+hash+'\nLOGS:\n'+d.join('\n');
+    document.body.innerHTML = '<pre style="white-space:pre-wrap;font-size:12px;padding:10px">'+msg+'</pre>';
+  });
+})();
+</script>
+
+
+  
 (function(){
   var k='aqualance_theme',d=document.documentElement;
   var s;try{s=localStorage.getItem(k);}catch(e){}
