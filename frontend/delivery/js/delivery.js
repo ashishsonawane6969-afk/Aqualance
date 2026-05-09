@@ -1,3 +1,16 @@
+'use strict';
+
+/* ── AqAuth guard ─────────────────────────────────────────── */
+if (typeof window.AqAuth === 'undefined') {
+  console.error('[delivery.js] CRITICAL: auth-utils.js not loaded before portal script.');
+  window.AqAuth = {
+    isWebView: false,
+    redeemMobileCode: async () => '',
+    buildRedirectUrl: (base) => base,
+    clearMobileAuth: () => {},
+  };
+}
+
 /* ─── delivery.js ─────────────────────────────────────────── */
 const API = (window.API_BASE || '') + '/api/v1';
 
