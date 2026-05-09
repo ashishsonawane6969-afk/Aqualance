@@ -91,6 +91,38 @@ function authHeader() {
     .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
   const headers = { 'Content-Type': 'application/json' };
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+  // FIX (mobile Chrome/WebView login loop — REAL ROOT CAUSE):
+  // authHeader() was only returning CSRF token — no Bearer token.
+  // On mobile, cross-origin httpOnly cookies are unreliable after navigation.
+  // Every apiFetch call (loadDashboardStats, loadOrders, etc.) sent requests
+  // with NO Authorization header → backend returned 401 → patchApiFetch in
+  // network.js caught the 401 → called adminLogout() → redirect to login.
+  // The auth gate (/auth/me) passed because it uses _mobileAuthHeaders(),
+  // but ALL subsequent API calls used this function which had no Bearer token.
+  //
+  // Fix: inject Bearer token here from the same sources _mobileAuthHeaders uses.
+  // Priority: URL hash (#aqt=) → localStorage → sessionStorage mirror.
+  try {
+    let mobileToken = null;
+    // URL hash (most reliable: survives location.replace across origins)
+    try {
+      const hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/);
+      if (hm) mobileToken = decodeURIComponent(hm[1]);
+    } catch(_) {}
+    // localStorage (persists across page loads on all mobile browsers)
+    if (!mobileToken) {
+      try { mobileToken = localStorage.getItem('aq_mobile_token'); } catch(_) {}
+    }
+    // sessionStorage mirror (fast in-page cache)
+    if (!mobileToken) {
+      try { mobileToken = sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) {}
+    }
+    if (mobileToken) {
+      headers['Authorization'] = 'Bearer ' + mobileToken;
+    }
+  } catch(_) {}
+
   return headers;
 }
 
