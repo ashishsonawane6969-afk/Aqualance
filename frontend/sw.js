@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v6';  // Android fix: all API calls bypass cache
+const CACHE_NAME    = 'aqualence-v7';  // bumped: evicts stale JS bundles causing raw-JS render bug
 const OFFLINE_URL   = '/offline.html';
 
 // Read API_BASE from the service worker URL query parameter (set during registration)
