@@ -39,18 +39,34 @@ console.log("✅ NEW network.js LOADED");
   function _mobileAuthHeaders() {
     var headers = { 'Content-Type': 'application/json' };
     try {
-      var ssMirror = sessionStorage.getItem('aq_mobile_token_mirror');
-      var lsToken  = localStorage.getItem('aq_mobile_token');
-      // URL-hash token handoff: login page writes token to hash before navigating.
-      // This is the ONLY channel that reliably survives Android WebView navigation
-      // when both localStorage SQLite flush and sessionStorage context transfer
-      // are unreliable across location.replace() in certain WebView configurations.
+      // FIX (mobile Chrome): Priority order changed.
+      // Old order: ssMirror | _memToken | ssMirror | lsToken
+      // Problem: on mobile Chrome, sessionStorage is cleared between cross-origin
+      // navigations AND _memToken resets on every page load (new JS heap).
+      // This left lsToken as last resort — but the log showed ls_token: false
+      // because localStorage.getItem was called BEFORE the #aqt= URL token
+      // was written back to localStorage (the hash hydration happened after
+      // the token variable was already assigned).
+      //
+      // NEW order: urlToken first (most reliable cross-navigation channel),
+      // then localStorage (survives navigation on all mobile browsers),
+      // then sessionStorage mirror (fast in-page cache),
+      // then _memToken (in-page only — only useful for same-page re-calls).
+      //
+      // The URL hash (#aqt=) is written by buildRedirectUrl() in auth-utils.js
+      // BEFORE location.replace() fires. It survives navigation because it is
+      // part of the URL itself, not a storage API. network.js reads it here,
+      // writes it back to localStorage + sessionStorage, then strips the hash.
       var urlToken = null;
       try {
         var hashMatch = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/);
         if (hashMatch) urlToken = decodeURIComponent(hashMatch[1]);
       } catch(_) {}
-      var token = urlToken || _memToken || ssMirror || lsToken;
+      // FIX: read localStorage AFTER resolving urlToken so hydration below
+      // can skip redundant writes when urlToken === lsToken
+      var lsToken  = localStorage.getItem('aq_mobile_token');
+      var ssMirror = sessionStorage.getItem('aq_mobile_token_mirror');
+      var token = urlToken || lsToken || _memToken || ssMirror;
       console.log('[AqNet] _mobileAuthHeaders — ss_mirror:', !!ssMirror, 'ls_token:', !!lsToken, 'url_token:', !!urlToken, 'has_auth:', !!token, 'path:', window.location.pathname);
       if (token) {
         _memToken = token; // cache in RAM — survives WebView localStorage/sessionStorage flush
@@ -181,6 +197,28 @@ console.log("✅ NEW network.js LOADED");
 
     window._aqRehydrating = true;
     console.log('[AqNet] _runAuthGate DASHBOARD — token_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls_token:', !!localStorage.getItem('aq_mobile_token'), 'hash:', window.location.hash.slice(0,20));
+
+    // FIX (mobile Chrome login loop): defer auth gate by one microtask tick.
+    //
+    // Root cause of the loop:
+    //   1. Login page calls redeemMobileCode() → gets JWT → stores in localStorage
+    //   2. Login page calls buildRedirectUrl() → appends #aqt=TOKEN to URL (FIXED in auth-utils.js)
+    //   3. location.replace('/admin/dashboard.html#aqt=TOKEN') fires
+    //   4. Dashboard page loads. network.js init() runs synchronously on DOMContentLoaded.
+    //   5. _mobileAuthHeaders() reads window.location.hash — #aqt=TOKEN IS present.
+    //   6. BUT on some mobile Chrome versions, the hash is read correctly yet
+    //      localStorage.setItem() from step 1 has not been flushed to disk yet
+    //      (IndexedDB/SQLite flush is async on Android).
+    //
+    // The defer below gives the browser one event loop turn to:
+    //   a) Process the URL hash (already done synchronously above)
+    //   b) Flush any pending localStorage writes from the login page
+    //   c) Allow _mobileAuthHeaders to hydrate localStorage from the #aqt= hash
+    //      BEFORE the /auth/me fetch fires
+    //
+    // One setTimeout(0) is sufficient — localStorage reads are synchronous once
+    // the write has been committed. The 1-frame delay is imperceptible to users.
+    setTimeout(function() {
     fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
         if (!res.ok) {
@@ -223,6 +261,7 @@ console.log("✅ NEW network.js LOADED");
         _clearAuthState();
         window.location.replace(portalPrefix + '/login.html');
       });
+    }, 0); // end setTimeout — closes the mobile localStorage flush defer
   }
 
   /* ══════════════════════════════════════════════════════════════
