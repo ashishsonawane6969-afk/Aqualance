@@ -1,5 +1,16 @@
 'use strict';
 
+/* ── AqAuth guard ─────────────────────────────────────────── */
+if (typeof window.AqAuth === 'undefined') {
+  console.error('[salesman.js] CRITICAL: auth-utils.js not loaded before portal script.');
+  window.AqAuth = {
+    isWebView: false,
+    redeemMobileCode: async () => '',
+    buildRedirectUrl: (base) => base,
+    clearMobileAuth: () => {},
+  };
+}
+
 function _esc(str) {
   const d = document.createElement('div');
   d.appendChild(document.createTextNode(str != null ? String(str) : ''));
