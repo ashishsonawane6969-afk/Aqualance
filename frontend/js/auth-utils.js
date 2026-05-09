@@ -3,42 +3,55 @@
  * ─────────────────────────────────────────────────────────────────
  * Shared auth helpers for all portals (admin / salesman / delivery).
  *
- * Replaces 5+ copy-pasted mobile_code redemption blocks across:
- *   admin/js/admin.js    (direct login, MFA verify, SMS OTP paths)
- *   salesman/js/salesman.js
- *   delivery/js/delivery.js
+ * FIX (mobile Chrome login loop):
+ *   buildRedirectUrl previously only appended #aqt= token for _isWebView.
+ *   Mobile Chrome is NOT detected as WebView (no 'wv)' in UA), but it ALSO
+ *   blocks cross-origin httpOnly cookies on cross-site fetches after navigation.
+ *   Result: token stored in localStorage, page navigates, new JS context,
+ *   _mobileAuthHeaders() finds nothing, /auth/me → 401 → redirect loop.
  *
- * Usage in each login success handler:
- *
- *   const bearer = await AqAuth.redeemMobileCode(data, API);
- *   sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
- *   const dest = data.user.must_change_password
- *     ? '/admin/change-password.html'
- *     : AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer);
- *   window.location.replace(dest);
- *
+ *   Fix: use #aqt= URL hash handoff for ANY mobile browser (not just WebView).
+ *   Desktop Chrome/Firefox on real desktop skips hash (cookie works).
+ *   Detection now uses pointer accuracy (coarse = touch device = mobile).
  * ─────────────────────────────────────────────────────────────────
  */
 
-'use strict';
-
-// FIX: Assign to window explicitly so the object is accessible across all <script> tags.
-// `var` at top-level IS window property, but being explicit prevents edge cases
-// in strict module environments and makes the intent clear.
 var AqAuth = window.AqAuth = (function () {
+  'use strict';
 
-  /* ── WebView Detection ─────────────────────────────────────────────────
-   * Android WebView user-agent contains 'wv)' in the UA string.
-   * Chrome on Android does NOT contain 'wv)'.
-   * iOS WKWebView does not expose a reliable flag; iOS Safari ITP is handled
-   * separately by SameSite=None + Secure cookies on the backend.
+  /* ── Device Detection ───────────────────────────────────────────────────
+   * FIXED: was `_isWebView` — only caught Android WebView ('wv)' UA marker).
+   * Mobile Chrome on Android does NOT have 'wv)' in UA, so it returned false.
+   * buildRedirectUrl then skipped the #aqt= hash handoff.
+   * After location.replace(), mobile Chrome does NOT reliably pass cookies
+   * for cross-origin requests (SameSite=None is honoured for ongoing sessions
+   * but the cookie store is not always flushed before the new page's first
+   * fetch fires — timing race on mobile CPU).
+   *
+   * NEW DETECTION: any touch-primary device (matchMedia pointer:coarse).
+   * This covers: Android Chrome, Android WebView, iOS Safari, iOS WKWebView.
+   * Desktop Chrome/Firefox always return pointer:fine → cookie path used.
    * ──────────────────────────────────────────────────────────────────── */
-  var _isWebView = (function () {
+  var _isMobileClient = (function () {
     var ua = navigator.userAgent || '';
-    // Android WebView: Chrome UA with 'wv)' marker
+
+    // Android WebView: explicit wv) marker
     if (/wv\)/.test(ua) && /Android/.test(ua)) return true;
-    // Android without any Chrome version string (older WebView builds)
+    // Older Android WebView builds without Chrome string
     if (/Android/.test(ua) && !/Chrome/.test(ua)) return true;
+
+    // FIX: mobile Chrome (and all mobile browsers) — use pointer media query.
+    // coarse = touch screen = mobile. fine = mouse = desktop.
+    // This is the check that was missing and caused the mobile Chrome loop.
+    try {
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        return true;
+      }
+    } catch (_) {}
+
+    // Fallback: UA screen width heuristic
+    if (window.screen && window.screen.width <= 768) return true;
+
     return false;
   })();
 
@@ -46,24 +59,29 @@ var AqAuth = window.AqAuth = (function () {
    * Exchange the single-use mobile_code from a login response for the JWT.
    * Stores result in localStorage + sessionStorage mirror for Bearer fallback.
    *
+   * Called on ALL devices — server always sends mobile_code in login response.
+   * On desktop the token is stored but _isMobileClient=false so buildRedirectUrl
+   * won't append it to the URL (desktop relies on the httpOnly cookie instead).
+   *
    * @param  {object} data     - The JSON body of a successful login response
    * @param  {string} apiBase  - e.g. window.API_BASE or '' for same-origin
    * @returns {Promise<string>} - The JWT string, or '' if not applicable/failed
    * ──────────────────────────────────────────────────────────────────── */
   async function redeemMobileCode(data, apiBase) {
-    // Only run on WebView or when the server explicitly sends a mobile_code.
-    // Desktop Chrome uses the httpOnly cookie — no localStorage token needed.
     if (!data || !data.mobile_code) return '';
 
     try {
       var url = (apiBase || '') + '/api/v1/auth/mobile-token/' + data.mobile_code;
-      var tr = await fetch(url, { credentials: 'include' });
+      // NOTE: no `credentials: 'include'` here — this endpoint requires NO auth
+      // (the code itself is the credential). Sending credentials would cause a
+      // CORS preflight on some mobile Chrome versions and add latency.
+      var tr = await fetch(url);
       if (!tr.ok) return '';
 
       var td = await tr.json();
       if (!td || !td.token) return '';
 
-      // Persist for Bearer fallback on subsequent page loads
+      // Persist for Bearer fallback on all subsequent page loads
       try { localStorage.setItem('aq_mobile_token', td.token); } catch (_) {}
       try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch (_) {}
 
@@ -74,18 +92,23 @@ var AqAuth = window.AqAuth = (function () {
   }
 
   /* ── buildRedirectUrl ──────────────────────────────────────────────────
-   * Appends the bearer token as a URL hash (#aqt=...) ONLY for WebView
-   * clients where sessionStorage may not survive location.replace().
+   * FIXED: was `if (token && _isWebView)` — excluded mobile Chrome.
    *
-   * On desktop or non-WebView mobile: returns base unmodified — the
-   * httpOnly cookie handles auth on the next page without token in URL.
+   * Now appends #aqt= for ANY mobile client (touch-primary device).
+   * network.js _mobileAuthHeaders() reads the hash on dashboard load,
+   * extracts the token, stores it in localStorage + sessionStorage,
+   * then strips it from the URL. This guarantees the token survives
+   * location.replace() regardless of mobile browser cookie timing.
+   *
+   * Desktop: cookie handles auth. No hash appended. Behaviour unchanged.
    *
    * @param  {string} base   - e.g. '/admin/dashboard.html'
    * @param  {string} token  - JWT from redeemMobileCode, or ''
    * @returns {string}
    * ──────────────────────────────────────────────────────────────────── */
   function buildRedirectUrl(base, token) {
-    if (token && _isWebView) {
+    // FIX: was `_isWebView` — now `_isMobileClient` covers mobile Chrome too
+    if (token && _isMobileClient) {
       return base + '#aqt=' + encodeURIComponent(token);
     }
     return base;
@@ -102,20 +125,14 @@ var AqAuth = window.AqAuth = (function () {
 
   /* ── Public API ─────────────────────────────────────────────────────── */
   var _api = {
-    isWebView:        _isWebView,
+    isMobileClient:   _isMobileClient,
+    isWebView:        _isMobileClient, // back-compat alias — code that checked isWebView still works
     redeemMobileCode: redeemMobileCode,
     buildRedirectUrl: buildRedirectUrl,
     clearMobileAuth:  clearMobileAuth,
   };
 
-  // FIX: Expose on window so all portal scripts (admin.js / salesman.js / delivery.js)
-  // can access AqAuth regardless of whether they share the same script scope.
-  // Previously this IIFE returned into `var AqAuth` which is fine when the script
-  // and its callers are in the same scope — but since each portal script is loaded
-  // as a separate <script> tag, the var is not visible across tags unless it is
-  // attached to window. This was the root cause of "AqAuth is not defined".
   window.AqAuth = _api;
-
   return _api;
 
 })();
