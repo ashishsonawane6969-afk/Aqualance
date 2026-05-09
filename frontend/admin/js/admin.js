@@ -316,6 +316,10 @@ async function submitOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
+    // Mobile guard — same as password flow: block loop if token exchange failed
+    if (!bearer && AqAuth.isMobileClient) {
+      throw new Error('Mobile session setup failed — please try again.');
+    }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
@@ -389,6 +393,10 @@ async function submitSmsOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
+    // Mobile guard — block loop if token exchange failed
+    if (!bearer && AqAuth.isMobileClient) {
+      throw new Error('Mobile session setup failed — please try again.');
+    }
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
@@ -446,6 +454,12 @@ if (document.getElementById('loginForm')) {
     // calling _clearAuthState(), preventing race on slow mobile connections.
     window.isLoggingIn = true;
 
+    // Clear any stale mobile token from a previous expired session.
+    // Ghost token in localStorage → _mobileAuthHeaders() injects it as Bearer
+    // on the new /auth/me → 401 → loop, even on successful re-login.
+    try { localStorage.removeItem('aq_mobile_token'); } catch(_) {}
+    try { sessionStorage.removeItem('aq_mobile_token_mirror'); } catch(_) {}
+
     try {
       const res = await fetch(`${API}/auth/login`, {
         method:      'POST',
@@ -478,6 +492,11 @@ if (document.getElementById('loginForm')) {
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
       const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
+      // Mobile guard: if token exchange failed on mobile, block navigation.
+      // Without this, bearer='' → no #aqt= hash → dashboard /auth/me 401 → loop.
+      if (!bearer && AqAuth.isMobileClient) {
+        throw new Error('Mobile session setup failed — please try again.');
+      }
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
