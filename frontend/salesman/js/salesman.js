@@ -56,6 +56,14 @@ function authHeader() {
     .find(c => c.startsWith('aq_csrf='))?.split('=')[1] || '';
   const headers = { 'Content-Type': 'application/json' };
   if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+  // FIX: Bearer token for mobile — cross-origin cookie unreliable after navigation
+  try {
+    let mt = null;
+    try { const hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/); if (hm) mt = decodeURIComponent(hm[1]); } catch(_) {}
+    if (!mt) { try { mt = localStorage.getItem('aq_mobile_token'); } catch(_) {} }
+    if (!mt) { try { mt = sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) {} }
+    if (mt) headers['Authorization'] = 'Bearer ' + mt;
+  } catch(_) {}
   return headers;
 }
 
