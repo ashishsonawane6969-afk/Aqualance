@@ -1,5 +1,21 @@
 'use strict';
 
+/* ── AqAuth guard ─────────────────────────────────────────── */
+// auth-utils.js MUST be loaded before admin.js. If it somehow isn't,
+// provide a safe no-op fallback so the page does not crash entirely.
+// The real fix is the <script src="/js/auth-utils.js"></script> tag
+// added before admin.js in every HTML page — this is defense-in-depth.
+if (typeof window.AqAuth === 'undefined') {
+  console.error('[admin.js] CRITICAL: auth-utils.js not loaded. ' +
+    'Add <script src="/js/auth-utils.js"></script> before admin.js in HTML.');
+  window.AqAuth = {
+    isWebView: false,
+    redeemMobileCode: async () => '',
+    buildRedirectUrl: (base) => base,
+    clearMobileAuth: () => {},
+  };
+}
+
 /* ── XSS Guard ───────────────────────────────────────────── */
 // All values from the DB rendered into innerHTML MUST pass through _esc().
 function _esc(str) {
