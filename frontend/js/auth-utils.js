@@ -1,19 +1,18 @@
 /**
- * frontend/js/auth-utils.js — FIXED
+ * frontend/js/auth-utils.js
  * ─────────────────────────────────────────────────────────────────
+ * Shared auth helpers for all portals (admin / salesman / delivery).
  *
- * FIXES APPLIED:
- *  FIX-1 (auth-utils) — redeemMobileCode: Added logging, retry, and grace
- *         fallback. Previously swallowed ALL errors silently and returned ''.
- *         Engineers had zero diagnostic information when token exchange failed.
+ * FIX (mobile Chrome login loop):
+ *   buildRedirectUrl previously only appended #aqt= token for _isWebView.
+ *   Mobile Chrome is NOT detected as WebView (no 'wv)' in UA), but it ALSO
+ *   blocks cross-origin httpOnly cookies on cross-site fetches after navigation.
+ *   Result: token stored in localStorage, page navigates, new JS context,
+ *   _mobileAuthHeaders() finds nothing, /auth/me → 401 → redirect loop.
  *
- *  FIX-2 (auth-utils) — redeemMobileCode: Increased exchange timeout to 15s.
- *         On 2G connections the redemption GET can exceed 1s. Default fetch
- *         has no timeout — but the server's 60s TTL means a slow mobile that
- *         takes >60s will get a 401. 15s AbortController gives early feedback.
- *
- *  FIX-3 (auth-utils) — clearMobileAuth: Also clears sessionStorage mirror
- *         key that was sometimes missed on logout.
+ *   Fix: use #aqt= URL hash handoff for ANY mobile browser (not just WebView).
+ *   Desktop Chrome/Firefox on real desktop skips hash (cookie works).
+ *   Detection now uses pointer accuracy (coarse = touch device = mobile).
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -21,8 +20,17 @@ var AqAuth = window.AqAuth = (function () {
   'use strict';
 
   /* ── Device Detection ───────────────────────────────────────────────────
-   * Detects any touch-primary device (mobile Chrome, Android WebView,
-   * iOS WKWebView). Desktop browsers use the httpOnly cookie path.
+   * FIXED: was `_isWebView` — only caught Android WebView ('wv)' UA marker).
+   * Mobile Chrome on Android does NOT have 'wv)' in UA, so it returned false.
+   * buildRedirectUrl then skipped the #aqt= hash handoff.
+   * After location.replace(), mobile Chrome does NOT reliably pass cookies
+   * for cross-origin requests (SameSite=None is honoured for ongoing sessions
+   * but the cookie store is not always flushed before the new page's first
+   * fetch fires — timing race on mobile CPU).
+   *
+   * NEW DETECTION: any touch-primary device (matchMedia pointer:coarse).
+   * This covers: Android Chrome, Android WebView, iOS Safari, iOS WKWebView.
+   * Desktop Chrome/Firefox always return pointer:fine → cookie path used.
    * ──────────────────────────────────────────────────────────────────── */
   var _isMobileClient = (function () {
     var ua = navigator.userAgent || '';
@@ -32,118 +40,135 @@ var AqAuth = window.AqAuth = (function () {
     // Older Android WebView builds without Chrome string
     if (/Android/.test(ua) && !/Chrome/.test(ua)) return true;
 
-    // Mobile Chrome and all mobile browsers — pointer:coarse = touch screen
+    // FIX: mobile Chrome (and all mobile browsers) — use pointer media query.
+    // coarse = touch screen = mobile. fine = mouse = desktop.
+    // This is the check that was missing and caused the mobile Chrome loop.
     try {
       if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
         return true;
       }
     } catch (_) {}
 
-    // Fallback: screen width heuristic
+    // Fallback: UA screen width heuristic
     if (window.screen && window.screen.width <= 768) return true;
 
     return false;
   })();
 
+  // FIX-8 [AqAuth] startup diagnostic — logged once on auth-utils.js init.
+  // Shows client classification and storage availability for debugging.
+  (function() {
+    var _lsOk  = (function() { try { localStorage.setItem('_aqt','1'); localStorage.removeItem('_aqt'); return true; } catch(_) { return false; } })();
+    var _ssOk  = (function() { try { sessionStorage.setItem('_aqt','1'); sessionStorage.removeItem('_aqt'); return true; } catch(_) { return false; } })();
+    var _ua    = (navigator.userAgent || '').slice(0, 80);
+    console.log('[AqAuth] init — isMobileClient:', _isMobileClient,
+      'localStorage:', _lsOk, 'sessionStorage:', _ssOk,
+      'ua:', _ua);
+  })();
+
   /* ── redeemMobileCode ──────────────────────────────────────────────────
    * Exchange the single-use mobile_code from a login response for the JWT.
+   * Stores result in localStorage + sessionStorage mirror for Bearer fallback.
    *
-   * FIX-1: Now logs ALL failures with status codes and error messages.
-   *        Previously: all errors silently caught → '' → no diagnostics.
-   *        Now: console.error on every failure path.
+   * Called on ALL devices — server always sends mobile_code in login response.
+   * On desktop the token is stored but _isMobileClient=false so buildRedirectUrl
+   * won't append it to the URL (desktop relies on the httpOnly cookie instead).
    *
-   * FIX-2: Retry logic — one retry after 600ms on network failure.
-   *        Exchange codes are single-use; retry only fires on network
-   *        errors (TypeError / AbortError), not on 4xx server responses
-   *        (those would just fail again with the same expired/invalid code).
-   *
-   * FIX-3: AbortController timeout (15s). Prevents indefinite hang on 2G.
-   *        The server TTL is 60s so 15s still leaves margin.
-   *
-   * @param  {object} data     - JSON body of a successful login response
-   * @param  {string} apiBase  - e.g. window.API_BASE or ''
-   * @param  {number} [_retry] - internal retry counter (don't pass externally)
-   * @returns {Promise<string>} - JWT string, or '' if failed
+   * @param  {object} data     - The JSON body of a successful login response
+   * @param  {string} apiBase  - e.g. window.API_BASE or '' for same-origin
+   * @returns {Promise<string>} - The JWT string, or '' if not applicable/failed
    * ──────────────────────────────────────────────────────────────────── */
-  async function redeemMobileCode(data, apiBase, _retry) {
-    if (!data || !data.mobile_code) {
-      // Server didn't send mobile_code — this is a server-side config issue.
-      console.error('[AqAuth] redeemMobileCode: no mobile_code in login response. '
-        + 'Check authController.js login() — it should always include mobile_code.');
-      return '';
-    }
+  async function redeemMobileCode(data, apiBase) {
+    // FIX-3: Add retry (once after 500ms), per-attempt timeout, and structured
+    // diagnostics. Original had no retry and silent catch — a single network
+    // blip on 2G silently dropped the Bearer token with no recovery path.
+    // Now distinguishes: network error vs 401 (expired/redeemed) vs timeout vs
+    // bad JSON. Returns '' on failure so callers fall back to cookie auth.
+    if (!data || !data.mobile_code) return '';
 
-    _retry = _retry || 0;
+    var url      = (apiBase || '') + '/api/v1/auth/mobile-token/' + data.mobile_code;
+    var MAX_TRIES = 2;     // one retry after initial failure
+    var TIMEOUT   = 5000;  // 5s per attempt — prevents hung navigation on 2G
 
-    try {
-      var url = (apiBase || '') + '/api/v1/auth/mobile-token/' + data.mobile_code;
+    for (var attempt = 0; attempt < MAX_TRIES; attempt++) {
+      if (attempt > 0) {
+        // Wait 500ms before retry — gives transient network issues time to clear
+        await new Promise(function(r) { setTimeout(r, 500); });
+      }
 
-      // FIX-3: AbortController timeout (15s) — prevents indefinite hang on 2G
-      var controller = new AbortController();
-      var timeoutId  = setTimeout(function() { controller.abort(); }, 15000);
+      var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var tid = controller ? setTimeout(function() { controller.abort(); }, TIMEOUT) : null;
 
-      var tr;
       try {
-        tr = await fetch(url, { signal: controller.signal });
-      } finally {
-        clearTimeout(timeoutId);
+        // NOTE: no `credentials: 'include'` — the code IS the credential.
+        // Sending credentials causes CORS preflight on some mobile Chrome builds.
+        var tr = await fetch(url, controller ? { signal: controller.signal } : {});
+        if (tid) clearTimeout(tid);
+
+        // FIX-8 [AqAuth] structured log
+        console.log('[AqAuth] redeemMobileCode attempt', attempt + 1,
+          '— status:', tr.status, 'ok:', tr.ok,
+          'mobile:', !!_isMobileClient, 'url:', url.slice(-20));
+
+        if (tr.status === 401) {
+          // 401 = expired or already redeemed — retry won't help (code is gone)
+          console.warn('[AqAuth] redeemMobileCode: 401 — code expired or already redeemed. No retry.');
+          return '';
+        }
+        if (!tr.ok) {
+          console.warn('[AqAuth] redeemMobileCode: HTTP', tr.status, '— attempt', attempt + 1);
+          continue; // retry on 5xx / network errors
+        }
+
+        var td;
+        try { td = await tr.json(); }
+        catch (jsonErr) {
+          console.warn('[AqAuth] redeemMobileCode: invalid JSON —', jsonErr.message);
+          continue;
+        }
+
+        if (!td || !td.token) {
+          console.warn('[AqAuth] redeemMobileCode: response ok but no token field');
+          return '';
+        }
+
+        // Persist for Bearer fallback on all subsequent page loads
+        try { localStorage.setItem('aq_mobile_token', td.token); } catch (_) {}
+        try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch (_) {}
+
+        console.log('[AqAuth] redeemMobileCode: success on attempt', attempt + 1);
+        return td.token;
+
+      } catch (err) {
+        if (tid) clearTimeout(tid);
+        var isTimeout = err && err.name === 'AbortError';
+        console.warn('[AqAuth] redeemMobileCode:', isTimeout ? 'TIMEOUT' : 'network error',
+          '— attempt', attempt + 1, '—', err && err.message);
+        // Continue to retry on timeout/network error
       }
-
-      if (!tr.ok) {
-        // FIX-1: Log server-side rejection with status code
-        console.error('[AqAuth] redeemMobileCode: server rejected code —',
-          tr.status, tr.statusText,
-          '| Possible causes: multi-instance server (code on different node), '
-          + 'code expired (>60s), or code already redeemed.');
-        return '';
-      }
-
-      var td = await tr.json();
-      if (!td || !td.token) {
-        console.error('[AqAuth] redeemMobileCode: response OK but no token field.',
-          'Response:', JSON.stringify(td));
-        return '';
-      }
-
-      // Persist Bearer fallback for all subsequent page loads
-      try { localStorage.setItem('aq_mobile_token', td.token); } catch (e) {
-        // FIX-1: Log storage failures — critical for WebView diagnosis
-        console.error('[AqAuth] redeemMobileCode: localStorage.setItem failed:', e,
-          '| If this is Flutter WebView, ensure domStorageEnabled: true in WebView config.');
-      }
-      try { sessionStorage.setItem('aq_mobile_token_mirror', td.token); } catch (e) {
-        console.warn('[AqAuth] redeemMobileCode: sessionStorage.setItem failed:', e);
-      }
-
-      console.info('[AqAuth] redeemMobileCode: token stored successfully ✓');
-      return td.token;
-
-    } catch (err) {
-      var isNetworkErr = err.name === 'TypeError' || err.name === 'AbortError';
-
-      // FIX-2: Retry once on network errors only (not 4xx — those won't change)
-      // Single-use codes: retry is safe because if the first request failed
-      // at network level, the server never processed it and the code is intact.
-      if (isNetworkErr && _retry < 1) {
-        console.warn('[AqAuth] redeemMobileCode: network error, retrying in 600ms —', err.message);
-        await new Promise(function(r) { setTimeout(r, 600); });
-        return redeemMobileCode(data, apiBase, _retry + 1);
-      }
-
-      // FIX-1: Log the actual failure reason
-      console.error('[AqAuth] redeemMobileCode: FAILED —', err.name, err.message,
-        '| retry count:', _retry,
-        '| This will cause "mobile setup failed" error on login.');
-      return '';
     }
+
+    console.warn('[AqAuth] redeemMobileCode: all attempts failed — falling back to cookie auth');
+    return '';
   }
 
   /* ── buildRedirectUrl ──────────────────────────────────────────────────
-   * Appends #aqt= for ANY mobile client (touch-primary device).
+   * FIXED: was `if (token && _isWebView)` — excluded mobile Chrome.
+   *
+   * Now appends #aqt= for ANY mobile client (touch-primary device).
    * network.js _mobileAuthHeaders() reads the hash on dashboard load,
-   * extracts the token, stores it, then strips the hash.
+   * extracts the token, stores it in localStorage + sessionStorage,
+   * then strips it from the URL. This guarantees the token survives
+   * location.replace() regardless of mobile browser cookie timing.
+   *
+   * Desktop: cookie handles auth. No hash appended. Behaviour unchanged.
+   *
+   * @param  {string} base   - e.g. '/admin/dashboard.html'
+   * @param  {string} token  - JWT from redeemMobileCode, or ''
+   * @returns {string}
    * ──────────────────────────────────────────────────────────────────── */
   function buildRedirectUrl(base, token) {
+    // FIX: was `_isWebView` — now `_isMobileClient` covers mobile Chrome too
     if (token && _isMobileClient) {
       return base + '#aqt=' + encodeURIComponent(token);
     }
@@ -152,17 +177,17 @@ var AqAuth = window.AqAuth = (function () {
 
   /* ── clearMobileAuth ───────────────────────────────────────────────────
    * Remove all Bearer fallback state on logout.
-   * FIX-3: Now clears ALL keys consistently.
+   * Call alongside the server-side cookie clear.
    * ──────────────────────────────────────────────────────────────────── */
   function clearMobileAuth() {
-    try { localStorage.removeItem('aq_mobile_token'); }   catch (_) {}
+    try { localStorage.removeItem('aq_mobile_token'); } catch (_) {}
     try { sessionStorage.removeItem('aq_mobile_token_mirror'); } catch (_) {}
   }
 
   /* ── Public API ─────────────────────────────────────────────────────── */
   var _api = {
     isMobileClient:   _isMobileClient,
-    isWebView:        _isMobileClient, // back-compat alias
+    isWebView:        _isMobileClient, // back-compat alias — code that checked isWebView still works
     redeemMobileCode: redeemMobileCode,
     buildRedirectUrl: buildRedirectUrl,
     clearMobileAuth:  clearMobileAuth,
