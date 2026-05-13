@@ -315,14 +315,20 @@ exports.login = async (req, res) => {
     // Including it in the login JSON does not expose the raw JWT — only a short-lived
     // opaque code that is useless after first redemption or 60 seconds, whichever comes first.
     const mobileCode = crypto.randomBytes(32).toString('hex');
-    _mobileExchangeCodes.set(mobileCode, {
-      token:     token,
-      expiresAt: Date.now() + EXCHANGE_TTL_MS,
+    const mecExpiresAt = new Date(Date.now() + EXCHANGE_TTL_MS);
+
+    // FIX-4: Store in DB — visible to ALL Railway instances (multi-instance safe).
+    // Fire-and-forget: login succeeds even if DB write fails.
+    await db.query(
+      'INSERT INTO mobile_exchange_codes (code, token, expires_at) VALUES (?, ?, ?)',
+      [mobileCode, token, mecExpiresAt]
+    ).catch(dbErr => {
+      console.error('[auth] Failed to store mobile exchange code:', dbErr.message);
     });
 
     res.json({
       success: true,
-      mobile_code: mobileCode, // single-use, 60s TTL — Android WebView Bearer fallback
+      mobile_code: mobileCode, // single-use, 60s TTL, DB-backed — multi-instance safe
       user: {
         id:                   user.id,
         name:                 user.name,
@@ -557,27 +563,35 @@ function parseExpiry(str) {
    response, so XSS on the login page cannot steal it.
 ══════════════════════════════════════════════════════════════════════════ */
 
-// In-memory store: code → { token, expiresAt }
-// Fine for single-node Railway deployment. For multi-node: use Redis.
-const _mobileExchangeCodes = new Map();
-const EXCHANGE_TTL_MS = 60 * 1000; // 60 seconds
-exports._mobileExchangeCodes = _mobileExchangeCodes;
-exports.EXCHANGE_TTL_MS      = EXCHANGE_TTL_MS;
+// FIX-4: Exchange codes now stored in MySQL instead of in-memory Map.
+// WHY: Railway can run multiple Node.js instances. The in-memory Map is
+// per-process — login hits Instance A (code stored there), redemption GET
+// hits Instance B (Map is empty) → 401 → bearer='' → ~50% mobile login failure.
+// Zero new infrastructure: uses the existing db pool.
+//
+// PREREQUISITE — run once in migration or ensureAuthTables():
+//   CREATE TABLE IF NOT EXISTS mobile_exchange_codes (
+//     code        CHAR(64)  NOT NULL,
+//     token       TEXT      NOT NULL,
+//     created_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//     expires_at  DATETIME  NOT NULL,
+//     redeemed_at DATETIME  NULL     DEFAULT NULL,
+//     PRIMARY KEY (code),
+//     INDEX idx_mec_expires (expires_at)
+//   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-// Cleanup stale codes every 5 minutes (prevent memory leak)
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, entry] of _mobileExchangeCodes) {
-    if (entry.expiresAt < now) _mobileExchangeCodes.delete(code);
-  }
-}, 5 * 60 * 1000).unref();
+const EXCHANGE_TTL_MS = 60 * 1000; // 60 seconds — unchanged
+exports.EXCHANGE_TTL_MS = EXCHANGE_TTL_MS;
+
+// Nightly cleanup: call from existing maybeCleanupRevocations() or a cron.
+// db.query("DELETE FROM mobile_exchange_codes WHERE expires_at < NOW() OR redeemed_at IS NOT NULL")
 
 /**
  * POST /api/v1/auth/mobile-token
  * Requires: valid session cookie (auth middleware applied at route level)
  * Issues a one-time exchange code the mobile client can redeem for a Bearer token.
  */
-exports.issueMobileTokenCode = (req, res) => {
+exports.issueMobileTokenCode = async (req, res) => {
   // req.user is set by auth() middleware — token already verified
   // Re-read the raw token from the cookie to give back to mobile
   const rawToken = req.cookies?.[COOKIE_NAME] || null;
@@ -585,11 +599,19 @@ exports.issueMobileTokenCode = (req, res) => {
     return res.status(401).json({ success: false, message: 'No session cookie found.' });
   }
 
-  const code = crypto.randomBytes(32).toString('hex');
-  _mobileExchangeCodes.set(code, {
-    token:     rawToken,
-    expiresAt: Date.now() + EXCHANGE_TTL_MS,
-  });
+  const code      = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + EXCHANGE_TTL_MS);
+
+  try {
+    // FIX-4: DB-backed — safe for multi-instance Railway deployments.
+    await db.query(
+      'INSERT INTO mobile_exchange_codes (code, token, expires_at) VALUES (?, ?, ?)',
+      [code, rawToken, expiresAt]
+    );
+  } catch (dbErr) {
+    console.error('[auth] issueMobileTokenCode: DB insert failed:', dbErr.message);
+    return res.status(500).json({ success: false, message: 'Could not issue exchange code.' });
+  }
 
   console.info(`[auth] Mobile token exchange code issued — user: ${req.user.id} — IP: ${req.ip}`);
   res.json({ success: true, code });
@@ -600,28 +622,71 @@ exports.issueMobileTokenCode = (req, res) => {
  * Redeems a one-time code for the JWT string.
  * No auth middleware — the code itself is the credential.
  */
-exports.redeemMobileTokenCode = (req, res) => {
+exports.redeemMobileTokenCode = async (req, res) => {
+  // FIX-4 PATCH-3: Prevent SW/proxy caching of this response.
+  // A cached 401 or stale success would permanently break mobile auth.
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+
   const { code } = req.params;
   if (!code || typeof code !== 'string' || !/^[0-9a-f]{64}$/.test(code)) {
     return res.status(400).json({ success: false, message: 'Invalid exchange code.' });
   }
 
-  const entry = _mobileExchangeCodes.get(code);
-  if (!entry) {
-    return res.status(401).json({ success: false, message: 'Exchange code not found or already used.' });
-  }
-  if (entry.expiresAt < Date.now()) {
-    _mobileExchangeCodes.delete(code);
-    return res.status(401).json({ success: false, message: 'Exchange code expired. Please log in again.' });
-  }
+  try {
+    // FIX-4: Atomic soft-delete via UPDATE — race-safe.
+    // Two concurrent redemption requests cannot both win:
+    //   affectedRows=1 → this request wins, proceeds to fetch token.
+    //   affectedRows=0 → expired, already redeemed, or not found → 401.
+    const [updateResult] = await db.query(
+      `UPDATE mobile_exchange_codes
+          SET redeemed_at = NOW()
+        WHERE code        = ?
+          AND redeemed_at IS NULL
+          AND expires_at  > NOW()`,
+      [code]
+    );
 
-  // Single-use: delete immediately
-  _mobileExchangeCodes.delete(code);
+    if (updateResult.affectedRows === 0) {
+      // Diagnose: expired vs already redeemed vs not found
+      const [[existing]] = await db.query(
+        'SELECT redeemed_at, expires_at FROM mobile_exchange_codes WHERE code = ? LIMIT 1',
+        [code]
+      ).catch(() => [[null]]);
 
-  console.info(`[auth] Mobile token exchange redeemed — IP: ${req.ip}`);
-  // ✅ FIX: Return the actual JWT so the mobile client can store it in localStorage.
-  // Previously this returned only { success: true, message } — the frontend's
-  // `if (td.token) localStorage.setItem('aq_mobile_token', td.token)` check
-  // always failed silently, meaning Android WebView never got the Bearer fallback.
-  res.json({ success: true, token: entry.token });
+      const codeShort = code.slice(0, 8) + '...';
+      if (!existing) {
+        console.warn('[auth] Mobile token redemption: code not found —', codeShort);
+        return res.status(401).json({ success: false, message: 'Exchange code not found or already used.' });
+      }
+      if (existing.redeemed_at) {
+        console.warn('[auth] Mobile token redemption: already redeemed —', codeShort);
+        return res.status(401).json({ success: false, message: 'Exchange code already redeemed.' });
+      }
+      console.warn('[auth] Mobile token redemption: expired —', codeShort);
+      return res.status(401).json({ success: false, message: 'Exchange code expired. Please log in again.' });
+    }
+
+    // Fetch token (code now marked redeemed — safe to read)
+    const [[row]] = await db.query(
+      'SELECT token FROM mobile_exchange_codes WHERE code = ? LIMIT 1',
+      [code]
+    );
+
+    if (!row || !row.token) {
+      console.error('[auth] Mobile token redemption: row missing after update —', code.slice(0, 8) + '...');
+      return res.status(500).json({ success: false, message: 'Token retrieval failed. Please log in again.' });
+    }
+
+    // Non-blocking cleanup — redeemed codes no longer needed
+    db.query('DELETE FROM mobile_exchange_codes WHERE code = ?', [code])
+      .catch(e => console.warn('[auth] Mobile code cleanup failed:', e.message));
+
+    console.info(`[auth] Mobile token exchange redeemed — IP: ${req.ip}`);
+    return res.json({ success: true, token: row.token });
+
+  } catch (err) {
+    console.error('[auth] redeemMobileTokenCode error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error during token exchange.' });
+  }
 };
