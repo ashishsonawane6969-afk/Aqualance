@@ -428,3 +428,38 @@ SELECT
 FROM information_schema.tables t
 WHERE t.table_schema = DATABASE()
 ORDER BY t.table_name;
+
+
+------------------------------------------------------------------------------------------------------------------
+
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- MIGRATION: mobile_exchange_codes
+-- Run BEFORE deploying the authController.js Fix-4 patch.
+-- Safe to run multiple times (IF NOT EXISTS).
+-- ─────────────────────────────────────────────────────────────────────────
+--
+-- WHY: Replace in-memory Map with DB-backed exchange codes.
+-- Railway multi-instance: login hits Instance A, redemption hits Instance B.
+-- In-memory Map = per process → 401 → bearer='' → ~50% mobile login failure.
+--
+-- WHAT: Single-use, 60-second TTL codes. Atomic redemption via UPDATE.
+-- Race-safe: two concurrent redemption requests cannot both win.
+-- ─────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS mobile_exchange_codes (
+  code        CHAR(64)  NOT NULL              COMMENT '256-bit entropy hex code — the credential',
+  token       TEXT      NOT NULL              COMMENT 'JWT to hand to mobile client on redemption',
+  created_at  DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at  DATETIME  NOT NULL              COMMENT 'TTL: 60s from creation',
+  redeemed_at DATETIME  NULL     DEFAULT NULL COMMENT 'Set atomically on first redemption. NULL = not yet redeemed.',
+  PRIMARY KEY (code),
+  INDEX idx_mec_expires (expires_at)          -- efficient TTL cleanup
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- OPTIONAL: Add cleanup to your existing nightly cron / maybeCleanupRevocations()
+-- ─────────────────────────────────────────────────────────────────────────
+-- DELETE FROM mobile_exchange_codes
+--   WHERE expires_at < NOW()
+--      OR redeemed_at IS NOT NULL;
