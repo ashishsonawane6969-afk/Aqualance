@@ -219,6 +219,16 @@ console.log("✅ NEW network.js LOADED");
     // One setTimeout(0) is sufficient — localStorage reads are synchronous once
     // the write has been committed. The 1-frame delay is imperceptible to users.
     setTimeout(function() {
+      // FIX-8 [AqNet] post-delay diagnostic — fires AFTER the 50ms flush window.
+      // The PRE-delay log above showing ls_token:false is normal — it ran before
+      // the Android SQLite write completed. THIS log shows the actual token state.
+      var _postDelayToken = (function() { try { return !!localStorage.getItem('aq_mobile_token'); } catch(_) { return 'err'; } })();
+      var _postDelayMirror = (function() { try { return !!sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) { return 'err'; } })();
+      console.log('[AqNet] _runAuthGate POST-DELAY — ls_token:', _postDelayToken,
+        'ss_mirror:', _postDelayMirror,
+        'hash:', window.location.hash.slice(0, 30),
+        'delay: 50ms');
+
     fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
         if (!res.ok) {
@@ -261,7 +271,10 @@ console.log("✅ NEW network.js LOADED");
         _clearAuthState();
         window.location.replace(portalPrefix + '/login.html');
       });
-    }, 0); // end setTimeout — closes the mobile localStorage flush defer
+    }, 50); // FIX-7: 50ms floor for Android SQLite localStorage flush latency.
+            // setTimeout(0) insufficient on mid-range Android — WebView localStorage
+            // is SQLite-backed; async I/O typically 5-40ms on real devices.
+            // 50ms = ~3 frames at 60fps, imperceptible to users.
   }
 
   /* ══════════════════════════════════════════════════════════════
