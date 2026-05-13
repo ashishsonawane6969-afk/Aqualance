@@ -304,6 +304,10 @@ async function submitOtp() {
   }
   btn.textContent = 'Verifying…'; btn.disabled = true;
 
+  // FIX-5: Prevent visibilitychange in _runAuthGate from calling _clearAuthState()
+  // and wiping aq_mfa_token while the MFA verify fetch is in-flight.
+  window.isLoggingIn = true;
+
   try {
     const res = await fetch(`${API}/auth/mfa/verify-login`, {
       method:      'POST',
@@ -316,10 +320,13 @@ async function submitOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
-    // Mobile guard — same as password flow: block loop if token exchange failed
+
+    // FIX-2: Same fallback as login submit — don't block on Bearer failure.
     if (!bearer && AqAuth.isMobileClient) {
-      throw new Error('Mobile session setup failed — please try again.');
+      console.warn('[admin.js] MFA: Bearer exchange failed — proceeding with cookie auth.');
+      await new Promise(r => setTimeout(r, 150));
     }
+
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
@@ -327,6 +334,7 @@ async function submitOtp() {
     }
     window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
   } catch (err) {
+    window.isLoggingIn = false; // FIX-5: Release lock on error
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
     btn.textContent = 'Verify'; btn.disabled = false;
@@ -382,6 +390,10 @@ async function submitSmsOtp() {
   }
 
   btn.textContent = 'Verifying…'; btn.disabled = true;
+
+  // FIX-5: Prevent visibilitychange race during SMS OTP verification.
+  window.isLoggingIn = true;
+
   try {
     const res = await fetch(`${API}/auth/verify-otp`, {
       method: 'POST', credentials: 'include',
@@ -393,14 +405,18 @@ async function submitSmsOtp() {
     if (!data.success) throw new Error(data.message);
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
-    // Mobile guard — block loop if token exchange failed
+
+    // FIX-2: Don't block on Bearer failure — cookie is the primary auth.
     if (!bearer && AqAuth.isMobileClient) {
-      throw new Error('Mobile session setup failed — please try again.');
+      console.warn('[admin.js] SMS OTP: Bearer exchange failed — proceeding with cookie auth.');
+      await new Promise(r => setTimeout(r, 150));
     }
+
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
   } catch (err) {
+    window.isLoggingIn = false; // FIX-5: Release lock on error
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
     btn.textContent = 'Verify OTP'; btn.disabled = false;
@@ -492,11 +508,20 @@ if (document.getElementById('loginForm')) {
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
       const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
-      // Mobile guard: if token exchange failed on mobile, block navigation.
-      // Without this, bearer='' → no #aqt= hash → dashboard /auth/me 401 → loop.
+
+      // FIX-2: Remove hard-block on Bearer failure.
+      // httpOnly cookie IS set — the session is valid. If Bearer exchange failed
+      // (network blip, multi-instance server, slow 2G), cookie auth handles
+      // /auth/me on dashboard. Throwing here discards a working session.
       if (!bearer && AqAuth.isMobileClient) {
-        throw new Error('Mobile session setup failed — please try again.');
+        console.warn('[admin.js] Bearer exchange failed on mobile — proceeding with cookie auth. '
+          + 'If login loops, check: (1) Flutter domStorageEnabled, '
+          + '(2) Railway single-instance (now fixed by DB exchange codes), '
+          + '(3) network.js setTimeout delay.');
+        // Short delay: lets Android WebView commit Set-Cookie before next page fetch fires.
+        await new Promise(r => setTimeout(r, 150));
       }
+
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
