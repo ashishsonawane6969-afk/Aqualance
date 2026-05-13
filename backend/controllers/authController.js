@@ -111,6 +111,20 @@ async function maybeCleanupRevocations() {
   } catch (e) {
     console.warn('[auth] Revocation cleanup error:', e.message);
   }
+
+  // FIX-4 cleanup: purge expired/redeemed mobile exchange codes.
+  // Redeemed codes have redeemed_at set; expired codes are past expires_at.
+  // Both are safe to delete — they cannot be redeemed again.
+  try {
+    const [mec] = await db.query(
+      "DELETE FROM mobile_exchange_codes WHERE expires_at < NOW() OR redeemed_at IS NOT NULL"
+    );
+    if (mec.affectedRows > 0) {
+      console.info(`[auth] Cleaned up ${mec.affectedRows} mobile_exchange_codes rows.`);
+    }
+  } catch (e) {
+    console.warn('[auth] mobile_exchange_codes cleanup error:', e.message);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
