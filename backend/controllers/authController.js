@@ -88,14 +88,37 @@ function cookieOptions(maxAgeMs) {
 
   return {
     httpOnly: true,
-    secure:   useSameSiteNone,           // Secure MUST accompany SameSite=None
+    secure:   useSameSiteNone,
     sameSite: useSameSiteNone ? 'None' : 'Lax',
     maxAge:   maxAgeMs,
     path:     '/',
-    // Do NOT set domain — omitting domain scopes the cookie to the exact host
-    // (railway.app subdomain). Setting domain='.railway.app' scopes it too
-    // broadly and browsers may reject it.
+    // DTTC FIX: Chrome's navigation-chain tracking protection deletes cookies
+    // for cross-site domains visited without user interaction (the Railway API
+    // domain is hit via fetch, never directly by the user). Adding Partitioned
+    // (CHIPS) scopes the cookie to the top-level site partition so Chrome does
+    // not treat it as a third-party tracking cookie and nuke it.
+    // Note: partitioned cookies require SameSite=None + Secure.
+    // Express doesn't have a first-class `partitioned` option yet — set via
+    // the raw header append below. For now flag it so the CDN/proxy can add it.
+    // TODO: when Express supports `partitioned: true`, replace comment with flag.
   };
+}
+
+// Middleware: append Partitioned to Set-Cookie when SameSite=None is present.
+// Call this AFTER res.cookie() in login/refresh handlers.
+function appendPartitioned(res) {
+  try {
+    var headers = res.getHeader('Set-Cookie');
+    if (!headers) return;
+    var arr = Array.isArray(headers) ? headers : [headers];
+    var patched = arr.map(function(h) {
+      if (/SameSite=None/i.test(h) && !/Partitioned/i.test(h)) {
+        return h + '; Partitioned';
+      }
+      return h;
+    });
+    res.setHeader('Set-Cookie', patched);
+  } catch (_) {}
 }
 
 /* ── Nightly cleanup: remove expired jti rows ────────────────────────────── */
@@ -290,7 +313,7 @@ exports.login = async (req, res) => {
     const maxAgeMs = parseExpiry(expiresIn);
 
     // Fix 2: Set httpOnly cookie — token is inaccessible to JavaScript
-    res.cookie(COOKIE_NAME, token, cookieOptions(maxAgeMs));
+    res.cookie(COOKIE_NAME, token, cookieOptions(maxAgeMs)); appendPartitioned(res);
 
     console.info(
       `[auth] Login — user: ${user.id} role: ${user.role} — ` +
@@ -486,7 +509,7 @@ exports.changePassword = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn, algorithm: 'HS256' }
     );
-    res.cookie(COOKIE_NAME, token, cookieOptions(parseExpiry(expiresIn)));
+    res.cookie(COOKIE_NAME, token, cookieOptions(parseExpiry(expiresIn))); appendPartitioned(res);
 
     console.info(`[auth] Password changed — user: ${user.id} — IP: ${req.ip}`);
     res.json({ success: true, message: 'Password changed successfully' });
