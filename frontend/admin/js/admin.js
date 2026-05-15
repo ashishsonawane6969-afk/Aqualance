@@ -116,7 +116,7 @@ function authHeader() {
     }
     // sessionStorage mirror (fast in-page cache)
     if (!mobileToken) {
-      try { mobileToken = sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) {}
+      try { mobileToken = sessionStorage.getItem('aq_token_mirror'); } catch(_) {}
     }
     if (mobileToken) {
       headers['Authorization'] = 'Bearer ' + mobileToken;
@@ -474,7 +474,7 @@ if (document.getElementById('loginForm')) {
     // Ghost token in localStorage → _mobileAuthHeaders() injects it as Bearer
     // on the new /auth/me → 401 → loop, even on successful re-login.
     try { localStorage.removeItem('aq_mobile_token'); } catch(_) {}
-    try { sessionStorage.removeItem('aq_mobile_token_mirror'); } catch(_) {}
+    try { sessionStorage.removeItem('aq_token_mirror'); } catch(_) {}
 
     try {
       const res = await fetch(`${API}/auth/login`, {
@@ -525,6 +525,10 @@ if (document.getElementById('loginForm')) {
       if (data.user.must_change_password) {
         window.location.replace('/admin/change-password.html');
         return;
+      }
+      if (bearer) {
+        try { localStorage.setItem('aq_mobile_token', bearer); } catch(_) {}
+        try { sessionStorage.setItem('aq_token_mirror', bearer); } catch(_) {}
       }
       window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
     } catch (err) {
