@@ -42,7 +42,7 @@ function authHeader() {
     let mt = null;
     try { const hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/); if (hm) mt = decodeURIComponent(hm[1]); } catch(_) {}
     if (!mt) { try { mt = localStorage.getItem('aq_mobile_token'); } catch(_) {} }
-    if (!mt) { try { mt = sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) {} }
+    if (!mt) { try { mt = sessionStorage.getItem('aq_token_mirror'); } catch(_) {} }
     if (mt) headers['Authorization'] = 'Bearer ' + mt;
   } catch(_) {}
   return headers;
