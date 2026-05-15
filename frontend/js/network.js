@@ -36,57 +36,57 @@ console.log("✅ NEW network.js LOADED");
   // by the mobile-token exchange that runs immediately after login.
   var _memToken = null; // in-memory fallback: survives location.replace() within same JS heap
 
+  // FIX-5: startup hydration — read localStorage immediately so _memToken
+  // is populated before any auth gate or header builder runs.
+  try {
+    var _storedToken = localStorage.getItem('aq_mobile_token');
+    if (_storedToken) {
+      sessionStorage.setItem('aq_token_mirror', _storedToken);
+      _memToken = _storedToken;
+      console.log('[AqNet] startup hydration success');
+    }
+  } catch (e) {
+    console.warn('[AqNet] startup hydration failed', e);
+  }
+
   function _mobileAuthHeaders() {
     var headers = { 'Content-Type': 'application/json' };
     try {
-      // FIX (mobile Chrome): Priority order changed.
-      // Old order: ssMirror | _memToken | ssMirror | lsToken
-      // Problem: on mobile Chrome, sessionStorage is cleared between cross-origin
-      // navigations AND _memToken resets on every page load (new JS heap).
-      // This left lsToken as last resort — but the log showed ls_token: false
-      // because localStorage.getItem was called BEFORE the #aqt= URL token
-      // was written back to localStorage (the hash hydration happened after
-      // the token variable was already assigned).
-      //
-      // NEW order: urlToken first (most reliable cross-navigation channel),
-      // then localStorage (survives navigation on all mobile browsers),
-      // then sessionStorage mirror (fast in-page cache),
-      // then _memToken (in-page only — only useful for same-page re-calls).
-      //
-      // The URL hash (#aqt=) is written by buildRedirectUrl() in auth-utils.js
-      // BEFORE location.replace() fires. It survives navigation because it is
-      // part of the URL itself, not a storage API. network.js reads it here,
-      // writes it back to localStorage + sessionStorage, then strips the hash.
-      var urlToken = null;
+      var hashToken = '';
       try {
-        var hashMatch = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/);
-        if (hashMatch) urlToken = decodeURIComponent(hashMatch[1]);
-      } catch(_) {}
-      // FIX: read localStorage AFTER resolving urlToken so hydration below
-      // can skip redundant writes when urlToken === lsToken
-      var lsToken  = localStorage.getItem('aq_mobile_token');
-      var ssMirror = sessionStorage.getItem('aq_mobile_token_mirror');
-      var token = urlToken || lsToken || _memToken || ssMirror;
-      console.log('[AqNet] _mobileAuthHeaders — ss_mirror:', !!ssMirror, 'ls_token:', !!lsToken, 'url_token:', !!urlToken, 'has_auth:', !!token, 'path:', window.location.pathname);
-      if (token) {
-        _memToken = token; // cache in RAM — survives WebView localStorage/sessionStorage flush
-        headers['Authorization'] = 'Bearer ' + token;
-        // Hydrate persistent storage from URL token so subsequent requests work
-        if (urlToken && !ssMirror) {
-          try { sessionStorage.setItem('aq_mobile_token_mirror', urlToken); } catch(_) {}
-        }
-        if (urlToken && !lsToken) {
-          try { localStorage.setItem('aq_mobile_token', urlToken); } catch(_) {}
-        }
-        // Clean the token from the URL bar so it's not visible / bookmarkable
-        if (urlToken && window.history && window.history.replaceState) {
-          try {
-            var cleanHash = window.location.hash.replace(/[#&]?aqt=[A-Za-z0-9._%-]+/, '').replace(/^#$/, '');
-            window.history.replaceState(null, '', window.location.pathname + window.location.search + cleanHash);
-          } catch(_) {}
-        }
+        hashToken = new URLSearchParams(
+          location.hash.replace('#', '?')
+        ).get('aqt') || '';
+      } catch (_) {}
+
+      var ssToken = '';
+      var lsToken = '';
+      try { ssToken = sessionStorage.getItem('aq_token_mirror') || ''; } catch (_) {}
+      try { lsToken = localStorage.getItem('aq_mobile_token') || ''; } catch (_) {}
+
+      var token = hashToken || lsToken || ssToken || _memToken;
+
+      console.log('[AqNet] _mobileAuthHeaders',
+        'ss_mirror:', !!ssToken,
+        'ls_token:', !!lsToken,
+        'url_token:', !!hashToken,
+        'has_auth:', !!token,
+        'path:', window.location.pathname);
+
+      if (hashToken) {
+        try { localStorage.setItem('aq_mobile_token', hashToken); } catch (_) {}
+        try { sessionStorage.setItem('aq_token_mirror', hashToken); } catch (_) {}
+        try {
+          history.replaceState(null, '', location.pathname + location.search);
+        } catch (_) {}
       }
-    } catch(_) {}
+
+      if (token) {
+        _memToken = token;
+        headers['Authorization'] = 'Bearer ' + token;
+        headers['x-auth-token']  = token;
+      }
+    } catch (_) {}
     return headers;
   }
 
@@ -102,7 +102,7 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.setItem('aq_logged_out', '1');
       // ANDROID: clear Bearer fallback token so stale token doesn't re-auth
       localStorage.removeItem('aq_mobile_token');
-      sessionStorage.removeItem('aq_mobile_token_mirror');
+      sessionStorage.removeItem('aq_token_mirror');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════
@@ -196,7 +196,7 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
-    console.log('[AqNet] _runAuthGate DASHBOARD — token_mirror:', !!sessionStorage.getItem('aq_mobile_token_mirror'), 'ls_token:', !!localStorage.getItem('aq_mobile_token'), 'hash:', window.location.hash.slice(0,20));
+    console.log('[AqNet] _runAuthGate DASHBOARD — token_mirror:', !!sessionStorage.getItem('aq_token_mirror'), 'ls_token:', !!localStorage.getItem('aq_mobile_token'), 'hash:', window.location.hash.slice(0,20));
 
     // FIX (mobile Chrome login loop): defer auth gate by one microtask tick.
     //
@@ -223,11 +223,11 @@ console.log("✅ NEW network.js LOADED");
       // The PRE-delay log above showing ls_token:false is normal — it ran before
       // the Android SQLite write completed. THIS log shows the actual token state.
       var _postDelayToken = (function() { try { return !!localStorage.getItem('aq_mobile_token'); } catch(_) { return 'err'; } })();
-      var _postDelayMirror = (function() { try { return !!sessionStorage.getItem('aq_mobile_token_mirror'); } catch(_) { return 'err'; } })();
+      var _postDelayMirror = (function() { try { return !!sessionStorage.getItem('aq_token_mirror'); } catch(_) { return 'err'; } })();
       console.log('[AqNet] _runAuthGate POST-DELAY — ls_token:', _postDelayToken,
         'ss_mirror:', _postDelayMirror,
         'hash:', window.location.hash.slice(0, 30),
-        'delay: 50ms');
+        'delay: 350ms');
 
     fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
@@ -271,10 +271,7 @@ console.log("✅ NEW network.js LOADED");
         _clearAuthState();
         window.location.replace(portalPrefix + '/login.html');
       });
-    }, 50); // FIX-7: 50ms floor for Android SQLite localStorage flush latency.
-            // setTimeout(0) insufficient on mid-range Android — WebView localStorage
-            // is SQLite-backed; async I/O typically 5-40ms on real devices.
-            // 50ms = ~3 frames at 60fps, imperceptible to users.
+    }, 350); // FIX-6: 350ms — gives Android SQLite flush + sessionStorage hydration time.
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -601,7 +598,7 @@ window.fetch = function(url, options) {
     var urlTok = null;
     try { var hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/); if (hm) urlTok = decodeURIComponent(hm[1]); } catch(_) {}
     var mobileToken = urlTok ||
-                      sessionStorage.getItem('aq_mobile_token_mirror') ||
+                      sessionStorage.getItem('aq_token_mirror') ||
                       localStorage.getItem('aq_mobile_token');
     if (mobileToken) {
       var existingHeaders = opts.headers;
