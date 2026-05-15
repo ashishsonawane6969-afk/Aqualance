@@ -322,7 +322,7 @@ async function submitOtp() {
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
 
     // FIX-2: Same fallback as login submit — don't block on Bearer failure.
-    if (!bearer && AqAuth.isMobileClient) {
+    if (!bearer) { // FIX: removed isMobileClient gate — WebView wrappers hit same path
       console.warn('[admin.js] MFA: Bearer exchange failed — proceeding with cookie auth.');
       await new Promise(r => setTimeout(r, 150));
     }
@@ -411,7 +411,7 @@ async function submitSmsOtp() {
     const bearer = await AqAuth.redeemMobileCode(data, window.API_BASE || '');
 
     // FIX-2: Don't block on Bearer failure — cookie is the primary auth.
-    if (!bearer && AqAuth.isMobileClient) {
+    if (!bearer) { // FIX: removed isMobileClient gate — WebView wrappers hit same path
       console.warn('[admin.js] SMS OTP: Bearer exchange failed — proceeding with cookie auth.');
       await new Promise(r => setTimeout(r, 150));
     }
@@ -521,7 +521,7 @@ if (document.getElementById('loginForm')) {
       // httpOnly cookie IS set — the session is valid. If Bearer exchange failed
       // (network blip, multi-instance server, slow 2G), cookie auth handles
       // /auth/me on dashboard. Throwing here discards a working session.
-      if (!bearer && AqAuth.isMobileClient) {
+      if (!bearer) { // FIX: removed isMobileClient gate — WebView wrappers hit same path
         console.warn('[admin.js] Bearer exchange failed on mobile — proceeding with cookie auth. '
           + 'If login loops, check: (1) Flutter domStorageEnabled, '
           + '(2) Railway single-instance (now fixed by DB exchange codes), '
