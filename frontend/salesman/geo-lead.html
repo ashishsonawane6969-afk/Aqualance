@@ -549,16 +549,28 @@ body {
     <canvas id="captureCanvas"></canvas>
     <img id="photoPreview" class="photo-prev" alt="Captured" />
     <div class="cam-controls">
-      <button class="btn btn-outline btn-sm" id="startCamBtn" onclick="startCamera()" style="flex:1;border-radius:10px;padding:10px">📷 Open Camera</button>
-      <button class="btn btn-primary btn-sm" id="captureBtn"  onclick="capturePhoto()" style="flex:1;border-radius:10px;padding:10px;display:none">📸 Capture</button>
-      <button class="btn btn-outline btn-sm" id="retakeBtn"   onclick="retakePhoto()"  style="flex:1;border-radius:10px;padding:10px;display:none">🔄 Retake</button>
-      <!-- Gallery: label wraps hidden <input> directly — no JS click needed, gesture-safe in all WebViews -->
-      <label class="btn btn-outline btn-sm" style="flex:1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;margin:0">
+    <div class="cam-controls">
+      <!-- Camera: label wraps input[capture=environment] directly.
+           No JS .click() call needed — browser activates native camera from label tap.
+           Works in Android WebView, Jio browser, Flutter wrapper — no gesture context issues.
+           id="startCamBtn" kept on the label so retakePhoto() can show/hide it. -->
+      <label class="btn btn-outline btn-sm" id="startCamBtn" style="flex:1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin:0">
+        📷 Open Camera
+        <input id="cameraInputInline" type="file" accept="image/jpeg,image/png,image/webp"
+               capture="environment"
+               style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
+               onchange="(function(f){if(f)_processPhotoFile(f,'camera')})(this.files&&this.files[0]);this.value=''">
+      </label>
+      <button class="btn btn-primary btn-sm" id="captureBtn" onclick="capturePhoto()" style="flex:1;border-radius:10px;padding:10px;display:none">📸 Capture</button>
+      <button class="btn btn-outline btn-sm" id="retakeBtn"  onclick="retakePhoto()"  style="flex:1;border-radius:10px;padding:10px;display:none">🔄 Retake</button>
+      <!-- Gallery: same label pattern -->
+      <label class="btn btn-outline btn-sm" style="flex:1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin:0">
         🖼️ Gallery
         <input id="galleryInputInline" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
                style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
                onchange="(function(f){if(f)_processPhotoFile(f,'gallery')})(this.files&&this.files[0]);this.value=''">
       </label>
+    </div>
     </div>
     <div class="photo-status" id="photoStatus"></div>
   </div>
@@ -1317,20 +1329,20 @@ function _processPhotoFile(file, source) {
 }
 
 async function startCamera() {
-  _ensureNativeInputs();
+  // NOTE: On WebView wrappers, Jio browser, and most mobile contexts,
+  // the "Open Camera" label's input[capture=environment] handles camera natively.
+  // This function is only reached on desktop Chrome where getUserMedia gives a
+  // live video preview. The label's input is hidden (pointer-events:none) on
+  // desktop so JS-driven getUserMedia is the correct path there.
 
   if (_useNativeCamera()) {
-    // Synchronous — user gesture context still alive. Native camera/file dialog opens.
-    _nativeCameraInput.click();
+    // Should not reach here — label handles it. Safety fallback only.
+    var inp = document.getElementById('cameraInputInline');
+    if (inp) inp.click();
     return;
   }
 
-  // getUserMedia path (real desktop Chrome only).
-  // CRITICAL: if getUserMedia throws, we CANNOT call _nativeCameraInput.click() inside
-  // the catch block — the await above kills the user gesture context and WebView2/mobile
-  // browsers silently block programmatic file input clicks from non-gesture contexts.
-  // FIX: re-wire the button's onclick so the NEXT tap is a fresh synchronous gesture.
-  var startBtn = document.getElementById('startCamBtn');
+  // Desktop: use getUserMedia for live preview
   try {
     _stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
@@ -1341,14 +1353,10 @@ async function startCamera() {
     document.getElementById('startCamBtn').style.display = 'none';
     document.getElementById('captureBtn').style.display  = '';
   } catch (e) {
-    // getUserMedia failed — gesture context lost here, cannot click() file input.
-    // Re-wire button so next user tap fires native input synchronously.
-    console.warn('[camera] getUserMedia failed (' + e.name + ') — switching to native input on next tap');
-    if (startBtn) {
-      startBtn.textContent = '📷 Take Photo';
-      startBtn.onclick = function() { _ensureNativeInputs(); _nativeCameraInput.click(); };
-    }
-    showToast('Tap "Take Photo" to use your camera app.', '');
+    // getUserMedia failed on desktop — gesture lost, cannot .click() file input.
+    // Show placeholder message; user can use Gallery label instead.
+    console.warn('[camera] getUserMedia failed (' + e.name + ')');
+    showToast('Camera access denied. Use Gallery to select a photo.', '');
   }
 }
 
@@ -1358,14 +1366,15 @@ function selectPhoto() {
   _ensureNativeInputs();
   _nativeGalleryInput.click();
 }
-/* retakePhoto — resets camera UI so user can try again */
 function retakePhoto() {
   _photoData = null;
   document.getElementById('photoPreview').classList.remove('show');
   var camWrap = document.getElementById('camWrap');
-  if (camWrap) camWrap.style.display = 'none'; // hide video (native path doesn't use it)
+  if (camWrap) { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
+  if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
   document.getElementById('retakeBtn').style.display   = 'none';
-  document.getElementById('startCamBtn').style.display = '';
+  document.getElementById('captureBtn').style.display  = 'none';
+  document.getElementById('startCamBtn').style.display = '';   // shows the label
   document.getElementById('camPlaceholder').style.display = '';
   document.getElementById('photoStatus').textContent   = '';
 }
