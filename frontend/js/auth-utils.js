@@ -182,8 +182,15 @@ var AqAuth = window.AqAuth = (function () {
    * @returns {string}
    * ──────────────────────────────────────────────────────────────────── */
   function buildRedirectUrl(base, token) {
-    // FIX: was `_isWebView` — now `_isMobileClient` covers mobile Chrome too
-    if (token && _isMobileClient) {
+    // FIX: removed _isMobileClient gate.
+    // Hash handoff now fires for ANY client when a bearer token is available.
+    // Reason: web wrapper apps (Flutter/WebView on Windows/desktop) report
+    // isMobileClient:false (desktop UA) yet localStorage does NOT persist
+    // reliably across page navigations inside the WebView context.
+    // The #aqt= hash is part of the URL itself — survives location.replace()
+    // in every environment. network.js reads it, writes to localStorage +
+    // sessionStorage, then strips it. Zero user-visible effect on real desktop.
+    if (token) {
       return base + '#aqt=' + encodeURIComponent(token);
     }
     return base;
