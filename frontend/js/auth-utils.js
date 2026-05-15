@@ -19,6 +19,12 @@
 var AqAuth = window.AqAuth = (function () {
   'use strict';
 
+  // COUNCIL FIX: capture native fetch NOW, before network.js patch overwrites window.fetch.
+  // redeemMobileCode MUST use native fetch — the patched version can inject stale
+  // Authorization headers on retry attempts, causing the exchange endpoint to reject
+  // the request (it expects NO auth header — the code itself is the credential).
+  var _nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+
   /* ── Device Detection ───────────────────────────────────────────────────
    * FIXED: was `_isWebView` — only caught Android WebView ('wv)' UA marker).
    * Mobile Chrome on Android does NOT have 'wv)' in UA, so it returned false.
@@ -93,45 +99,67 @@ var AqAuth = window.AqAuth = (function () {
    * @returns {Promise<string>} - The JWT string, or '' if not applicable/failed
    * ──────────────────────────────────────────────────────────────────── */
   async function redeemMobileCode(data, apiBase) {
-    // FIX-3: Add retry (once after 500ms), per-attempt timeout, and structured
-    // diagnostics. Original had no retry and silent catch — a single network
-    // blip on 2G silently dropped the Bearer token with no recovery path.
-    // Now distinguishes: network error vs 401 (expired/redeemed) vs timeout vs
-    // bad JSON. Returns '' on failure so callers fall back to cookie auth.
-    if (!data || !data.mobile_code) return '';
+    // COUNCIL FIX — four changes:
+    // 1. Uses _nativeFetch (captured before network.js patch) — eliminates
+    //    stale-token Authorization header injection on retries.
+    // 2. data.token direct fallback — if server embeds token in login response,
+    //    skip the exchange entirely (no second round-trip to fail).
+    // 3. Extended timeout 15s (was 5s) — WebView on Windows has higher network
+    //    overhead than mobile Chrome; 5s hit TimeoutError silently.
+    // 4. Full diagnostic logging at every exit point.
+
+    var fetchFn = _nativeFetch || window.fetch.bind(window);
+
+    // ── FAST PATH: server embedded token directly in login response ──────
+    // Some server builds return data.token instead of (or alongside) mobile_code.
+    // Using it directly eliminates the exchange round-trip entirely.
+    if (data && data.token) {
+      console.log('[AqAuth] redeemMobileCode: direct token in response — skipping exchange');
+      try { localStorage.setItem('aq_mobile_token', data.token); } catch (_) {}
+      try { sessionStorage.setItem('aq_token_mirror', data.token); } catch (_) {}
+      return data.token;
+    }
+
+    // ── Diagnostic: log what the login response contains ─────────────────
+    console.log('[AqAuth] redeemMobileCode — data keys:', Object.keys(data || {}).join(','),
+      'has mobile_code:', !!(data && data.mobile_code),
+      'apiBase:', apiBase || '(empty)');
+
+    if (!data || !data.mobile_code) {
+      console.warn('[AqAuth] redeemMobileCode: no mobile_code in login response — cannot exchange.');
+      return '';
+    }
 
     var url      = (apiBase || '') + '/api/v1/auth/mobile-token/' + data.mobile_code;
-    var MAX_TRIES = 2;     // one retry after initial failure
-    var TIMEOUT   = 5000;  // 5s per attempt — prevents hung navigation on 2G
+    var MAX_TRIES = 3;      // two retries
+    var TIMEOUT   = 15000;  // 15s — WebView Windows has higher network overhead
+
+    console.log('[AqAuth] redeemMobileCode — exchange url:', url);
 
     for (var attempt = 0; attempt < MAX_TRIES; attempt++) {
       if (attempt > 0) {
-        // Wait 500ms before retry — gives transient network issues time to clear
-        await new Promise(function(r) { setTimeout(r, 500); });
+        await new Promise(function(r) { setTimeout(r, 600 * attempt); });
       }
 
       var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       var tid = controller ? setTimeout(function() { controller.abort(); }, TIMEOUT) : null;
 
       try {
-        // NOTE: no `credentials: 'include'` — the code IS the credential.
-        // Sending credentials causes CORS preflight on some mobile Chrome builds.
-        var tr = await fetch(url, controller ? { signal: controller.signal } : {});
+        // Use NATIVE fetch — no Authorization header injection from network.js patch.
+        // The mobile_code IS the credential; adding Bearer headers breaks the endpoint.
+        var tr = await fetchFn(url, controller ? { signal: controller.signal } : {});
         if (tid) clearTimeout(tid);
 
-        // FIX-8 [AqAuth] structured log
         console.log('[AqAuth] redeemMobileCode attempt', attempt + 1,
-          '— status:', tr.status, 'ok:', tr.ok,
-          'mobile:', !!_isMobileClient, 'url:', url.slice(-20));
+          '— status:', tr.status, 'ok:', tr.ok, 'url:', url.slice(-30));
 
         if (tr.status === 401) {
-          // 401 = expired or already redeemed — retry won't help (code is gone)
-          console.warn('[AqAuth] redeemMobileCode: 401 — code expired or already redeemed. No retry.');
+          console.warn('[AqAuth] redeemMobileCode: 401 — code expired or already redeemed.');
           return '';
         }
         if (!tr.ok) {
           console.warn('[AqAuth] redeemMobileCode: HTTP', tr.status, '— attempt', attempt + 1);
-          continue; // retry on 5xx / network errors
+          continue;
         }
 
         var td;
@@ -141,28 +169,28 @@ var AqAuth = window.AqAuth = (function () {
           continue;
         }
 
+        console.log('[AqAuth] redeemMobileCode: response keys:', Object.keys(td || {}).join(','));
+
         if (!td || !td.token) {
-          console.warn('[AqAuth] redeemMobileCode: response ok but no token field');
+          console.warn('[AqAuth] redeemMobileCode: ok but no token field in response');
           return '';
         }
 
-        // Persist for Bearer fallback on all subsequent page loads
         try { localStorage.setItem('aq_mobile_token', td.token); } catch (_) {}
         try { sessionStorage.setItem('aq_token_mirror', td.token); } catch (_) {}
 
-        console.log('[AqAuth] redeemMobileCode: success on attempt', attempt + 1);
+        console.log('[AqAuth] redeemMobileCode: SUCCESS attempt', attempt + 1);
         return td.token;
 
       } catch (err) {
         if (tid) clearTimeout(tid);
         var isTimeout = err && err.name === 'AbortError';
-        console.warn('[AqAuth] redeemMobileCode:', isTimeout ? 'TIMEOUT' : 'network error',
+        console.warn('[AqAuth] redeemMobileCode:', isTimeout ? 'TIMEOUT' : 'NETWORK ERROR',
           '— attempt', attempt + 1, '—', err && err.message);
-        // Continue to retry on timeout/network error
       }
     }
 
-    console.warn('[AqAuth] redeemMobileCode: all attempts failed — falling back to cookie auth');
+    console.warn('[AqAuth] redeemMobileCode: ALL ATTEMPTS FAILED — cookie auth is only fallback');
     return '';
   }
 
