@@ -79,7 +79,12 @@ function cookieOptions(maxAgeMs) {
   // browser silently drops the cookie. Brave/Opera are more lenient — this is
   // why the loop only reproduces in Chrome and Android WebView.
   const isCrossOrigin = !!(process.env.ALLOWED_ORIGINS || '').trim();
-  const useSameSiteNone = isProduction || isCrossOrigin;
+  // FIX: if ALL allowed origins are localhost, we're in local dev over HTTP.
+  // SameSite=None+Secure requires HTTPS — browser silently drops cookie on HTTP.
+  // Dev localhost must use SameSite=Lax (no Secure) so cookie is actually sent.
+  const allowedList = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const allLocalhost = allowedList.length > 0 && allowedList.every(o => /localhost|127\.0\.0\.1/.test(o));
+  const useSameSiteNone = (isProduction || isCrossOrigin) && !allLocalhost;
 
   return {
     httpOnly: true,
