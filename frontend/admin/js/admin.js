@@ -328,6 +328,10 @@ async function submitOtp() {
     }
 
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+    if (bearer) {
+      try { localStorage.setItem('aq_mobile_token', bearer); } catch(_) {}
+      try { sessionStorage.setItem('aq_token_mirror', bearer); } catch(_) {}
+    }
     if (data.user.must_change_password) {
       window.location.replace('/admin/change-password.html');
       return;
@@ -413,6 +417,10 @@ async function submitSmsOtp() {
     }
 
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
+    if (bearer) {
+      try { localStorage.setItem('aq_mobile_token', bearer); } catch(_) {}
+      try { sessionStorage.setItem('aq_token_mirror', bearer); } catch(_) {}
+    }
     if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
     window.location.replace(AqAuth.buildRedirectUrl('/admin/dashboard.html', bearer));
   } catch (err) {
