@@ -1193,17 +1193,95 @@ function haversine(lat1, lng1, lat2, lng2) {
  *   5. Fall back to getUserMedia on desktop/non-Android where it works fine
  */
 
-function _isAndroidWebView() {
+function _isWebViewWrapper() {
   var ua = navigator.userAgent || '';
-  // Android WebView: contains "wv" or "Version/X.X" in Chrome UA with Android
-  return /Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\.\d+/.test(ua));
+  // Android WebView: "wv)" marker or "Version/X.X" alongside Chrome on Android
+  if (/Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\./.test(ua))) return true;
+  // iOS WKWebView: has AppleWebKit but Safari token is absent
+  if (/iPad|iPhone|iPod/.test(ua) && !/Safari/.test(ua)) return true;
+  // Windows WebView2 / Flutter desktop / Electron:
+  // Real Chrome always exposes window.chrome.runtime; WebView2 wrappers omit it.
+  try { if (!window.chrome || !window.chrome.runtime) return true; } catch (_) { return true; }
+  return false;
 }
 
 function _useNativeCamera() {
-  // Use native input[capture] when: Android WebView, OR getUserMedia unavailable
-  if (_isAndroidWebView()) return true;
+  if (_isWebViewWrapper()) return true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   return false;
+}
+
+async function startCamera() {
+  _ensureNativeInputs();
+  var btn         = document.getElementById('startCamBtn');
+  var capBtn      = document.getElementById('captureBtn');
+  var placeholder = document.getElementById('camPlaceholder');
+
+  // ── Try getUserMedia on ALL platforms (desktop, mobile, wrapper) ──────────
+  // getUserMedia is the ONLY API that opens camera directly without a file
+  // chooser dialog. input[capture=environment] shows a chooser (camera+gallery)
+  // which confuses users. We try getUserMedia first everywhere.
+  //
+  // Two-attempt strategy:
+  //   1st: facingMode:{ideal:'environment'} — prefers rear, falls back to front
+  //   2nd: video:true — no constraints at all (maximum compatibility)
+  //
+  // BUG FIXED: original used facingMode:'environment' (strict) — fails on any
+  // device that can't satisfy it exactly (single front camera, some WebView2).
+  // ideal means "prefer but don't require".
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if (btn) btn.textContent = '⏳ Starting…';
+    try {
+      _stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+        audio: false
+      });
+    } catch (e1) {
+      console.warn('[camera] attempt 1 failed (' + e1.name + ') — retrying without constraints');
+      try {
+        _stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      } catch (e2) {
+        console.warn('[camera] attempt 2 failed (' + e2.name + ') — no camera via getUserMedia');
+        _stream = null;
+      }
+    }
+  }
+
+  if (_stream) {
+    // ── getUserMedia succeeded — show live preview ────────────────────────
+    var videoEl = document.getElementById('videoEl');
+    videoEl.srcObject = _stream;
+    videoEl.play().catch(function () {});
+    document.getElementById('camWrap').classList.add('active');
+    if (placeholder) placeholder.style.display = 'none';
+    if (btn)    { btn.style.display = 'none'; btn.textContent = '📷 Open Camera'; }
+    if (capBtn)   capBtn.style.display = '';
+    return;
+  }
+
+  // ── getUserMedia failed on all attempts ───────────────────────────────────
+  // CRITICAL: we are now inside an async function after one or two failed awaits.
+  // The original user-gesture context is DEAD here — any programmatic .click()
+  // on a file <input> will be silently blocked by the browser/WebView security policy.
+  //
+  // FIX: do NOT call _nativeCameraInput.click() here.
+  // Instead, re-wire the button's onclick so the user's NEXT tap fires
+  // _nativeCameraInput.click() synchronously — that tap IS a fresh user gesture.
+  if (btn) {
+    btn.disabled  = false;
+    btn.textContent = '📷 Tap to open camera';
+    btn.onclick = function () {
+      _ensureNativeInputs();
+      _nativeCameraInput.click(); // synchronous — fresh gesture from this tap
+      // restore normal handler so Retake works correctly
+      setTimeout(function () {
+        btn.textContent = '📷 Open Camera';
+        btn.onclick = startCamera;
+      }, 500);
+    };
+  }
+  showToast('Tap "Tap to open camera" to launch your camera app', '');
 }
 
 // Hidden native camera input — appended to body once, reused
@@ -1300,38 +1378,10 @@ function _processPhotoFile(file, source) {
   reader.readAsDataURL(file);
 }
 
-async function startCamera() {
-  _ensureNativeInputs();
-
-  if (_useNativeCamera()) {
-    // Android WebView path: trigger native camera app via input[capture]
-    // This uses OS-level permissions — no browser permission popup
-    _nativeCameraInput.click();
-    return;
-  }
-
-  // Desktop / mobile browser path: use getUserMedia (live preview in video element)
-  try {
-    _stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
-    });
-    document.getElementById('videoEl').srcObject = _stream;
-    document.getElementById('camWrap').classList.add('active');
-    document.getElementById('camPlaceholder').style.display = 'none';
-    document.getElementById('startCamBtn').style.display = 'none';
-    document.getElementById('captureBtn').style.display  = '';
-  } catch (e) {
-    // getUserMedia failed — fall back to native input[capture]
-    console.warn('[camera] getUserMedia failed (' + e.name + '), falling back to native input');
-    _nativeCameraInput.click();
-  }
-}
-
 function selectPhoto() {
+  // MUST stay synchronous — called directly from button onclick (user gesture alive).
+  // Never add await here; doing so kills the gesture context and WebView blocks .click().
   _ensureNativeInputs();
-  // FIX: Appended to DOM (above) so Android WebView file chooser works reliably.
-  // Previously created a detached <input> that Android WebView GC'd before the
-  // file chooser returned, dropping the result silently.
   _nativeGalleryInput.click();
 }
 /* retakePhoto — resets camera UI so user can try again */
@@ -1339,11 +1389,15 @@ function retakePhoto() {
   _photoData = null;
   document.getElementById('photoPreview').classList.remove('show');
   var camWrap = document.getElementById('camWrap');
-  if (camWrap) camWrap.style.display = 'none'; // hide video (native path doesn't use it)
+  if (camWrap) { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
+  if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
   document.getElementById('retakeBtn').style.display   = 'none';
-  document.getElementById('startCamBtn').style.display = '';
+  document.getElementById('captureBtn').style.display  = 'none';
   document.getElementById('camPlaceholder').style.display = '';
   document.getElementById('photoStatus').textContent   = '';
+  // Restore camera button to original state (may have been re-wired after getUserMedia failure)
+  var btn = document.getElementById('startCamBtn');
+  if (btn) { btn.style.display = ''; btn.textContent = '📷 Open Camera'; btn.onclick = startCamera; btn.disabled = false; }
 }
 
 /* capturePhoto — only used on desktop getUserMedia path (video element is live) */
