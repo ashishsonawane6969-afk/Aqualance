@@ -1399,6 +1399,14 @@ function drawWatermark(ctx, W, H) {
   const padding  = Math.round(W * 0.025);
   const boxH     = lines.length * (lineH + 4) + padding * 2;
   const boxY     = H - boxH - 10;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, boxY, W, boxH + 10);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold ' + fontSize + 'px sans-serif';
+  lines.forEach(function(line, i) {
+    ctx.fillText(line, padding + 10, boxY + padding + (i + 1) * (lineH + 4));
+  });
+}
 
 /* ══════════ SALE TOGGLE ══════════ */
 function setSale(v) {
