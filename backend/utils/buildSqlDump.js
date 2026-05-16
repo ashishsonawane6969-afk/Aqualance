@@ -56,8 +56,7 @@ async function buildSqlDump(db) {
         if (v === null) return 'NULL';
         if (typeof v === 'number') return String(v);
         if (v instanceof Date) return `'${v.toISOString().replace('T', ' ').slice(0, 19)}'`;
-        const escaped = db.escape ? db.escape(v) : `'${String(v).replace(/'/g, "''")}'`;
-        return escaped;
+        return `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')}'`;
       });
       return `(${vals.join(', ')})`;
     });

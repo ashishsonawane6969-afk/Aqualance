@@ -1,3 +1,4 @@
+
 {
   "name": "aqualence-backend",
   "version": "1.0.0",
@@ -36,6 +37,6 @@
     "nodemon": "^3.0.1"
   },
   "optionalDependencies": {
-    "@node-rs/bcrypt": "^1.10.7"
+    "@node-rs/bcrypt": "^1.10.4"
   }
 }

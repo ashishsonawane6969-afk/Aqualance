@@ -19,7 +19,6 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Geo Lead — Aqualence</title>
   <link rel="stylesheet" href="/salesman/css/salesman.css" />
   <style>
@@ -1213,9 +1212,10 @@ var _nativeGalleryInput = null;
 function _ensureNativeInputs() {
   if (!_nativeCameraInput) {
     _nativeCameraInput = document.createElement('input');
-    _nativeCameraInput.type    = 'file';
-    _nativeCameraInput.accept  = 'image/jpeg,image/png,image/webp';
-    _nativeCameraInput.capture = 'environment'; // rear camera
+    _nativeCameraInput.type = 'file';
+    // TWA FIX: no accept= on camera input — accept + capture together = Android shows
+    // gallery/camera chooser dialog. No accept = goes straight to camera app.
+    _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Samsung/Android
     _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     _nativeCameraInput.setAttribute('aria-hidden', 'true');
     document.body.appendChild(_nativeCameraInput);
@@ -1247,7 +1247,7 @@ function _ensureNativeInputs() {
  * @param {'camera'|'gallery'} source
  */
 function _processPhotoFile(file, source) {
-  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
   if (!ALLOWED.includes(file.type)) {
     showToast('Only JPEG, PNG, WebP images are allowed.', 'error'); return;
   }
@@ -1528,12 +1528,10 @@ function showToast(msg, type) {
 }
 </script>
 
-<script nonce="CSP_NONCE">window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script nonce="CSP_NONCE">
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    var apiBase = window.API_BASE || '';
-    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
+    navigator.serviceWorker.register('/sw.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }

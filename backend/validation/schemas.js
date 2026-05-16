@@ -13,32 +13,15 @@ const safeText = (max = 255) =>
   Joi.string()
     .trim()
     .max(max)
-    .custom((value) => {
-      return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .trim();
-    }, 'encode HTML entities');
+    .custom((value) => value.replace(/<[^>]*>/g, '').trim(), 'strip HTML tags');
 
 const latitude  = Joi.number().min(-90).max(90);
 const longitude = Joi.number().min(-180).max(180);
 
-/* ── Password complexity (A07: Auth Failures) ──────────────────────────────── */
-const passwordComplex = Joi.string()
-  .min(8).max(128)
-  .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/)
-  .messages({
-    'string.min': 'Password must be at least 8 characters',
-    'string.pattern.base': 'Password must include at least one uppercase letter, one lowercase letter, and one number',
-  });
-
 /* ── AUTH ─────────────────────────────────────────────────────────────────── */
 const loginSchema = Joi.object({
   phone:    phone.required(),
-  password: passwordComplex.required(),
+  password: Joi.string().min(8).max(128).required(),
 }).options({ stripUnknown: true });
 
 /* ── ORDERS ───────────────────────────────────────────────────────────────── */
@@ -151,7 +134,7 @@ const bundleItemsSchema = Joi.object({
 const deliveryBoySchema = Joi.object({
   name:     safeText(100).required(),
   phone:    phone.required(),
-  password: passwordComplex.required()
+  password: Joi.string().min(8).max(128).required()
               .messages({ 'string.min': 'Password must be at least 8 characters' }),
 }).options({ stripUnknown: true });
 
@@ -159,7 +142,7 @@ const deliveryBoySchema = Joi.object({
 const salesmanCreateSchema = Joi.object({
   name:     safeText(100).required(),
   phone:    phone.required(),
-  password: passwordComplex.required()
+  password: Joi.string().min(8).max(128).required()
               .messages({ 'string.min': 'Password must be at least 8 characters' }),
 }).options({ stripUnknown: true });
 
@@ -315,12 +298,12 @@ const aiChatSchema = Joi.object({
 /* ── CHANGE / RESET PASSWORD ──────────────────────────────────────────────── */
 const changePasswordSchema = Joi.object({
   current_password: Joi.string().min(1).max(128).required(),
-  new_password:     passwordComplex.required()
+  new_password:     Joi.string().min(8).max(128).required()
     .messages({ 'string.min': 'New password must be at least 8 characters' }),
 }).options({ stripUnknown: true });
 
 const resetPasswordSchema = Joi.object({
-  new_password: passwordComplex.required()
+  new_password: Joi.string().min(8).max(128).required()
     .messages({ 'string.min': 'Password must be at least 8 characters' }),
 }).options({ stripUnknown: true });
 
@@ -358,5 +341,4 @@ module.exports = {
   areaAssignSchema, reportQuerySchema, leadsQuerySchema,
   geoLeadSchema, mapLeadsQuerySchema, geoTrackSchema, geoValidateSchema,
   talukaCreateSchema, talukaUpdateSchema, talukaAssignSchema,
-  passwordComplex,
 };

@@ -18,11 +18,6 @@
 const CACHE_NAME    = 'aqualence-v4';  // bumped — forces SW update, clears all stale JS/CSS/API cache
 const OFFLINE_URL   = '/offline.html';
 
-// Read API_BASE from the service worker URL query parameter (set during registration)
-// This allows cross-origin API calls when frontend is on Vercel and backend on Railway
-const urlParams = new URL(self.location.href).searchParams;
-const SW_API_BASE = urlParams.get('api_base') || '';
-
 // Static assets to pre-cache on install
 // frontend/sw.js
 const PRECACHE_URLS = [
@@ -68,26 +63,26 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle API calls — Network-First
-  // For same-origin deployments (backend serves frontend), API origin = location.origin.
-  // For cross-origin setups (frontend on Vercel, backend on Railway), use SW_API_BASE.
-  const API_ORIGIN = SW_API_BASE || location.origin;
-  const isApiCall = url.pathname.startsWith('/api/') ||
-                    (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
-
-  if (isApiCall) {
-    // For cross-origin API calls, construct the proper URL
-    let fetchUrl = request.url;
-    if (SW_API_BASE && !url.pathname.startsWith('/api/')) {
-      fetchUrl = SW_API_BASE + url.pathname + url.search;
-    }
-    // Exclude authenticated endpoints from service worker cache
-    const isAuthEndpoint = url.pathname.includes('/orders') || url.pathname.includes('/salesman/') || url.pathname.includes('/delivery/') || url.pathname.includes('/export');
+  // Handle Railway API calls (cross-origin) — Network-First
+  const RAILWAY_API = 'https://aqualance-production-9e22.up.railway.app';
+  if (url.origin === RAILWAY_API) {
+    // ✅ FIX (Login Loop): Auth endpoints must NEVER be served from cache.
+    // On mobile/PWA, a stale cached 200 from /auth/me tricks network.js into
+    // thinking the session is still valid, causing the login ↔ dashboard loop.
+    const isAuthEndpoint = url.pathname.includes('/auth/');
     if (isAuthEndpoint) {
-      event.respondWith(fetch(fetchUrl, request));
-    } else {
-      event.respondWith(networkFirst(new Request(fetchUrl, request)));
+      // Pass through to network with no caching — if offline, return a clear error
+      event.respondWith(
+        fetch(request).catch(() =>
+          new Response(
+            JSON.stringify({ success: false, message: 'You are offline.' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+          )
+        )
+      );
+      return;
     }
+    event.respondWith(networkFirst(request));
     return;
   }
 

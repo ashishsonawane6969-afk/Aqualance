@@ -22,17 +22,10 @@ function _calcBundlePrice(items) {
 
 /* GET /api/v1/products/:id/bundle-items */
 exports.list = async (req, res) => {
-  const page    = Math.max(1, parseInt(req.query.page, 10) || 1);
-  const perPage = Math.min(50, Math.max(1, parseInt(req.query.per_page, 10) || 20));
-  const offset  = (page - 1) * perPage;
   try {
     const bundleId = parseInt(req.params.id, 10);
     if (!bundleId) return sendError(res, 400, 'Invalid product ID');
 
-    const [[{ total }]] = await db.query(
-      'SELECT COUNT(*) AS total FROM bundle_items WHERE bundle_product_id = ?',
-      [bundleId]
-    );
     const [rows] = await db.query(
       `SELECT
          bi.id,
@@ -53,8 +46,8 @@ exports.list = async (req, res) => {
          ON pv.id = bi.variant_id
          AND pv.is_active = 1
        WHERE bi.bundle_product_id = ?
-       ORDER BY bi.id LIMIT ? OFFSET ?`,
-      [bundleId, perPage, offset]
+       ORDER BY bi.id`,
+      [bundleId]
     );
 
     const data = rows.map(row => ({
@@ -72,9 +65,10 @@ exports.list = async (req, res) => {
       has_variant:   Boolean(row.has_variant),
     }));
 
+    // FIX: Return calculated bundle price so frontend can display it immediately
     const bundle_calculated_price = _calcBundlePrice(data);
 
-    res.json({ success: true, data, bundle_calculated_price, pagination: { total, page, per_page: perPage } });
+    res.json({ success: true, data, bundle_calculated_price });
   } catch (err) {
     serverError(res, err, '[bundleController.list]');
   }

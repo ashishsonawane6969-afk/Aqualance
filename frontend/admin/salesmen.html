@@ -22,7 +22,6 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Salesmen — Admin | Aqualence Ventures</title>
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
@@ -2040,8 +2039,11 @@ const MAHARASHTRA_TALUKAS = [
 
 /* ── Safe fetch — cookie-based auth (credentials:include) ── */
 async function areasFetch(url, opts = {}) {
+  // Send Bearer token as fallback for mobile (cross-site cookies blocked on Android/iOS)
+  const token = localStorage.getItem('aq_token') || '';
   const headers = {
     'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
     ...(opts.headers || {})
   };
   const res = await fetch(url, {
@@ -2050,7 +2052,7 @@ async function areasFetch(url, opts = {}) {
     headers
   });
   if (res.status === 401 || res.status === 403) {
-    try { sessionStorage.removeItem('aq_admin_user'); } catch(_) {}
+    try { localStorage.removeItem('aq_token'); sessionStorage.removeItem('aq_admin_user'); } catch(_) {}
     window.location.href = '/admin/login.html';
     throw new Error('Session expired');
   }
@@ -2370,8 +2372,10 @@ window.onGMapsLoaded = function() {
        If no valid key is configured, Maps is not loaded at all — prevents
        anonymous quota consumption on the Google Maps billing account. */
     /* SECURITY: maps-key requires auth — cookie + Bearer token for mobile */
+    const _mkt = localStorage.getItem('aq_token') || '';
     const r   = await fetch('/api/v1/config/maps-key', {
       credentials: 'include',
+      headers: _mkt ? { 'Authorization': 'Bearer ' + _mkt } : {}
     });
 
     if (!r.ok) {
@@ -2420,12 +2424,10 @@ window.onGMapsLoaded = function() {
 </style>
 
 
-<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    var apiBase = window.API_BASE || '';
-    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
+    navigator.serviceWorker.register('/sw.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }

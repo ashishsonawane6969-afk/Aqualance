@@ -81,6 +81,12 @@ require('./utils/bcrypt');
 // Centralised startup guard — aborts in production if config is unsafe.
 require('./utils/validateEnv');
 
+/* ── CSP nonce middleware (must run BEFORE helmet) ───────────────────────── */
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
 /* ── Helmet: secure HTTP response headers ────────────────────────────────── */
 app.use((req, res, next) => {
   helmet({
@@ -143,8 +149,8 @@ app.use(cors({
   credentials: true,
 }));
 /* ── Body parsers ────────────────────────────────────────────────────────── */
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 
 /* ── Cookie parser ───────────────────────────────────────────────────────── */
 app.use(cookieParser());
@@ -293,12 +299,8 @@ let httpServer = null;
 /* ── Process-level error guards ───────────────────────────────── */
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[unhandledRejection]', reason);
-  logger.error('[unhandledRejection]', { reason: String(reason) });
-  if (httpServer) {
-    httpServer.close(() => process.exit(1));
-  } else {
-    process.exit(1);
-  }
+  // Do NOT exit — unhandled rejections are logged but non-fatal.
+  // Exiting here triggers Railway restart which causes EADDRINUSE loop.
 });
 
 process.on('uncaughtException', (err) => {

@@ -20,21 +20,12 @@ exports.getOrders = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden: cannot access other delivery partner orders' });
     }
 
-    const page    = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const perPage = Math.min(100, Math.max(1, parseInt(req.query.per_page, 10) || 50));
-    const offset  = (page - 1) * perPage;
-
-    const [[{ total }]] = await db.query(
-      'SELECT COUNT(*) AS total FROM orders WHERE delivery_id = ? AND status != ?',
-      [requestedId, 'cancelled']
-    );
     const [orders] = await db.query(
       `SELECT * FROM orders WHERE delivery_id = ? AND status != 'cancelled'
-       ORDER BY FIELD(status,'out_for_delivery','assigned','delivered'), created_at DESC
-       LIMIT ? OFFSET ?`,
-      [requestedId, perPage, offset]
+       ORDER BY FIELD(status,'out_for_delivery','assigned','delivered'), created_at DESC`,
+      [requestedId]
     );
-    res.json({ success: true, data: orders, pagination: { total, page, per_page: perPage } });
+    res.json({ success: true, data: orders });
   } catch (err) {
     serverError(res, err, '[deliveryController]');
   }

@@ -7,13 +7,11 @@
  * Optional: GITHUB_SQL_PATH (default: database/aqualence_complete.sql)
  */
 
-const express                = require('express');
-const router                 = express.Router();
-const db                     = require('../config/db');
-const auth                   = require('../middleware/auth');
-const { buildSqlDump }       = require('../utils/buildSqlDump');
-const { serverError }        = require('../utils/errors');
-const { validateOutboundUrl } = require('../utils/ssrfGuard');
+const express          = require('express');
+const router           = express.Router();
+const db               = require('../config/db');
+const auth             = require('../middleware/auth');
+const { buildSqlDump } = require('../utils/buildSqlDump');
 
 const GITHUB_SQL_PATH = process.env.GITHUB_SQL_PATH || 'database/aqualence_complete.sql';
 
@@ -27,13 +25,6 @@ router.post('/sql-to-github', auth(['admin']), async (req, res) => {
       success: false,
       message: 'GitHub export not configured. Set GITHUB_TOKEN, GITHUB_REPO_OWNER, GITHUB_REPO_NAME in environment.',
     });
-  }
-
-  // SSRF mitigation: validate the GitHub API URL is in the allowlist
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${GITHUB_SQL_PATH}`;
-  const ssrfCheck = validateOutboundUrl(apiUrl, 'GitHub export');
-  if (!ssrfCheck.valid) {
-    return res.status(400).json({ success: false, message: ssrfCheck.reason });
   }
 
   try {
@@ -72,7 +63,7 @@ router.post('/sql-to-github', auth(['admin']), async (req, res) => {
     res.json({ success: true, message: 'SQL exported to GitHub successfully.' });
   } catch (err) {
     console.error('[export] sql-to-github error:', err.message);
-    serverError(res, err, '[export.sql-to-github]');
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

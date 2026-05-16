@@ -18,7 +18,6 @@
   <meta name="theme-color" content="#0d2210" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="api-base" content="https://aqualance-production-9e22.up.railway.app">
   <title>Geo Intelligence Map — Admin | Aqualence</title>
   <link rel="stylesheet" href="/admin/css/admin.css" />
 
@@ -1332,7 +1331,11 @@ document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeSide
   try{
     if (window._aqAuthReady) await window._aqAuthReady.catch(function(){});
     /* SECURITY: maps-key requires auth — cookie + Bearer token for mobile */
-    var r=await fetch('/api/v1/config/maps-key', { credentials: 'include' }), cfg=await r.json();
+    var _mkt=localStorage.getItem('aq_token')||'';
+    var r=await fetch('/api/v1/config/maps-key', {
+      credentials: 'include',
+      headers: _mkt ? { 'Authorization': 'Bearer ' + _mkt } : {}
+    }), cfg=await r.json();
     var hasKey=cfg.key&&cfg.key!=='YOUR_GOOGLE_MAPS_API_KEY_HERE'&&cfg.key.length>10;
     if(!hasKey){ showMapFallback('Add GOOGLE_MAPS_API_KEY in your .env file'); return; }
     var s=document.createElement('script');
@@ -1443,12 +1446,10 @@ function _lfRenderZones() {
 }
 </script>
 
-<script>window.API_BASE = 'https://aqualance-production-9e22.up.railway.app';</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    var apiBase = window.API_BASE || '';
-    navigator.serviceWorker.register('/sw.js?api_base=' + encodeURIComponent(apiBase))
+    navigator.serviceWorker.register('/sw.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
