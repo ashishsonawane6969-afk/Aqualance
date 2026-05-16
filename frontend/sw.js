@@ -15,8 +15,15 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v8';  // bumped: evicts stale geo-lead.html (camera fix)
+const CACHE_NAME    = 'aqualence-v9';  // bumped: defines SW_API_BASE, fixes ReferenceError crash
 const OFFLINE_URL   = '/offline.html';
+
+// SW_API_BASE — backend origin used for cross-origin API rewriting.
+// MUST be declared here: Service Workers have no access to window, document,
+// or any value injected by the page. This is a plain static site with no build
+// step, so there is no bundler to inject env vars — declare it explicitly.
+// Keep in sync with API_BASE in network.js / admin.js / salesman.js.
+const SW_API_BASE = 'https://aqualance-production-9e22.up.railway.app';
 
 // Static assets to pre-cache on install
 // frontend/sw.js
@@ -63,20 +70,21 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle API calls — Network-First
-  // For same-origin deployments (backend serves frontend), API origin = location.origin.
-  // For cross-origin setups (frontend on Vercel, backend on Railway), use SW_API_BASE.
-  const API_ORIGIN = SW_API_BASE || location.origin;
-  const isApiCall = url.pathname.startsWith('/api/') ||
-                    (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
+  // Handle API calls — always Network-Only (never cache auth/business data).
+  // SW_API_BASE is declared at top of this file. Guard with || to be safe.
+  const _apiBase = (typeof SW_API_BASE === 'string' && SW_API_BASE) ? SW_API_BASE : location.origin;
+  let _apiOrigin;
+  try { _apiOrigin = new URL(_apiBase).origin; } catch (_) { _apiOrigin = location.origin; }
+
+  const isApiCall = url.pathname.startsWith('/api/') || url.origin === _apiOrigin;
 
   if (isApiCall) {
     // Build a clean cross-origin Request.
     // Never re-use the original Request object cross-origin: its mode may be
     // 'same-origin' or 'navigate', which throws TypeError cross-origin.
     let fetchUrl = request.url;
-    if (SW_API_BASE && url.origin !== new URL(SW_API_BASE).origin) {
-      fetchUrl = SW_API_BASE + url.pathname + url.search;
+    if (url.origin !== _apiOrigin && url.pathname.startsWith('/api/')) {
+      fetchUrl = _apiBase + url.pathname + url.search;
     }
 
     // Clone headers so we can safely read them
