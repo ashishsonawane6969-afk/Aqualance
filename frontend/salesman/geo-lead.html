@@ -1233,9 +1233,11 @@ function _ensureNativeInputs() {
   if (!_nativeCameraInput) {
     _nativeCameraInput = document.createElement('input');
     _nativeCameraInput.type = 'file';
-    // TWA CAMERA FIX: do NOT set accept on camera input.
-    // accept="image/*" + capture="environment" triggers Android's intent chooser
-    // (shows gallery + camera options). No accept = goes straight to camera app.
+    // FIX: accept="image/*" + capture="environment" is the W3C standard combo.
+    // Without accept, Android treats the input as a generic file picker and opens
+    // gallery/recents instead of the camera. With both set, modern Android & TWA
+    // route directly to the native camera app.
+    _nativeCameraInput.accept = 'image/*';
     _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Android/Samsung
     _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     _nativeCameraInput.setAttribute('aria-hidden', 'true');
