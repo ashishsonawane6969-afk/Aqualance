@@ -1195,19 +1195,28 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 function _isWebViewWrapper() {
   var ua = navigator.userAgent || '';
-  // All Android devices — WebView, Chrome browser, PWA, Samsung Internet.
-  // getUserMedia on Android = bad UX (no zoom/flash, async kills gesture token,
-  // permission denial opens gallery on second tap). Native capture intent always better.
+  // Android WebView (explicit wv) marker) — native capture intent works fine.
+  if (/Android/.test(ua) && /wv\)/.test(ua)) return true;
+  // All other Android (Chrome browser tab, TWA, Samsung Internet, Android PWA):
+  // capture="environment" routes to OS camera app via Chrome file chooser,
+  // provided the host app / origin has camera permission. Use native path for all.
   if (/Android/.test(ua)) return true;
-  // All iOS devices — Safari, WKWebView, PWA. capture="environment" works correctly.
+  // All iOS — Safari, WKWebView, PWA. capture="environment" works correctly.
   if (/iPad|iPhone|iPod/.test(ua)) return true;
-  // Samsung Internet on non-Android UA edge cases
+  // Samsung Internet on non-Android UA edge cases.
   if (/SamsungBrowser/.test(ua)) return true;
   // Windows WebView2 / Flutter desktop / Electron:
   // Real Chrome always has window.chrome.runtime; wrappers omit it.
   try { if (!window.chrome || !window.chrome.runtime) return true; } catch (_) { return true; }
   return false;
 }
+
+/* _isTWA — detect Trusted Web Activity (Chrome Custom Tab wrapper).
+ * TWA sets document.referrer to "android-app://<package>" on first navigation.
+ * Cached immediately because referrer clears on in-app navigations. */
+var _twaDetected = (function () {
+  try { return document.referrer.startsWith('android-app://'); } catch (_) { return false; }
+}());
 // Keep old name as alias so any external call sites still work
 var _isAndroidWebView = _isWebViewWrapper;
 
