@@ -1195,10 +1195,14 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 function _isWebViewWrapper() {
   var ua = navigator.userAgent || '';
-  // Android WebView: "wv)" marker or Version/X.X alongside Android+Chrome
-  if (/Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\./.test(ua))) return true;
-  // iOS WKWebView: AppleWebKit present but Safari token absent
-  if (/iPad|iPhone|iPod/.test(ua) && !/Safari/.test(ua)) return true;
+  // All Android devices — WebView, Chrome browser, PWA, Samsung Internet.
+  // getUserMedia on Android = bad UX (no zoom/flash, async kills gesture token,
+  // permission denial opens gallery on second tap). Native capture intent always better.
+  if (/Android/.test(ua)) return true;
+  // All iOS devices — Safari, WKWebView, PWA. capture="environment" works correctly.
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // Samsung Internet on non-Android UA edge cases
+  if (/SamsungBrowser/.test(ua)) return true;
   // Windows WebView2 / Flutter desktop / Electron:
   // Real Chrome always has window.chrome.runtime; wrappers omit it.
   try { if (!window.chrome || !window.chrome.runtime) return true; } catch (_) { return true; }
@@ -1222,7 +1226,7 @@ function _ensureNativeInputs() {
     _nativeCameraInput = document.createElement('input');
     _nativeCameraInput.type    = 'file';
     _nativeCameraInput.accept  = 'image/*'; // FIX: specific MIME types break capture intent on Android WebView
-    _nativeCameraInput.capture = 'environment'; // rear camera
+    _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Android/Samsung
     _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     _nativeCameraInput.setAttribute('aria-hidden', 'true');
     document.body.appendChild(_nativeCameraInput);
