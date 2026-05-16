@@ -549,28 +549,10 @@ body {
     <canvas id="captureCanvas"></canvas>
     <img id="photoPreview" class="photo-prev" alt="Captured" />
     <div class="cam-controls">
-    <div class="cam-controls">
-      <!-- Camera: label wraps input[capture=environment] directly.
-           No JS .click() call needed — browser activates native camera from label tap.
-           Works in Android WebView, Jio browser, Flutter wrapper — no gesture context issues.
-           id="startCamBtn" kept on the label so retakePhoto() can show/hide it. -->
-      <label class="btn btn-outline btn-sm" id="startCamBtn" style="flex:1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin:0">
-        📷 Open Camera
-        <input id="cameraInputInline" type="file" accept="image/jpeg,image/png,image/webp"
-               capture="environment"
-               style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
-               onchange="(function(f){if(f)_processPhotoFile(f,'camera')})(this.files&&this.files[0]);this.value=''">
-      </label>
-      <button class="btn btn-primary btn-sm" id="captureBtn" onclick="capturePhoto()" style="flex:1;border-radius:10px;padding:10px;display:none">📸 Capture</button>
-      <button class="btn btn-outline btn-sm" id="retakeBtn"  onclick="retakePhoto()"  style="flex:1;border-radius:10px;padding:10px;display:none">🔄 Retake</button>
-      <!-- Gallery: same label pattern -->
-      <label class="btn btn-outline btn-sm" style="flex:1;border-radius:10px;padding:10px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;margin:0">
-        🖼️ Gallery
-        <input id="galleryInputInline" type="file" accept="image/jpeg,image/png,image/webp,image/gif"
-               style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
-               onchange="(function(f){if(f)_processPhotoFile(f,'gallery')})(this.files&&this.files[0]);this.value=''">
-      </label>
-    </div>
+      <button class="btn btn-outline btn-sm" id="startCamBtn" onclick="startCamera()" style="flex:1;border-radius:10px;padding:10px">📷 Open Camera</button>
+      <button class="btn btn-primary btn-sm" id="captureBtn"  onclick="capturePhoto()" style="flex:1;border-radius:10px;padding:10px;display:none">📸 Capture</button>
+      <button class="btn btn-outline btn-sm" id="retakeBtn"   onclick="retakePhoto()"  style="flex:1;border-radius:10px;padding:10px;display:none">🔄 Retake</button>
+      <button class="btn btn-outline btn-sm"                  onclick="selectPhoto()"  style="flex:1;border-radius:10px;padding:10px">🖼️ Gallery</button>
     </div>
     <div class="photo-status" id="photoStatus"></div>
   </div>
@@ -705,7 +687,6 @@ body {
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
-<script nonce="CSP_NONCE" src="/js/auth-utils.js"></script>
 <script nonce="CSP_NONCE" src="../js/network.js"></script>
 <script nonce="CSP_NONCE" src="js/salesman.js"></script>
 <script nonce="CSP_NONCE">
@@ -1212,24 +1193,15 @@ function haversine(lat1, lng1, lat2, lng2) {
  *   5. Fall back to getUserMedia on desktop/non-Android where it works fine
  */
 
-function _isWebViewWrapper() {
+function _isAndroidWebView() {
   var ua = navigator.userAgent || '';
-  // Android WebView
-  if (/Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\.\d+/.test(ua))) return true;
-  // iOS WKWebView (no Safari token despite AppleWebKit)
-  if (/iPad|iPhone|iPod/.test(ua) && !/Safari/.test(ua)) return true;
-  // Windows WebView2 / Electron / Flutter Windows:
-  // Real Chrome always has window.chrome.runtime (extensions API surface).
-  // WebView2 wrappers omit it unless explicitly enabled by the host app.
-  try {
-    if (typeof window.chrome === 'undefined') return true;
-    if (window.chrome && !window.chrome.runtime) return true;
-  } catch (_) { return true; }
-  return false;
+  // Android WebView: contains "wv" or "Version/X.X" in Chrome UA with Android
+  return /Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\.\d+/.test(ua));
 }
 
 function _useNativeCamera() {
-  if (_isWebViewWrapper()) return true;
+  // Use native input[capture] when: Android WebView, OR getUserMedia unavailable
+  if (_isAndroidWebView()) return true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   return false;
 }
@@ -1329,20 +1301,16 @@ function _processPhotoFile(file, source) {
 }
 
 async function startCamera() {
-  // NOTE: On WebView wrappers, Jio browser, and most mobile contexts,
-  // the "Open Camera" label's input[capture=environment] handles camera natively.
-  // This function is only reached on desktop Chrome where getUserMedia gives a
-  // live video preview. The label's input is hidden (pointer-events:none) on
-  // desktop so JS-driven getUserMedia is the correct path there.
+  _ensureNativeInputs();
 
   if (_useNativeCamera()) {
-    // Should not reach here — label handles it. Safety fallback only.
-    var inp = document.getElementById('cameraInputInline');
-    if (inp) inp.click();
+    // Android WebView path: trigger native camera app via input[capture]
+    // This uses OS-level permissions — no browser permission popup
+    _nativeCameraInput.click();
     return;
   }
 
-  // Desktop: use getUserMedia for live preview
+  // Desktop / mobile browser path: use getUserMedia (live preview in video element)
   try {
     _stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
@@ -1353,28 +1321,27 @@ async function startCamera() {
     document.getElementById('startCamBtn').style.display = 'none';
     document.getElementById('captureBtn').style.display  = '';
   } catch (e) {
-    // getUserMedia failed on desktop — gesture lost, cannot .click() file input.
-    // Show placeholder message; user can use Gallery label instead.
-    console.warn('[camera] getUserMedia failed (' + e.name + ')');
-    showToast('Camera access denied. Use Gallery to select a photo.', '');
+    // getUserMedia failed — fall back to native input[capture]
+    console.warn('[camera] getUserMedia failed (' + e.name + '), falling back to native input');
+    _nativeCameraInput.click();
   }
 }
 
 function selectPhoto() {
-  // Synchronous — must stay synchronous. Never add await here.
-  // User gesture is alive; _nativeGalleryInput.click() triggers file picker.
   _ensureNativeInputs();
+  // FIX: Appended to DOM (above) so Android WebView file chooser works reliably.
+  // Previously created a detached <input> that Android WebView GC'd before the
+  // file chooser returned, dropping the result silently.
   _nativeGalleryInput.click();
 }
+/* retakePhoto — resets camera UI so user can try again */
 function retakePhoto() {
   _photoData = null;
   document.getElementById('photoPreview').classList.remove('show');
   var camWrap = document.getElementById('camWrap');
-  if (camWrap) { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
-  if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
+  if (camWrap) camWrap.style.display = 'none'; // hide video (native path doesn't use it)
   document.getElementById('retakeBtn').style.display   = 'none';
-  document.getElementById('captureBtn').style.display  = 'none';
-  document.getElementById('startCamBtn').style.display = '';   // shows the label
+  document.getElementById('startCamBtn').style.display = '';
   document.getElementById('camPlaceholder').style.display = '';
   document.getElementById('photoStatus').textContent   = '';
 }
