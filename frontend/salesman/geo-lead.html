@@ -1173,236 +1173,227 @@ function haversine(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-/* ══════════ CAMERA ══════════
- *
- * ANDROID WEBVIEW FIX:
- * navigator.mediaDevices.getUserMedia() triggers a browser-style permission dialog
- * in Android WebView instead of the native OS permission flow. On many Android
- * versions (10+) this fails silently or requires extra WebView flags to enable.
- *
- * The correct approach for a WebView/PWA app is input[capture="environment"] —
- * this triggers the native Android camera app directly, uses OS-level permissions
- * that the user already granted to the app, and returns the captured image as a File.
- *
- * Strategy:
- *   1. Detect Android WebView (or any environment where getUserMedia is unavailable)
- *   2. Use native <input type="file" capture="environment"> for camera
- *   3. Use native <input type="file" accept="image/*"> for gallery
- *   4. Apply GPS watermark via canvas after capture (same as before)
- *   5. Fall back to getUserMedia on desktop/non-Android where it works fine
- */
+/* ══════════════════════════════════════════════════════════════════
+   UNIVERSAL CAMERA SYSTEM
+   ──────────────────────────────────────────────────────────────────
+   Strategy (ordered by reliability):
 
-function _isWebViewWrapper() {
-  var ua = navigator.userAgent || '';
-  // Android WebView (explicit wv) marker) — native capture intent works fine.
-  if (/Android/.test(ua) && /wv\)/.test(ua)) return true;
-  // All other Android (Chrome browser tab, TWA, Samsung Internet, Android PWA):
-  // capture="environment" routes to OS camera app via Chrome file chooser,
-  // provided the host app / origin has camera permission. Use native path for all.
-  if (/Android/.test(ua)) return true;
-  // All iOS — Safari, WKWebView, PWA. capture="environment" works correctly.
-  if (/iPad|iPhone|iPod/.test(ua)) return true;
-  // Samsung Internet on non-Android UA edge cases.
-  if (/SamsungBrowser/.test(ua)) return true;
-  // Windows WebView2 / Flutter desktop / Electron:
-  // Real Chrome always has window.chrome.runtime; wrappers omit it.
-  try { if (!window.chrome || !window.chrome.runtime) return true; } catch (_) { return true; }
-  return false;
-}
+   TIER 1 — getUserMedia live preview
+     Works on: Desktop Chrome/Firefox, Android Chrome (HTTPS), TWA
+     (if the Android app grants CAMERA permission via onPermissionRequest).
 
-/* _isTWA — detect Trusted Web Activity (Chrome Custom Tab wrapper).
- * TWA sets document.referrer to "android-app://<package>" on first navigation.
- * Cached immediately because referrer clears on in-app navigations. */
-var _twaDetected = (function () {
-  try { return document.referrer.startsWith('android-app://'); } catch (_) { return false; }
+   TIER 2 — Fresh <input capture="environment"> per tap (mobile default)
+     Works on: Android WebView, TWA, iOS Safari, Samsung Internet,
+     Flutter WebView, PWA, any mobile browser.
+     Key: REUSED file input silently fails on Android OS second click.
+          Create brand-new element every tap.
+     Key combo: accept="image/*" + capture="environment" BOTH required.
+   ══════════════════════════════════════════════════════════════════ */
+
+var _stream = null;
+
+var _isMobile = (function () {
+  return /Android|iPhone|iPad|iPod|SamsungBrowser|Mobile/i.test(navigator.userAgent || '');
 }());
-// Keep old name as alias so any external call sites still work
-var _isAndroidWebView = _isWebViewWrapper;
 
-function _useNativeCamera() {
-  if (_isWebViewWrapper()) return true;
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
-  return false;
+/* getUserMedia is only reliable on HTTPS or localhost */
+var _canGetUserMedia = (function () {
+  if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') return false;
+  var p = location.protocol;
+  return p === 'https:' || p === 'chrome-extension:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+}());
+
+/* _openFileInput — fresh input per tap (never reuse — Android ignores reused inputs) */
+function _openFileInput(mode) {
+  document.querySelectorAll('input[data-aq-cam]').forEach(function (el) {
+    try { document.body.removeChild(el); } catch (_) {}
+  });
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.setAttribute('data-aq-cam', mode);
+  if (mode === 'camera') {
+    inp.accept = 'image/*';
+    try { inp.capture = 'environment'; } catch (_) {}
+    inp.setAttribute('capture', 'environment');
+  } else {
+    inp.accept = 'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif';
+    /* No capture attribute on gallery — its presence alone triggers camera on iOS */
+  }
+  /* Must be in DOM and NOT display:none — WebView silently drops .click() otherwise */
+  inp.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-9999;';
+  inp.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(inp);
+  function _cleanup() { try { document.body.removeChild(inp); } catch (_) {} }
+  inp.addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    _cleanup();
+    if (file) _processPhotoFile(file, mode);
+  });
+  inp.addEventListener('cancel', _cleanup);
+  inp.click();
 }
 
-// Hidden native camera input — appended to body once, reused
-var _nativeCameraInput = null;
-var _nativeGalleryInput = null;
+function _stopStream() {
+  if (_stream) { _stream.getTracks().forEach(function (t) { try { t.stop(); } catch (_) {} }); _stream = null; }
+  var vid = document.getElementById('videoEl');
+  if (vid) vid.srcObject = null;
+}
 
-function _ensureNativeInputs() {
-  if (!_nativeCameraInput) {
-    _nativeCameraInput = document.createElement('input');
-    _nativeCameraInput.type = 'file';
-    // FIX: accept="image/*" + capture="environment" is the W3C standard combo.
-    // Without accept, Android treats the input as a generic file picker and opens
-    // gallery/recents instead of the camera. With both set, modern Android & TWA
-    // route directly to the native camera app.
-    _nativeCameraInput.accept = 'image/*';
-    _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Android/Samsung
-    _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-    _nativeCameraInput.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(_nativeCameraInput);
-    _nativeCameraInput.addEventListener('change', function() {
-      var file = this.files && this.files[0];
-      if (file) _processPhotoFile(file, 'camera');
-      this.value = '';
-    });
-  }
-  if (!_nativeGalleryInput) {
-    _nativeGalleryInput = document.createElement('input');
-    _nativeGalleryInput.type   = 'file';
-    _nativeGalleryInput.accept = 'image/jpeg,image/png,image/webp,image/gif'; // accept kept on gallery only
-    _nativeGalleryInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-    _nativeGalleryInput.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(_nativeGalleryInput);
-    _nativeGalleryInput.addEventListener('change', function() {
-      var file = this.files && this.files[0];
-      if (file) _processPhotoFile(file, 'gallery');
-      this.value = '';
-    });
+function _setCamUI(state) {
+  var startBtn = document.getElementById('startCamBtn');
+  var captureBtn = document.getElementById('captureBtn');
+  var retakeBtn = document.getElementById('retakeBtn');
+  var placeholder = document.getElementById('camPlaceholder');
+  var camWrap = document.getElementById('camWrap');
+  var statusEl = document.getElementById('photoStatus');
+  if (state === 'idle') {
+    if (startBtn)    { startBtn.style.display = ''; startBtn.textContent = '📷 Open Camera'; startBtn.onclick = startCamera; startBtn.disabled = false; }
+    if (captureBtn)  captureBtn.style.display = 'none';
+    if (retakeBtn)   retakeBtn.style.display  = 'none';
+    if (placeholder) placeholder.style.display = '';
+    if (camWrap)     { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
+    if (statusEl)    statusEl.textContent = '';
+  } else if (state === 'live') {
+    if (startBtn)    startBtn.style.display = 'none';
+    if (captureBtn)  captureBtn.style.display = '';
+    if (retakeBtn)   retakeBtn.style.display  = 'none';
+    if (placeholder) placeholder.style.display = 'none';
+    if (camWrap)     { camWrap.style.display = ''; camWrap.classList.add('active'); }
+  } else if (state === 'done') {
+    if (startBtn)    startBtn.style.display = 'none';
+    if (captureBtn)  captureBtn.style.display = 'none';
+    if (retakeBtn)   retakeBtn.style.display  = '';
+    if (placeholder) placeholder.style.display = 'none';
+    if (camWrap)     { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
   }
 }
 
-/**
- * _processPhotoFile — shared handler for both camera capture and gallery selection.
- * Validates, compresses to max 1200px JPEG 0.82, applies GPS watermark.
- * @param {File} file
- * @param {'camera'|'gallery'} source
- */
+/* startCamera — called by "Open Camera" button (must be synchronous — user gesture) */
+function startCamera() {
+  _stopStream();
+  var statusEl = document.getElementById('photoStatus');
+
+  /* Mobile / WebView / TWA: always use file input (Tier 2).
+     getUserMedia on mobile requires additional TWA permission wiring
+     and is less reliable than the native camera intent.
+     File input is synchronous with user gesture — guaranteed to work. */
+  if (_isMobile || !_canGetUserMedia) {
+    _openFileInput('camera');
+    return;
+  }
+
+  /* Desktop: try getUserMedia live preview (Tier 1) */
+  var startBtn = document.getElementById('startCamBtn');
+  if (startBtn) { startBtn.disabled = true; startBtn.textContent = '⏳ Starting…'; }
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+    audio: false
+  }).then(function (stream) {
+    _stream = stream;
+    var vid = document.getElementById('videoEl');
+    vid.srcObject = stream;
+    vid.muted = true; vid.playsInline = true;
+    vid.play().catch(function () {});
+    _setCamUI('live');
+    if (statusEl) statusEl.textContent = '';
+  }).catch(function (err) {
+    console.warn('[camera] getUserMedia failed:', err.name, err.message);
+    _stopStream();
+    if (startBtn) {
+      startBtn.disabled = false;
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        startBtn.textContent = '📷 Tap again for camera';
+        if (statusEl) statusEl.textContent = '⚠ Camera permission denied — tap again to use file picker';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        startBtn.textContent = '📁 Choose photo file';
+        if (statusEl) statusEl.textContent = 'ℹ No camera found — select a file instead';
+      } else {
+        startBtn.textContent = '📷 Tap again';
+        if (statusEl) statusEl.textContent = '⚠ Camera unavailable — tap again';
+      }
+      /* Re-wire: next tap fires file input synchronously (user gesture) */
+      startBtn.onclick = function () { startBtn.onclick = startCamera; _openFileInput('camera'); };
+    }
+  });
+}
+
+/* capturePhoto — freeze live getUserMedia preview to JPEG (desktop only) */
+function capturePhoto() {
+  var video = document.getElementById('videoEl');
+  var canvas = document.getElementById('captureCanvas');
+  var W = video.videoWidth || 1280, H = video.videoHeight || 960;
+  var MAX = 1200;
+  if (W > MAX || H > MAX) { if (W >= H) { H = Math.round(H*MAX/W); W = MAX; } else { W = Math.round(W*MAX/H); H = MAX; } }
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, W, H);
+  drawWatermark(ctx, W, H);
+  _photoData = canvas.toDataURL('image/jpeg', 0.82);
+  _stopStream();
+  document.getElementById('photoPreview').src = _photoData;
+  document.getElementById('photoPreview').classList.add('show');
+  _setCamUI('done');
+  var statusEl = document.getElementById('photoStatus');
+  if (statusEl) statusEl.textContent = '✅ Photo captured with GPS watermark';
+}
+
+/* retakePhoto — reset so user can try again */
+function retakePhoto() {
+  _photoData = null; _stopStream();
+  var preview = document.getElementById('photoPreview');
+  preview.classList.remove('show'); preview.src = '';
+  _setCamUI('idle');
+}
+
+/* selectPhoto — Gallery button */
+function selectPhoto() { _openFileInput('gallery'); }
+
+/* _processPhotoFile — shared handler for file input + live capture */
 function _processPhotoFile(file, source) {
-  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']; // heic/heif: iOS camera returns these when no accept= is set
-  if (!ALLOWED.includes(file.type)) {
-    showToast('Only JPEG, PNG, WebP images are allowed.', 'error'); return;
+  var ALLOWED = ['image/jpeg','image/jpg','image/png','image/webp','image/gif','image/heic','image/heif'];
+  if (!file || !ALLOWED.includes(file.type.toLowerCase())) {
+    showToast('Only JPEG, PNG, WebP or HEIC images are allowed.', 'error'); return;
   }
   if (file.size > 20 * 1024 * 1024) {
-    showToast('Photo too large (max 20MB). Please choose a smaller image.', 'error'); return;
+    showToast('Photo too large (max 20 MB).', 'error'); return;
   }
-
   var statusEl = document.getElementById('photoStatus');
   if (statusEl) statusEl.textContent = '⏳ Processing photo…';
-
   var reader = new FileReader();
-  reader.onerror = function() { showToast('Failed to read image file.', 'error'); };
-  reader.onload = function(ev) {
+  reader.onerror = function () { showToast('Failed to read image file.', 'error'); };
+  reader.onload = function (ev) {
     var img = new Image();
-    img.onerror = function() { showToast('Failed to load image.', 'error'); };
-    img.onload = function() {
-      // Compress: max 1200px on longest side, JPEG 0.82
+    img.onerror = function () { showToast('Failed to load image — try another photo.', 'error'); };
+    img.onload = function () {
       var MAX = 1200, QUALITY = 0.82;
-      var w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
-        else        { w = Math.round(w * MAX / h); h = MAX; }
-      }
+      var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      if (w > MAX || h > MAX) { if (w >= h) { h = Math.round(h*MAX/w); w = MAX; } else { w = Math.round(w*MAX/h); h = MAX; } }
       var canvas = document.getElementById('captureCanvas');
       canvas.width = w; canvas.height = h;
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
       drawWatermark(ctx, w, h);
       _photoData = canvas.toDataURL('image/jpeg', QUALITY);
-
       var preview = document.getElementById('photoPreview');
-      preview.src = _photoData;
-      preview.classList.add('show');
-
-      // Hide camera UI elements if visible
-      var camWrap = document.getElementById('camWrap');
-      if (camWrap) { camWrap.style.display = 'none'; camWrap.classList.remove('active'); }
-      if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
-
-      document.getElementById('captureBtn').style.display  = 'none';
-      document.getElementById('retakeBtn').style.display   = '';
-      document.getElementById('startCamBtn').style.display = 'none';
-      document.getElementById('camPlaceholder').style.display = 'none';
-
-      var label = source === 'camera' ? '📸 Photo captured with GPS watermark' : '🖼️ Photo selected with GPS watermark';
-      if (statusEl) statusEl.textContent = '✅ ' + label.replace('📸 ','').replace('🖼️ ','');
+      preview.src = _photoData; preview.classList.add('show');
+      _stopStream(); _setCamUI('done');
+      if (statusEl) statusEl.textContent = source === 'camera' ? '✅ Photo captured with GPS watermark' : '✅ Photo selected with GPS watermark';
     };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-async function startCamera() {
-  _ensureNativeInputs();
+/* Legacy shims */
+function _ensureNativeInputs() {}
+var _nativeCameraInput  = { click: function () { _openFileInput('camera');  } };
+var _nativeGalleryInput = { click: function () { _openFileInput('gallery'); } };
 
-  if (_useNativeCamera()) {
-    // Wrapper/WebView path: click is SYNCHRONOUS here — user gesture alive.
-    // accept="image/*" + capture="environment" → Android routes to native camera app.
-    _nativeCameraInput.click();
-    return;
-  }
-
-  // Desktop Chrome path: getUserMedia live preview
-  try {
-    _stream = await navigator.mediaDevices.getUserMedia({
-      // FIX: ideal (not strict) — strict 'environment' fails on front-only cameras
-      // and some WebView2 configs, throwing OverconstrainedError silently.
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
-    });
-    document.getElementById('videoEl').srcObject = _stream;
-    document.getElementById('camWrap').classList.add('active');
-    document.getElementById('camPlaceholder').style.display = 'none';
-    document.getElementById('startCamBtn').style.display = 'none';
-    document.getElementById('captureBtn').style.display  = '';
-  } catch (e) {
-    // FIX: do NOT call _nativeCameraInput.click() here.
-    // We are after an await — user gesture context is DEAD.
-    // Programmatic .click() on file input is silently blocked post-gesture.
-    // Re-wire button so user's NEXT tap fires click() synchronously.
-    console.warn('[camera] getUserMedia failed (' + e.name + ') — re-wiring button');
-    var btn = document.getElementById('startCamBtn');
-    if (btn) {
-      btn.textContent = '📷 Tap to open camera';
-      btn.onclick = function () {
-        _ensureNativeInputs();
-        _nativeCameraInput.click(); // fresh synchronous gesture
-        setTimeout(function () { btn.textContent = '📷 Open Camera'; btn.onclick = startCamera; }, 500);
-      };
-    }
-  }
-}
-
-function selectPhoto() {
-  _ensureNativeInputs();
-  // FIX: Appended to DOM (above) so Android WebView file chooser works reliably.
-  // Previously created a detached <input> that Android WebView GC'd before the
-  // file chooser returned, dropping the result silently.
-  _nativeGalleryInput.click();
-}
-/* retakePhoto — resets camera UI so user can try again */
-function retakePhoto() {
-  _photoData = null;
-  document.getElementById('photoPreview').classList.remove('show');
-  var camWrap = document.getElementById('camWrap');
-  if (camWrap) camWrap.style.display = 'none'; // hide video (native path doesn't use it)
-  document.getElementById('retakeBtn').style.display   = 'none';
-  document.getElementById('startCamBtn').style.display = '';
-  document.getElementById('camPlaceholder').style.display = '';
-  document.getElementById('photoStatus').textContent   = '';
-}
-
-/* capturePhoto — only used on desktop getUserMedia path (video element is live) */
-function capturePhoto() {
-  var video  = document.getElementById('videoEl');
-  var canvas = document.getElementById('captureCanvas');
-  canvas.width = video.videoWidth || 640; canvas.height = video.videoHeight || 480;
-  var ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  drawWatermark(ctx, canvas.width, canvas.height);
-  _photoData = canvas.toDataURL('image/jpeg', 0.82);
-  document.getElementById('photoPreview').src = _photoData;
-  document.getElementById('photoPreview').classList.add('show');
-  document.getElementById('camWrap').style.display = 'none';
-  document.getElementById('captureBtn').style.display = 'none';
-  document.getElementById('retakeBtn').style.display  = '';
-  document.getElementById('photoStatus').textContent = '✅ Photo captured with GPS watermark';
-  if (_stream) { _stream.getTracks().forEach(function(t){ t.stop(); }); _stream = null; }
-}
-
+/* ── drawWatermark ──────────────────────────────────────────────── */
 function drawWatermark(ctx, W, H) {
-  const gps   = _gps ? _gps.latitude.toFixed(5) + ', ' + _gps.longitude.toFixed(5) : 'No GPS';
-  const ts    = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const gps    = _gps ? _gps.latitude.toFixed(5) + ', ' + _gps.longitude.toFixed(5) : 'No GPS';
+  const ts     = new Date().toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const taluka = document.getElementById('fTaluka').value || '—';
   const lines  = [gps, ts, 'Taluka: ' + taluka, 'Aqualence Ventures'];
   const fontSize = Math.max(12, Math.round(W / 42));
@@ -1410,14 +1401,6 @@ function drawWatermark(ctx, W, H) {
   const padding  = Math.round(W * 0.025);
   const boxH     = lines.length * (lineH + 4) + padding * 2;
   const boxY     = H - boxH - 10;
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  ctx.beginPath();
-  ctx.roundRect ? ctx.roundRect(8, boxY, W - 16, boxH, 8) : ctx.rect(8, boxY, W - 16, boxH);
-  ctx.fill();
-  ctx.fillStyle = '#fff';
-  ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
-  lines.forEach((line, i) => ctx.fillText(line, padding + 10, boxY + padding + (i + 1) * (lineH + 4)));
-}
 
 /* ══════════ SALE TOGGLE ══════════ */
 function setSale(v) {
