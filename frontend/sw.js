@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-const CACHE_NAME    = 'aqualence-v4';  // bumped — forces SW update, clears all stale JS/CSS/API cache
+const CACHE_NAME    = 'aqualence-v8';  // bumped: evicts stale geo-lead.html (camera fix)
 const OFFLINE_URL   = '/offline.html';
 
 // Static assets to pre-cache on install
@@ -63,26 +63,52 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Handle Railway API calls (cross-origin) — Network-First
-  const RAILWAY_API = 'https://aqualance-production-9e22.up.railway.app';
-  if (url.origin === RAILWAY_API) {
-    // ✅ FIX (Login Loop): Auth endpoints must NEVER be served from cache.
-    // On mobile/PWA, a stale cached 200 from /auth/me tricks network.js into
-    // thinking the session is still valid, causing the login ↔ dashboard loop.
-    const isAuthEndpoint = url.pathname.includes('/auth/');
-    if (isAuthEndpoint) {
-      // Pass through to network with no caching — if offline, return a clear error
-      event.respondWith(
-        fetch(request).catch(() =>
-          new Response(
-            JSON.stringify({ success: false, message: 'You are offline.' }),
-            { status: 503, headers: { 'Content-Type': 'application/json' } }
-          )
-        )
-      );
-      return;
+  // Handle API calls — Network-First
+  // For same-origin deployments (backend serves frontend), API origin = location.origin.
+  // For cross-origin setups (frontend on Vercel, backend on Railway), use SW_API_BASE.
+  const API_ORIGIN = SW_API_BASE || location.origin;
+  const isApiCall = url.pathname.startsWith('/api/') ||
+                    (SW_API_BASE && url.origin === new URL(SW_API_BASE).origin);
+
+  if (isApiCall) {
+    // Build a clean cross-origin Request.
+    // Never re-use the original Request object cross-origin: its mode may be
+    // 'same-origin' or 'navigate', which throws TypeError cross-origin.
+    let fetchUrl = request.url;
+    if (SW_API_BASE && url.origin !== new URL(SW_API_BASE).origin) {
+      fetchUrl = SW_API_BASE + url.pathname + url.search;
     }
-    event.respondWith(networkFirst(request));
+
+    // Clone headers so we can safely read them
+    const headersCopy = {};
+    request.headers.forEach((v, k) => { headersCopy[k] = v; });
+
+    const cleanInit = {
+      method:      request.method,
+      headers:     headersCopy,
+      mode:        'cors',
+      credentials: 'include',
+      redirect:    'follow',
+    };
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      cleanInit.body = request.clone().body;
+      cleanInit.duplex = 'half';
+    }
+    const cleanRequest = new Request(fetchUrl, cleanInit);
+
+    // ── NEVER CACHE ANY API CALL ─────────────────────────────────────────────
+    // 1. /auth/* (login, logout, me) must never be cached — stale /auth/me
+    //    causes ghost sessions after logout on every platform including Android.
+    // 2. All other /api/v1/* calls go network-only too. The SW has no business
+    //    caching business data (orders, products, leads) — staleness causes
+    //    incorrect UI state and is the source of most "data not loading" bugs.
+    //    Caching is handled at the application layer (DataCache in network.js).
+    //
+    // ANDROID WEBVIEW: The SW also acts as a CORS proxy here — it rewrites
+    // relative /api/* requests to the full Railway URL. If the WebView fires a
+    // fetch that hits the SW with a relative URL (before window.fetch is patched),
+    // this ensures it still reaches the backend.
+    event.respondWith(fetch(cleanRequest));
     return;
   }
 
