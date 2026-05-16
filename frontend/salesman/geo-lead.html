@@ -1192,15 +1192,35 @@ function haversine(lat1, lng1, lat2, lng2) {
  *   5. Fall back to getUserMedia on desktop/non-Android where it works fine
  */
 
-function _isAndroidWebView() {
+function _isWebViewWrapper() {
   var ua = navigator.userAgent || '';
-  // Android WebView: contains "wv" or "Version/X.X" in Chrome UA with Android
-  return /Android/.test(ua) && (/wv\)/.test(ua) || /Version\/\d+\.\d+/.test(ua));
+  // Android WebView (explicit wv) marker) — native capture intent works fine.
+  if (/Android/.test(ua) && /wv\)/.test(ua)) return true;
+  // All other Android (Chrome browser tab, TWA, Samsung Internet, Android PWA):
+  // capture="environment" routes to OS camera app via Chrome file chooser,
+  // provided the host app / origin has camera permission. Use native path for all.
+  if (/Android/.test(ua)) return true;
+  // All iOS — Safari, WKWebView, PWA. capture="environment" works correctly.
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // Samsung Internet on non-Android UA edge cases.
+  if (/SamsungBrowser/.test(ua)) return true;
+  // Windows WebView2 / Flutter desktop / Electron:
+  // Real Chrome always has window.chrome.runtime; wrappers omit it.
+  try { if (!window.chrome || !window.chrome.runtime) return true; } catch (_) { return true; }
+  return false;
 }
 
+/* _isTWA — detect Trusted Web Activity (Chrome Custom Tab wrapper).
+ * TWA sets document.referrer to "android-app://<package>" on first navigation.
+ * Cached immediately because referrer clears on in-app navigations. */
+var _twaDetected = (function () {
+  try { return document.referrer.startsWith('android-app://'); } catch (_) { return false; }
+}());
+// Keep old name as alias so any external call sites still work
+var _isAndroidWebView = _isWebViewWrapper;
+
 function _useNativeCamera() {
-  // Use native input[capture] when: Android WebView, OR getUserMedia unavailable
-  if (_isAndroidWebView()) return true;
+  if (_isWebViewWrapper()) return true;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   return false;
 }
@@ -1213,9 +1233,10 @@ function _ensureNativeInputs() {
   if (!_nativeCameraInput) {
     _nativeCameraInput = document.createElement('input');
     _nativeCameraInput.type = 'file';
-    // TWA FIX: no accept= on camera input — accept + capture together = Android shows
-    // gallery/camera chooser dialog. No accept = goes straight to camera app.
-    _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Samsung/Android
+    // TWA CAMERA FIX: do NOT set accept on camera input.
+    // accept="image/*" + capture="environment" triggers Android's intent chooser
+    // (shows gallery + camera options). No accept = goes straight to camera app.
+    _nativeCameraInput.setAttribute('capture', 'environment'); // setAttribute > .capture on old Android/Samsung
     _nativeCameraInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     _nativeCameraInput.setAttribute('aria-hidden', 'true');
     document.body.appendChild(_nativeCameraInput);
@@ -1228,7 +1249,7 @@ function _ensureNativeInputs() {
   if (!_nativeGalleryInput) {
     _nativeGalleryInput = document.createElement('input');
     _nativeGalleryInput.type   = 'file';
-    _nativeGalleryInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    _nativeGalleryInput.accept = 'image/jpeg,image/png,image/webp,image/gif'; // accept kept on gallery only
     _nativeGalleryInput.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
     _nativeGalleryInput.setAttribute('aria-hidden', 'true');
     document.body.appendChild(_nativeGalleryInput);
@@ -1247,7 +1268,7 @@ function _ensureNativeInputs() {
  * @param {'camera'|'gallery'} source
  */
 function _processPhotoFile(file, source) {
-  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+  var ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif']; // heic/heif: iOS camera returns these when no accept= is set
   if (!ALLOWED.includes(file.type)) {
     showToast('Only JPEG, PNG, WebP images are allowed.', 'error'); return;
   }
@@ -1304,16 +1325,18 @@ async function startCamera() {
   _ensureNativeInputs();
 
   if (_useNativeCamera()) {
-    // Android WebView path: trigger native camera app via input[capture]
-    // This uses OS-level permissions — no browser permission popup
+    // Wrapper/WebView path: click is SYNCHRONOUS here — user gesture alive.
+    // accept="image/*" + capture="environment" → Android routes to native camera app.
     _nativeCameraInput.click();
     return;
   }
 
-  // Desktop / mobile browser path: use getUserMedia (live preview in video element)
+  // Desktop Chrome path: getUserMedia live preview
   try {
     _stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+      // FIX: ideal (not strict) — strict 'environment' fails on front-only cameras
+      // and some WebView2 configs, throwing OverconstrainedError silently.
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
     });
     document.getElementById('videoEl').srcObject = _stream;
     document.getElementById('camWrap').classList.add('active');
@@ -1321,9 +1344,20 @@ async function startCamera() {
     document.getElementById('startCamBtn').style.display = 'none';
     document.getElementById('captureBtn').style.display  = '';
   } catch (e) {
-    // getUserMedia failed — fall back to native input[capture]
-    console.warn('[camera] getUserMedia failed (' + e.name + '), falling back to native input');
-    _nativeCameraInput.click();
+    // FIX: do NOT call _nativeCameraInput.click() here.
+    // We are after an await — user gesture context is DEAD.
+    // Programmatic .click() on file input is silently blocked post-gesture.
+    // Re-wire button so user's NEXT tap fires click() synchronously.
+    console.warn('[camera] getUserMedia failed (' + e.name + ') — re-wiring button');
+    var btn = document.getElementById('startCamBtn');
+    if (btn) {
+      btn.textContent = '📷 Tap to open camera';
+      btn.onclick = function () {
+        _ensureNativeInputs();
+        _nativeCameraInput.click(); // fresh synchronous gesture
+        setTimeout(function () { btn.textContent = '📷 Open Camera'; btn.onclick = startCamera; }, 500);
+      };
+    }
   }
 }
 
@@ -1464,7 +1498,7 @@ async function submitLead() {
       sale_status:  _saleStatus,
       notes:        document.getElementById('fNotes').value.trim(),
       photo_data:   _photoData,
-      products_interested: _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-'+i); const qtyEl = document.getElementById('geo-qty-'+i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price; const qty = qtyEl ? Math.max(1, parseInt(qtyEl.value,10)||1) : p.qty; return { id: p.id, variant_id: p.variant_id || null, name: p.name, price, qty, dist_price: p.dist_price || null }; }),
+      products: _geoSelProds.map((p, i) => { const priceEl = document.getElementById('geo-price-'+i); const qtyEl = document.getElementById('geo-qty-'+i); const price = priceEl ? Math.max(0, parseFloat(priceEl.value)||0) : p.price; const quantity = qtyEl ? Math.max(1, parseInt(qtyEl.value,10)||1) : (p.qty || p.quantity || 1); return { product_id: p.id, variant_id: p.variant_id || null, name: p.name, price, quantity, total: parseFloat((price * quantity).toFixed(2)), dist_price: p.dist_price || null }; }),
       latitude:     _gps?.latitude  || null,
       longitude:    _gps?.longitude || null,
       gps_accuracy: _gps?.accuracy  || null,
