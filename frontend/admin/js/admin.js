@@ -54,7 +54,7 @@ async function adminLogout() {
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort — always redirect */ }
   localStorage.removeItem('aq_mobile_token');
-sessionStorage.removeItem('aq_token_mirror');
+  sessionStorage.removeItem('aq_token_mirror');
   window.location.replace('/admin/login.html');
 }
 // Expose on window so network.js auth-guard (patchApiFetch) can call it
@@ -305,12 +305,19 @@ async function submitOtp() {
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     // SECURITY FIX: JWT no longer returned in login response.
     // Use mobile-token exchange if cross-site cookies are blocked (PWA fallback).
+    // TWA fallback: also store token from response body if present.
+    if (data.token) {
+      try { localStorage.setItem('aq_mobile_token', data.token); } catch (_) {}
+      try { sessionStorage.setItem('aq_token_mirror', data.token); } catch (_) {}
+    }
     await tryMobileTokenExchange();
+    const _mfaTok = data.token || localStorage.getItem('aq_mobile_token') || '';
+    const _mfaHash = _mfaTok ? '#aqt=' + encodeURIComponent(_mfaTok) : '';
     if (data.user.must_change_password) {
-      window.location.replace('/admin/change-password.html');
+      window.location.replace('/admin/change-password.html' + _mfaHash);
       return;
     }
-    window.location.replace('/admin/dashboard.html');
+    window.location.replace('/admin/dashboard.html' + _mfaHash);
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -379,9 +386,16 @@ async function submitSmsOtp() {
     if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
     sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
     // SECURITY FIX: use mobile-token exchange instead of data.token
+    // TWA fallback: also store token from response body if present.
+    if (data.token) {
+      try { localStorage.setItem('aq_mobile_token', data.token); } catch (_) {}
+      try { sessionStorage.setItem('aq_token_mirror', data.token); } catch (_) {}
+    }
     await tryMobileTokenExchange();
-    if (data.user.must_change_password) { window.location.replace('/admin/change-password.html'); return; }
-    window.location.replace('/admin/dashboard.html');
+    const _otpTok = data.token || localStorage.getItem('aq_mobile_token') || '';
+    const _otpHash = _otpTok ? '#aqt=' + encodeURIComponent(_otpTok) : '';
+    if (data.user.must_change_password) { window.location.replace('/admin/change-password.html' + _otpHash); return; }
+    window.location.replace('/admin/dashboard.html' + _otpHash);
   } catch (err) {
     errDiv.textContent = err.message;
     errDiv.classList.remove('hidden');
@@ -458,13 +472,33 @@ if (document.getElementById('loginForm')) {
 
       if (!data.user || data.user.role !== 'admin') throw new Error('Access denied. Admin only.');
       sessionStorage.setItem('aq_admin_user', JSON.stringify(data.user));
-      // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
+
+      // TWA/WebView Bearer fallback:
+      // The login response now includes `data.token` for Android WebView clients
+      // whose cookie jar does not commit cross-origin Set-Cookie before the next
+      // fetch fires (causing POST /mobile-token → 401 → no token stored → loop).
+      // Store it immediately here, BEFORE redirect, so network.js _runAuthGate
+      // finds it in localStorage on the dashboard page.
+      // Also append #aqt=TOKEN to the redirect URL so network.js _mobileAuthHeaders
+      // can extract it from the hash even if localStorage write is delayed on Android.
+      if (data.token) {
+        try { localStorage.setItem('aq_mobile_token', data.token); } catch (_) {}
+        try { sessionStorage.setItem('aq_token_mirror', data.token); } catch (_) {}
+      }
+
+      // tryMobileTokenExchange is still called as a belt-and-suspenders path
+      // for environments where the cookie works but localStorage needs the token
+      // for subsequent requests. If cookie path is fine, it stores the same token.
       await tryMobileTokenExchange();
+
+      const _tok = data.token || localStorage.getItem('aq_mobile_token') || '';
+      const _hash = _tok ? '#aqt=' + encodeURIComponent(_tok) : '';
+
       if (data.user.must_change_password) {
-        window.location.replace('/admin/change-password.html');
+        window.location.replace('/admin/change-password.html' + _hash);
         return;
       }
-      window.location.replace('/admin/dashboard.html');
+      window.location.replace('/admin/dashboard.html' + _hash);
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
