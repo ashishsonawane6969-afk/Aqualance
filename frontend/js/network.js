@@ -189,7 +189,10 @@ console.log("✅ NEW network.js LOADED");
       if (document.requestStorageAccess) {
         document.requestStorageAccess().catch(function() {});
       }
-      fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
+      fetch(`${API_BASE}/api/v1/auth/me`, {
+  credentials: 'omit',
+  headers: _mobileAuthHeaders()
+})
         .then(function(res) {
           // 🔒 Login race guard: if the user just submitted the login form,
           // abort this delayed /auth/me check — the cookie isn't committed yet,
@@ -280,7 +283,10 @@ console.log("✅ NEW network.js LOADED");
         'hash:', window.location.hash.slice(0, 30),
         'delay: 350ms');
 
-    fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
+    fetch(`${API_BASE}/api/v1/auth/me`, {
+  credentials: 'omit',
+  headers: _mobileAuthHeaders()
+})
       .then(function(res) {
         if (!res.ok) {
           window._aqRehydrating = false;
@@ -547,7 +553,7 @@ console.log("✅ NEW network.js LOADED");
         // adaptedOpts.headers override (e.g. caller supplies X-CSRF-Token).
         var _mergedHeaders = Object.assign({}, _mobileAuthHeaders(), adaptedOpts.headers || {});
         var _mergedOpts    = Object.assign({}, adaptedOpts, {
-          credentials: 'include',
+          credentials: 'omit',
           headers:     _mergedHeaders,
         });
         return adaptiveFetch(url, _mergedOpts)
@@ -635,7 +641,7 @@ console.log("✅ NEW network.js LOADED");
 //     blocks httpOnly cross-origin cookies — Bearer token in localStorage is the fallback)
 //
 // IMPORTANT: This patch does NOT override explicit Authorization headers set by callers.
-const _nativeFetch = window.fetch.bind(window);
+const _nativeFetch = (window.fetch || fetch).bind(window);
 window.fetch = function(url, options) {
   var opts = options ? Object.assign({}, options) : {};
 
@@ -727,7 +733,10 @@ window.fetch = function(url, options) {
         // Do NOT re-validate if login form just submitted — password manager autofill
         // can trigger visibilitychange which would wipe the in-flight session.
         if (window.isLoggingIn) return;
-        fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
+        fetch(`${API_BASE}/api/v1/auth/me`, {
+  credentials: 'omit',
+  headers: _mobileAuthHeaders()
+})
           .then(function(res) {
             if (!res.ok) {
               // Cookie expired — log out via the appropriate logout fn
