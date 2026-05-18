@@ -457,7 +457,13 @@
   window.addEventListener('pageshow', function(e) {
     if (e.persisted && !isAuthenticated()) {
       // Served from bfcache after logout — hard redirect to login
-      window.location.replace('/admin/login.html');
+      window.localStorage.setItem('aq_mobile_token', data.token);
+
+sessionStorage.setItem('aq_token_mirror', data.token);
+
+window.location.replace(
+  '/admin/dashboard.html#aqt=' + encodeURIComponent(data.token)
+);
     }
   });
   // Push a state so the back button hits this entry, not the login page
