@@ -44,7 +44,8 @@ async function tryMobileTokenExchange() {
     const tokenRes = await fetch(`${API}/auth/mobile-token/${codeData.code}`, { credentials: 'include' });
     if (!tokenRes.ok) return;
     const tokenData = await tokenRes.json();
-    if (tokenData.success && tokenData.token) localStorage.setItem('aq_token', tokenData.token);
+    if (tokenData.success && tokenData.token) localStorage.setItem('aq_mobile_token', tokenData.token);
+sessionStorage.setItem('aq_token_mirror', tokenData.token);
   } catch (_) {}
 }
 
@@ -63,7 +64,8 @@ async function deliveryLogout() {
     sessionStorage.removeItem('aq_delivery_user');
     sessionStorage.removeItem('aq_sales_user');  // belt-and-suspenders
     sessionStorage.removeItem('aq_admin_user');
-    localStorage.removeItem('aq_token');
+    localStorage.removeItem('aq_mobile_token');
+sessionStorage.removeItem('aq_token_mirror');
   } catch (_) {}
   window.location.replace('/delivery/login.html');
 }
