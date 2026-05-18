@@ -54,7 +54,8 @@ async function tryMobileTokenExchange() {
     if (!tokenRes.ok) return;
     const tokenData = await tokenRes.json();
     if (tokenData.success && tokenData.token) {
-      try { localStorage.setItem('aq_token', tokenData.token); } catch(_) {}
+      try { localStorage.setItem('aq_mobile_token', tokenData.token);
+sessionStorage.setItem('aq_token_mirror', tokenData.token); } catch(_) {}
     }
   } catch (_) {}
 }
@@ -66,7 +67,8 @@ async function salesLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort */ }
   sessionStorage.removeItem('aq_sales_user');
-  try { localStorage.removeItem('aq_token'); } catch(_){}
+  try { localStorage.removeItem('aq_mobile_token');
+sessionStorage.removeItem('aq_token_mirror'); } catch(_){}
   window.location.replace('login.html');
 }
 function salesmanLogout() { salesLogout(); }
