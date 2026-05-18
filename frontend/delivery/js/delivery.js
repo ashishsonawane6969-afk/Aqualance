@@ -44,8 +44,10 @@ async function tryMobileTokenExchange() {
     const tokenRes = await fetch(`${API}/auth/mobile-token/${codeData.code}`, { credentials: 'include' });
     if (!tokenRes.ok) return;
     const tokenData = await tokenRes.json();
-    if (tokenData.success && tokenData.token) localStorage.setItem('aq_mobile_token', tokenData.token);
-sessionStorage.setItem('aq_token_mirror', tokenData.token);
+    if (tokenData.success && tokenData.token) {
+      try { localStorage.setItem('aq_mobile_token', tokenData.token); } catch (_) {}
+      try { sessionStorage.setItem('aq_token_mirror', tokenData.token); } catch (_) {}
+    }
   } catch (_) {}
 }
 
@@ -65,7 +67,7 @@ async function deliveryLogout() {
     sessionStorage.removeItem('aq_sales_user');  // belt-and-suspenders
     sessionStorage.removeItem('aq_admin_user');
     localStorage.removeItem('aq_mobile_token');
-sessionStorage.removeItem('aq_token_mirror');
+    sessionStorage.removeItem('aq_token_mirror');
   } catch (_) {}
   window.location.replace('/delivery/login.html');
 }
@@ -168,13 +170,21 @@ if (page === 'login') {
       if (data.user.role !== 'delivery') throw new Error('This portal is for delivery partners only.');
 
       sessionStorage.setItem('aq_delivery_user', JSON.stringify(data.user));
+      // TWA/WebView Bearer fallback: store token from login response immediately,
+      // before redirect, so dashboard auth gate finds it in localStorage.
+      if (data.token) {
+        try { localStorage.setItem('aq_mobile_token', data.token); } catch (_) {}
+        try { sessionStorage.setItem('aq_token_mirror', data.token); } catch (_) {}
+      }
       // SECURITY FIX: use mobile-token exchange instead of data.token
       await tryMobileTokenExchange();
+      const _dTok = data.token || localStorage.getItem('aq_mobile_token') || '';
+      const _dHash = _dTok ? '#aqt=' + encodeURIComponent(_dTok) : '';
       if (data.user.must_change_password) {
-        window.location.replace('/delivery/change-password.html');
+        window.location.replace('/delivery/change-password.html' + _dHash);
         return;
       }
-      window.location.replace('/delivery/dashboard.html');
+      window.location.replace('/delivery/dashboard.html' + _dHash);
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.classList.remove('hidden');
