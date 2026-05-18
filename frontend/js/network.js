@@ -26,11 +26,63 @@ console.log("✅ NEW network.js LOADED");
   // Helper: build headers for /auth/me and other direct fetch() calls.
   // On mobile, cross-site cookies are blocked so we fall back to Bearer token
   // stored in localStorage after login.
+  // Build auth headers for direct fetch() calls (auth gate, visibilitychange).
+  // On Android WebView, cross-origin httpOnly cookies are blocked by the system
+  // WebView settings. We fall back to the Bearer token stored in localStorage
+  // by the mobile-token exchange that runs immediately after login.
+  var _memToken = null; // in-memory fallback: survives location.replace() within same JS heap
+
+  // FIX-5: startup hydration — read localStorage immediately so _memToken
+  // is populated before any auth gate or header builder runs.
+  try {
+    var _storedToken = localStorage.getItem('aq_mobile_token');
+    if (_storedToken) {
+      sessionStorage.setItem('aq_token_mirror', _storedToken);
+      _memToken = _storedToken;
+      console.log('[AqNet] startup hydration success');
+    }
+  } catch (e) {
+    console.warn('[AqNet] startup hydration failed', e);
+  }
+
   function _mobileAuthHeaders() {
-    var token = '';
-    try { token = localStorage.getItem('aq_token') || ''; } catch (_) {}
     var headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
+    try {
+      var hashToken = '';
+      try {
+        hashToken = new URLSearchParams(
+          location.hash.replace('#', '?')
+        ).get('aqt') || '';
+      } catch (_) {}
+
+      var ssToken = '';
+      var lsToken = '';
+      try { ssToken = sessionStorage.getItem('aq_token_mirror') || ''; } catch (_) {}
+      try { lsToken = localStorage.getItem('aq_mobile_token') || ''; } catch (_) {}
+
+      var token = hashToken || lsToken || ssToken || _memToken;
+
+      console.log('[AqNet] _mobileAuthHeaders',
+        'ss_mirror:', !!ssToken,
+        'ls_token:', !!lsToken,
+        'url_token:', !!hashToken,
+        'has_auth:', !!token,
+        'path:', window.location.pathname);
+
+      if (hashToken) {
+        try { localStorage.setItem('aq_mobile_token', hashToken); } catch (_) {}
+        try { sessionStorage.setItem('aq_token_mirror', hashToken); } catch (_) {}
+        try {
+          history.replaceState(null, '', location.pathname + location.search);
+        } catch (_) {}
+      }
+
+      if (token) {
+        _memToken = token;
+        headers['Authorization'] = 'Bearer ' + token;
+        headers['x-auth-token']  = token;
+      }
+    } catch (_) {}
     return headers;
   }
 
@@ -40,7 +92,13 @@ console.log("✅ NEW network.js LOADED");
       sessionStorage.removeItem('aq_admin_user');
       sessionStorage.removeItem('aq_sales_user');
       sessionStorage.removeItem('aq_delivery_user');
-      localStorage.removeItem('aq_token');
+      sessionStorage.removeItem('aq_admin_user');
+      // Explicit logout flag — prevents auto-relogin during this page lifecycle.
+      // Checked by _runAuthGate and the visibilitychange handler.
+      sessionStorage.setItem('aq_logged_out', '1');
+      // ANDROID: clear Bearer fallback token so stale token doesn't re-auth
+      localStorage.removeItem('aq_mobile_token');
+      sessionStorage.removeItem('aq_token_mirror');
     } catch (_) {}
   }
   /* ══════════════════════════════════════════════════════════════
@@ -85,13 +143,51 @@ console.log("✅ NEW network.js LOADED");
     }
 
     if (isLoginPage) {
+      // The user navigated to login intentionally — clear any stale logout flag
+      // so a fresh login can succeed without being blocked.
+      try { sessionStorage.removeItem('aq_logged_out'); } catch(_) {}
+      // BOUNCE TRACKING FIX: request cross-site storage access before any cross-origin
+      // fetch. This tells Chrome this domain legitimately needs cross-site cookies
+      // (Railway API) and is not a tracker. Safe to ignore if not supported/denied.
+      if (document.requestStorageAccess) {
+        document.requestStorageAccess().catch(function() {});
+      }
       fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
         .then(function(res) {
+          // 🔒 Login race guard: if the user just submitted the login form,
+          // abort this delayed /auth/me check — the cookie isn't committed yet,
+          // so res.ok will be false and _clearAuthState() would wipe the new session.
+          if (window.isLoggingIn) { _authGateResolve(null); return; }
           if (res.ok) {
             return res.json().then(function(data) {
               if (data && data.user) {
-                // Cookie is valid — go straight to dashboard, skip login form
-                window.location.replace(portalPrefix + '/dashboard.html');
+                // ── BUG FIX: role must match the portal the user is visiting.
+                // Old code redirected to portalPrefix+/dashboard.html for ANY valid
+                // session — so a logged-in salesman visiting /admin/login would be
+                // sent to /admin/dashboard, fail the role check there, and loop.
+                var userRole  = data.user.role; // 'admin' | 'salesman' | 'delivery'
+                var portal    = portalPrefix.replace('/', ''); // 'admin' | 'salesman' | 'delivery'
+                if (userRole === portal) {
+                  // Cookie valid AND correct portal — skip login form.
+                  // BOUNCE TRACKING FIX: requestStorageAccess() before cross-origin redirect
+                  // signals to Chrome that this is a legitimate first-party storage access,
+                  // not a tracking bounce. The 200ms delay ensures Chrome registers the
+                  // login page as a dwell (not an instant redirect), suppressing the
+                  // "intermediate website without user interaction" bounce tracking warning.
+                  var _doRedirect = function() {
+                    window.location.replace(portalPrefix + '/dashboard.html');
+                  };
+                  if (document.requestStorageAccess) {
+                    document.requestStorageAccess().then(_doRedirect).catch(_doRedirect);
+                  } else {
+                    setTimeout(_doRedirect, 200);
+                  }
+                } else {
+                  // Valid session but wrong portal — clear stale state,
+                  // show this portal's login form (don't cross-redirect)
+                  _clearAuthState();
+                  _authGateResolve(null);
+                }
                 return;
               }
               _authGateResolve(null);
@@ -114,6 +210,39 @@ console.log("✅ NEW network.js LOADED");
     document.documentElement.style.visibility = 'hidden';
 
     window._aqRehydrating = true;
+    console.log('[AqNet] _runAuthGate DASHBOARD — token_mirror:', !!sessionStorage.getItem('aq_token_mirror'), 'ls_token:', !!localStorage.getItem('aq_mobile_token'), 'hash:', window.location.hash.slice(0,20));
+
+    // FIX (mobile Chrome login loop): defer auth gate by one microtask tick.
+    //
+    // Root cause of the loop:
+    //   1. Login page calls redeemMobileCode() → gets JWT → stores in localStorage
+    //   2. Login page calls buildRedirectUrl() → appends #aqt=TOKEN to URL (FIXED in auth-utils.js)
+    //   3. location.replace('/admin/dashboard.html#aqt=TOKEN') fires
+    //   4. Dashboard page loads. network.js init() runs synchronously on DOMContentLoaded.
+    //   5. _mobileAuthHeaders() reads window.location.hash — #aqt=TOKEN IS present.
+    //   6. BUT on some mobile Chrome versions, the hash is read correctly yet
+    //      localStorage.setItem() from step 1 has not been flushed to disk yet
+    //      (IndexedDB/SQLite flush is async on Android).
+    //
+    // The defer below gives the browser one event loop turn to:
+    //   a) Process the URL hash (already done synchronously above)
+    //   b) Flush any pending localStorage writes from the login page
+    //   c) Allow _mobileAuthHeaders to hydrate localStorage from the #aqt= hash
+    //      BEFORE the /auth/me fetch fires
+    //
+    // One setTimeout(0) is sufficient — localStorage reads are synchronous once
+    // the write has been committed. The 1-frame delay is imperceptible to users.
+    setTimeout(function() {
+      // FIX-8 [AqNet] post-delay diagnostic — fires AFTER the 50ms flush window.
+      // The PRE-delay log above showing ls_token:false is normal — it ran before
+      // the Android SQLite write completed. THIS log shows the actual token state.
+      var _postDelayToken = (function() { try { return !!localStorage.getItem('aq_mobile_token'); } catch(_) { return 'err'; } })();
+      var _postDelayMirror = (function() { try { return !!sessionStorage.getItem('aq_token_mirror'); } catch(_) { return 'err'; } })();
+      console.log('[AqNet] _runAuthGate POST-DELAY — ls_token:', _postDelayToken,
+        'ss_mirror:', _postDelayMirror,
+        'hash:', window.location.hash.slice(0, 30),
+        'delay: 350ms');
+
     fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
       .then(function(res) {
         if (!res.ok) {
@@ -156,6 +285,7 @@ console.log("✅ NEW network.js LOADED");
         _clearAuthState();
         window.location.replace(portalPrefix + '/login.html');
       });
+    }, 350); // FIX-6: 350ms — gives Android SQLite flush + sessionStorage hydration time.
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -197,7 +327,7 @@ console.log("✅ NEW network.js LOADED");
     _probe: function () {
       var t0 = Date.now();
       // Fetch a 1-pixel GIF (cachebust so it always goes to network)
-      fetch('/api/v1/health?_nq=' + t0, { method: 'GET', cache: 'no-store', mode: 'no-cors' })
+      fetch(API_BASE + '/api/v1/health?_nq=' + t0, { method: 'GET', cache: 'no-store', mode: 'cors', credentials: 'omit' })
         .then(function () {
           var rtt = Date.now() - t0;
           NetQ.rtt = rtt;
@@ -375,10 +505,15 @@ console.log("✅ NEW network.js LOADED");
         // Build a new options object with adaptive timeout
         var adaptedOpts = Object.assign({}, options, { _timeout: NetQ.timeout() });
 
-        return adaptiveFetch(url, Object.assign({
+        // Merge caller headers with auth headers (Bearer + Content-Type).
+        // Object.assign order: _mobileAuthHeaders() provides defaults,
+        // adaptedOpts.headers override (e.g. caller supplies X-CSRF-Token).
+        var _mergedHeaders = Object.assign({}, _mobileAuthHeaders(), adaptedOpts.headers || {});
+        var _mergedOpts    = Object.assign({}, adaptedOpts, {
           credentials: 'include',
-          headers: _mobileAuthHeaders()
-        }, adaptedOpts))
+          headers:     _mergedHeaders,
+        });
+        return adaptiveFetch(url, _mergedOpts)
         .then(function (res) {
           Progress.done();
 
@@ -457,12 +592,48 @@ console.log("✅ NEW network.js LOADED");
 
   // frontend/js/network.js — add this block inside the IIFE, before the init() call
 // Patch native window.fetch so every portal benefits without touching 30+ call sites
+// Patch native window.fetch:
+//  1. Prepend API_BASE for relative /api/* paths (so calls work cross-origin in WebView)
+//  2. Inject Authorization: Bearer header if aq_mobile_token present (Android WebView
+//     blocks httpOnly cross-origin cookies — Bearer token in localStorage is the fallback)
+//
+// IMPORTANT: This patch does NOT override explicit Authorization headers set by callers.
 const _nativeFetch = window.fetch.bind(window);
 window.fetch = function(url, options) {
+  var opts = options ? Object.assign({}, options) : {};
+
+  // 1. Absolute URL fix for /api/* paths
   if (typeof url === 'string' && url.startsWith('/api')) {
-    url = API_BASE + url;  // API_BASE = 'https://aqualance-production-9e22.up.railway.app'
+    url = API_BASE + url;
   }
-  return _nativeFetch(url, options);
+
+  // 2. Bearer token injection for Android WebView
+  try {
+    var urlTok = null;
+    try { var hm = window.location.hash.match(/[#&]aqt=([A-Za-z0-9._-]+)/); if (hm) urlTok = decodeURIComponent(hm[1]); } catch(_) {}
+    var mobileToken = urlTok ||
+                      sessionStorage.getItem('aq_token_mirror') ||
+                      localStorage.getItem('aq_mobile_token');
+    if (mobileToken) {
+      var existingHeaders = opts.headers;
+      // Don't override an explicit Authorization already set
+      var hasAuth = existingHeaders &&
+        (existingHeaders['Authorization'] || existingHeaders['authorization']);
+      if (!hasAuth) {
+        // Merge into headers — handle both plain object and Headers instance
+        if (existingHeaders instanceof Headers) {
+          if (!existingHeaders.has('Authorization')) {
+            existingHeaders.set('Authorization', 'Bearer ' + mobileToken);
+          }
+        } else {
+          opts.headers = Object.assign({ 'Authorization': 'Bearer ' + mobileToken },
+                                       existingHeaders || {});
+        }
+      }
+    }
+  } catch(_) {}
+
+  return _nativeFetch(url, opts);
 };
 
   
@@ -511,9 +682,14 @@ window.fetch = function(url, options) {
         var _path = window.location.pathname;
         var _isPortal = /^\/(admin|salesman|delivery)/.test(_path);
         if (!_isPortal) return; // no auth needed on customer storefront
-        // Silently re-validate the cookie without hiding the page.
-        // If the cookie expired while the tab was inactive, the next
-        // apiFetch will return 401 and logout() will handle the redirect.
+        // Do NOT re-validate if the user explicitly logged out this lifecycle.
+        // Without this guard, the visibilitychange fires on the login page after
+        // logout, sees no sessionStorage user, then re-fetches /auth/me which
+        // still has a valid cookie → auto-relogs the user in.
+        if (sessionStorage.getItem('aq_logged_out') === '1') return;
+        // Do NOT re-validate if login form just submitted — password manager autofill
+        // can trigger visibilitychange which would wipe the in-flight session.
+        if (window.isLoggingIn) return;
         fetch(`${API_BASE}/api/v1/auth/me`, { credentials: 'include', headers: _mobileAuthHeaders() })
           .then(function(res) {
             if (!res.ok) {
