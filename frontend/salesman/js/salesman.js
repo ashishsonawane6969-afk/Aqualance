@@ -54,8 +54,8 @@ async function tryMobileTokenExchange() {
     if (!tokenRes.ok) return;
     const tokenData = await tokenRes.json();
     if (tokenData.success && tokenData.token) {
-      try { localStorage.setItem('aq_mobile_token', tokenData.token);
-sessionStorage.setItem('aq_token_mirror', tokenData.token); } catch(_) {}
+      try { localStorage.setItem('aq_mobile_token', tokenData.token); } catch(_) {}
+      try { sessionStorage.setItem('aq_token_mirror', tokenData.token); } catch(_) {}
     }
   } catch (_) {}
 }
@@ -197,16 +197,25 @@ if (page === 'login') {
         if (!data.user) throw new Error('Login response missing user profile.');
         if (data.user.role !== 'salesman') throw new Error('This portal is for field salesmen only.');
 
+        // TWA/WebView Bearer fallback: store token from login response immediately,
+        // before redirect, so dashboard auth gate finds it in localStorage.
+        if (data.token) {
+          try { localStorage.setItem('aq_mobile_token', data.token); } catch(_) {}
+          try { sessionStorage.setItem('aq_token_mirror', data.token); } catch(_) {}
+        }
         // SECURITY FIX: use mobile-token exchange instead of data.token in localStorage
         await tryMobileTokenExchange();
         // Store only the user profile (non-sensitive)
         sessionStorage.setItem('aq_sales_user', JSON.stringify(data.user));
+
+        const _sTok = data.token || localStorage.getItem('aq_mobile_token') || '';
+        const _sHash = _sTok ? '#aqt=' + encodeURIComponent(_sTok) : '';
         // Fix 4: Force password change if required
         if (data.user.must_change_password) {
-          window.location.replace('change-password.html');
+          window.location.replace('change-password.html' + _sHash);
           return;
         }
-        window.location.replace('dashboard.html');
+        window.location.replace('dashboard.html' + _sHash);
       } catch (ex) {
         if (err) { err.textContent = ex.message; err.classList.remove('hidden'); }
         btn.textContent = 'Login to Field App'; btn.disabled = false;
