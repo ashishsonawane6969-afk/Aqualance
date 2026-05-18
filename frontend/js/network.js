@@ -46,7 +46,9 @@ console.log("✅ NEW network.js LOADED");
   }
 
   function _mobileAuthHeaders() {
-    var headers = { 'Content-Type': 'application/json' };
+    var headers = {
+      'Content-Type': 'application/json'
+    };
     try {
       var hashToken = '';
       try {
@@ -54,35 +56,70 @@ console.log("✅ NEW network.js LOADED");
           location.hash.replace('#', '?')
         ).get('aqt') || '';
       } catch (_) {}
-
       var ssToken = '';
       var lsToken = '';
-      try { ssToken = sessionStorage.getItem('aq_token_mirror') || ''; } catch (_) {}
-      try { lsToken = localStorage.getItem('aq_mobile_token') || ''; } catch (_) {}
-
+      try {
+        ssToken = sessionStorage.getItem('aq_token_mirror') || '';
+      } catch (_) {}
+      try {
+        lsToken = localStorage.getItem('aq_mobile_token') || '';
+      } catch (_) {}
+      // PRIORITY:
+      // 1. URL HASH TOKEN (fresh login redirect)
+      // 2. localStorage durable token
+      // 3. sessionStorage mirror
+      // 4. in-memory fallback
       var token = hashToken || lsToken || ssToken || _memToken;
-
-      console.log('[AqNet] _mobileAuthHeaders',
-        'ss_mirror:', !!ssToken,
-        'ls_token:', !!lsToken,
-        'url_token:', !!hashToken,
-        'has_auth:', !!token,
-        'path:', window.location.pathname);
-
+      console.log(
+        '[AqNet] _mobileAuthHeaders FIXED',
+        'hash:', !!hashToken,
+        'ls:', !!lsToken,
+        'ss:', !!ssToken,
+        'mem:', !!_memToken,
+        'final:', !!token
+      );
+      // IMPORTANT FIX:
+      // Persist token FIRST.
+      // NEVER immediately remove hash in Android WebView/TWA.
+      // Android storage commit can lag during redirects.
       if (hashToken) {
-        try { localStorage.setItem('aq_mobile_token', hashToken); } catch (_) {}
-        try { sessionStorage.setItem('aq_token_mirror', hashToken); } catch (_) {}
         try {
-          history.replaceState(null, '', location.pathname + location.search);
+          localStorage.setItem('aq_mobile_token', hashToken);
         } catch (_) {}
+        try {
+          sessionStorage.setItem('aq_token_mirror', hashToken);
+        } catch (_) {}
+        _memToken = hashToken;
+        token = hashToken;
+        // FIX:
+        // Delay hash cleanup heavily so Android WebView
+        // finishes SQLite/localStorage commit safely.
+        setTimeout(function () {
+          try {
+            var verify = localStorage.getItem('aq_mobile_token');
+            // Only remove hash AFTER durable persistence verified
+            if (verify === hashToken) {
+              history.replaceState(
+                null,
+                '',
+                location.pathname + location.search
+              );
+              console.log('[AqNet] hash cleanup success');
+            } else {
+              console.warn('[AqNet] hash cleanup skipped — token not durable yet');
+            }
+          } catch (e) {
+            console.warn('[AqNet] delayed hash cleanup failed', e);
+          }
+        }, 2500);
       }
-
       if (token) {
-        _memToken = token;
         headers['Authorization'] = 'Bearer ' + token;
-        headers['x-auth-token']  = token;
+        headers['x-auth-token'] = token;
       }
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[AqNet] _mobileAuthHeaders fatal', e);
+    }
     return headers;
   }
 
