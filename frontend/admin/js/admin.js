@@ -53,8 +53,8 @@ async function adminLogout() {
     // Fix 1+2: Tell the server to revoke the jti and clear the httpOnly cookie
     await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
   } catch (_) { /* best-effort — always redirect */ }
-  sessionStorage.removeItem('aq_admin_user');
-  localStorage.removeItem('aq_token');
+  localStorage.removeItem('aq_mobile_token');
+sessionStorage.removeItem('aq_token_mirror');
   window.location.replace('/admin/login.html');
 }
 // Expose on window so network.js auth-guard (patchApiFetch) can call it
@@ -105,7 +105,8 @@ async function tryMobileTokenExchange() {
     if (!tokenRes.ok) return;
     const tokenData = await tokenRes.json();
     if (tokenData.success && tokenData.token) {
-      localStorage.setItem('aq_token', tokenData.token);
+     localStorage.setItem('aq_mobile_token', tokenData.token);
+     sessionStorage.setItem('aq_token_mirror', tokenData.token);
     }
   } catch (_) {
     // Non-fatal — desktop browsers using cookies don't need this path
