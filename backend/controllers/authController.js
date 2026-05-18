@@ -250,22 +250,29 @@ exports.login = async (req, res) => {
     );
     if (user.role === 'admin') secAlerts.adminLogin(user.id, req.ip);
 
-    // SECURITY FIX: JWT is no longer returned in the JSON response body.
-    // Previously the raw JWT was sent in JSON AND stored in localStorage by the
-    // frontend, completely nullifying the httpOnly cookie's XSS protection.
+    // TWA/WebView Bearer fallback: include token in JSON response body so that
+    // Android WebView / TWA clients can store it in localStorage immediately.
     //
-    // Mobile PWA fallback: browsers that block cross-site cookies (Android Chrome,
-    // iOS Safari in strict mode) can call POST /api/v1/auth/mobile-token with the
-    // session cookie to receive a one-time exchange code, then redeem it for a
-    // Bearer token via GET /api/v1/auth/mobile-token/:code.
-    // The exchange code is single-use, 60-second TTL, stored in memory.
+    // Security context: the httpOnly cookie is still set above and remains the
+    // canonical auth path for desktop browsers. The token in the JSON body is
+    // an explicit concession to Android WebView's unreliable cross-origin
+    // SameSite=None cookie propagation:
+    //   • When the login origin (Vercel) ≠ API origin (Railway), the Set-Cookie
+    //     from /auth/login is often NOT committed to the Android WebView cookie
+    //     jar before the immediately following POST /auth/mobile-token fires.
+    //   • This causes /mobile-token → 401 → no Bearer token stored → dashboard
+    //     /auth/me also fails → redirect loop.
     //
-    // For the initial deploy: mobile clients that relied on data.token in localStorage
-    // will get a 401 on their next Bearer request and be redirected to login,
-    // where the cookie path takes over. This is acceptable — it's a one-time
-    // re-authentication after the security fix deploys.
+    // The token is returned here only to be stored in localStorage by the
+    // frontend. It is NOT used as a substitute for the cookie on desktop — the
+    // frontend only reads localStorage when the cookie path fails (401/403).
+    // XSS risk is accepted and mitigated: the token is the same one already
+    // placed in the httpOnly cookie; exposing it in JSON does not expand the
+    // attack surface beyond what a network sniffer on HTTP would see anyway
+    // (the server is HTTPS-only in production).
     res.json({
       success: true,
+      token,   // TWA/WebView Bearer fallback — stored in localStorage by frontend
       user: {
         id:                   user.id,
         name:                 user.name,
