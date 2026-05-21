@@ -5,40 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Aqualence Geo Intelligence</title>
   
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <style>
     :root {
-      /* Base & Surface */
       --bg-base: #020604;
       --surface-100: rgba(10, 20, 14, 0.65);
       --surface-200: rgba(15, 30, 20, 0.75);
       --surface-300: rgba(25, 45, 30, 0.85);
-      
-      /* Accents */
       --accent-primary: #00ffa3;
       --accent-secondary: #00d264;
       --accent-glow: rgba(0, 255, 163, 0.25);
-      
-      /* Status Colors */
       --status-live: #3b82f6;
       --status-live-glow: rgba(59, 130, 246, 0.3);
       --status-warn: #f59e0b;
       --status-danger: #ef4444;
-      
-      /* Text */
       --text-main: rgba(255, 255, 255, 0.95);
       --text-muted: rgba(255, 255, 255, 0.6);
       --text-faint: rgba(255, 255, 255, 0.35);
-      
-      /* Borders & FX */
       --border-light: rgba(0, 255, 163, 0.15);
       --border-strong: rgba(0, 255, 163, 0.3);
       --blur-fx: blur(24px) saturate(150%);
@@ -46,6 +35,10 @@
       --radius-md: 10px;
       --radius-sm: 6px;
       --shadow-float: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      --sidebar-w: 240px;
+      --gold-light: #f0b429;
+      --ink-sidebar: #0d2a45;
+      --brand-light-s: #2e8ecf;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,23 +48,31 @@
       background: var(--bg-base);
       color: var(--text-main);
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
     }
 
-    /* ── Admin Sidebar CSS ── */
-    :root { --gold-light: #f0b429; --ink-sidebar: #0d2a45; --brand-light-s: #2e8ecf; }
+    /* ══════════════════════════════════════════
+       SIDEBAR — Desktop: fixed left | Mobile: slide-over
+    ══════════════════════════════════════════ */
     .sidebar {
-      position: fixed; top: 0; left: 0; bottom: 0; width: 240px; height: 100vh;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w); height: 100vh; height: 100dvh;
       background: var(--ink-sidebar); z-index: 400;
-      display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+      display: flex; flex-direction: column;
+      overflow-y: auto; overflow-x: hidden;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
+
     .sidebar-logo {
-      padding: 20px 18px 14px; border-bottom: 1px solid rgba(255,255,255,.1);
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.1);
       font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600;
       color: var(--gold-light); display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     }
     .sidebar-user {
-      padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: .82rem; flex-shrink: 0;
+      padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.08);
+      font-size: .82rem; flex-shrink: 0;
     }
     .sidebar-user .name { font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sidebar-user .role { color: var(--gold-light); font-size: .66rem; text-transform: uppercase; letter-spacing: .07em; margin-top: 2px; }
@@ -87,7 +88,8 @@
     .nav-item.active { color: #fff; background: rgba(46,142,207,.22); border-left-color: var(--brand-light-s); }
     .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
     .sidebar-footer {
-      padding: 14px 18px; padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+      padding: 14px 18px;
+      padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
       border-top: 1px solid rgba(255,255,255,.08); flex-shrink: 0;
     }
     .btn-logout {
@@ -98,57 +100,75 @@
     }
     .btn-logout:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.5); color: #fff; }
 
-    /* ── Main Area ── */
+    /* Sidebar overlay (mobile) */
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 390;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.visible { display: block; }
+
+    /* ══════════════════════════════════════════
+       MAIN CONTENT
+    ══════════════════════════════════════════ */
     .main-content {
-      margin-left: 240px;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      margin-left: var(--sidebar-w);
+      height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column;
       position: relative;
     }
 
-    /* ── Top Navigation ── */
+    /* ══════════════════════════════════════════
+       TOP NAV
+    ══════════════════════════════════════════ */
     .topnav {
-      height: 72px;
-      background: linear-gradient(to bottom, rgba(2,6,4,0.9) 0%, transparent 100%);
-      position: absolute;
-      top: 0; left: 0; right: 0;
+      height: 64px;
+      background: linear-gradient(to bottom, rgba(2,6,4,0.92) 0%, transparent 100%);
+      position: absolute; top: 0; left: 0; right: 0;
       z-index: 50;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
+      display: flex; align-items: center;
+      padding: 0 16px;
       pointer-events: none;
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .topnav-content {
       pointer-events: auto;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      width: 100%;
+      display: flex; align-items: center; gap: 12px; width: 100%;
     }
+
+    /* Hamburger — hidden on desktop */
+    .hamburger {
+      display: none;
+      background: var(--surface-100);
+      backdrop-filter: var(--blur-fx);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      color: var(--text-main);
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hamburger svg { display: block; width: 20px; height: 20px; }
 
     .page-title {
       font-family: 'Syne', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 10px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .pulse-dot {
-      width: 10px; height: 10px;
-      background: var(--accent-primary);
-      border-radius: 50%;
+      width: 10px; height: 10px; flex-shrink: 0;
+      background: var(--accent-primary); border-radius: 50%;
       box-shadow: 0 0 12px var(--accent-glow);
       animation: pulse 2s infinite;
     }
-
     @keyframes pulse {
       0% { box-shadow: 0 0 0 0 var(--accent-glow); }
       70% { box-shadow: 0 0 0 10px rgba(0, 255, 163, 0); }
@@ -156,68 +176,48 @@
     }
 
     .kpi-container {
-      display: flex;
-      gap: 12px;
-      margin-left: auto;
+      display: flex; gap: 8px; margin-left: auto; flex-shrink: 0;
     }
 
     .kpi-card {
       background: var(--surface-100);
       backdrop-filter: var(--blur-fx);
       border: 1px solid var(--border-light);
-      padding: 8px 16px;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+      padding: 6px 12px; border-radius: 20px;
+      display: flex; flex-direction: column; align-items: flex-end;
       box-shadow: 0 4px 20px rgba(0,0,0,0.2);
       transition: transform 0.2s;
     }
-    
     .kpi-card:hover { transform: translateY(-2px); border-color: var(--border-strong); }
-
     .kpi-val {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-main);
-      line-height: 1;
+      font-size: 1rem; font-weight: 700; color: var(--text-main); line-height: 1;
     }
-
     .kpi-lbl {
-      font-size: 0.6rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-top: 4px;
+      font-size: 0.55rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-muted); margin-top: 3px;
     }
-
+    /* Hide less important KPIs on small screens */
     .kpi-card.accent-green { border-color: rgba(0,255,163,0.3); }
     .kpi-card.accent-green .kpi-val { color: var(--accent-primary); }
-    
     .kpi-card.accent-blue { border-color: rgba(59,130,246,0.3); }
     .kpi-card.accent-blue .kpi-val { color: var(--status-live); }
-
     .kpi-card.accent-amber { border-color: rgba(245,158,11,0.3); }
     .kpi-card.accent-amber .kpi-val { color: var(--status-warn); }
 
-    /* ── Map Area ── */
-    .map-container {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-    }
-    
+    /* ══════════════════════════════════════════
+       MAP
+    ══════════════════════════════════════════ */
+    .map-container { position: absolute; inset: 0; z-index: 10; }
     #map { width: 100%; height: 100%; background: #000; }
 
-    /* ── Floating Command Panel ── */
+    /* ══════════════════════════════════════════
+       COMMAND PANEL — Desktop: fixed left | Mobile: bottom sheet
+    ══════════════════════════════════════════ */
     .glass-panel {
       position: absolute;
-      top: 85px;
-      left: 24px;
-      bottom: 24px;
-      width: 340px;
+      top: 76px; left: 16px; bottom: 16px;
+      width: 320px;
       background: var(--surface-100);
       backdrop-filter: var(--blur-fx);
       -webkit-backdrop-filter: var(--blur-fx);
@@ -225,56 +225,62 @@
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-float);
       z-index: 40;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
       overflow: hidden;
       animation: slideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-
     @keyframes slideIn {
       from { opacity: 0; transform: translateX(-20px); }
       to { opacity: 1; transform: translateX(0); }
     }
 
+    /* Panel toggle button (mobile only) */
+    .panel-toggle {
+      display: none;
+      position: absolute;
+      bottom: 80px; left: 16px;
+      z-index: 45;
+      background: var(--surface-200);
+      backdrop-filter: var(--blur-fx);
+      border: 1px solid var(--border-strong);
+      border-radius: 50%;
+      width: 48px; height: 48px;
+      align-items: center; justify-content: center;
+      cursor: pointer; color: var(--accent-primary);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      font-size: 1.2rem;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.2s;
+    }
+    .panel-toggle:active { transform: scale(0.92); }
+
     /* Tabs */
     .panel-tabs {
-      display: flex;
-      padding: 8px;
+      display: flex; padding: 6px;
       background: rgba(0,0,0,0.3);
       border-bottom: 1px solid var(--border-light);
-      gap: 4px;
-      flex-shrink: 0;
+      gap: 3px; flex-shrink: 0;
     }
-
     .tab-btn {
-      flex: 1;
-      padding: 10px 0;
-      background: transparent;
-      border: none;
+      flex: 1; padding: 9px 0;
+      background: transparent; border: none;
       color: var(--text-muted);
       font-family: 'Syne', sans-serif;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
       border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      cursor: pointer; transition: all 0.2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      min-height: 36px;
+      -webkit-tap-highlight-color: transparent;
     }
-
     .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
-
     .tab-btn.active {
       background: linear-gradient(180deg, rgba(0,255,163,0.15) 0%, rgba(0,255,163,0.05) 100%);
       color: var(--accent-primary);
       border: 1px solid var(--border-strong);
       box-shadow: 0 4px 15px var(--accent-glow);
     }
-
     .tab-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .tab-dot.leads { background: var(--accent-primary); }
     .tab-dot.live { background: var(--status-live); }
@@ -282,143 +288,99 @@
     .tab-dot.zones { background: var(--status-warn); }
 
     /* Content Area */
-    .panel-content {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    
+    .panel-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
     .panel-content::-webkit-scrollbar { width: 4px; }
     .panel-content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
 
     /* Form Controls */
     .filter-bar {
-      padding: 16px;
-      border-bottom: 1px solid var(--border-light);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex-shrink: 0;
+      padding: 12px; border-bottom: 1px solid var(--border-light);
+      display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
     }
-
-    .input-group { display: flex; gap: 8px; }
-    
+    .input-group { display: flex; gap: 6px; }
     .glass-input {
-      width: 100%;
-      padding: 10px 12px;
+      width: 100%; padding: 10px 12px;
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-sm);
       color: var(--text-main);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.85rem;
-      outline: none;
-      transition: all 0.2s;
+      font-family: 'Inter', sans-serif; font-size: 0.85rem;
+      outline: none; transition: all 0.2s;
+      min-height: 42px;
     }
-
     .glass-input:focus {
       background: rgba(0,255,163,0.05);
       border-color: var(--accent-primary);
       box-shadow: 0 0 0 3px rgba(0,255,163,0.1);
     }
-    
     .glass-input option { background: var(--bg-base); color: var(--text-main); }
 
     .btn-primary {
-      padding: 10px 16px;
+      padding: 10px 14px;
       background: linear-gradient(135deg, rgba(0,255,163,0.2), rgba(0,210,100,0.2));
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-sm);
       color: var(--accent-primary);
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: all 0.2s;
-      flex: 1;
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; transition: all 0.2s; flex: 1;
+      min-height: 42px;
+      -webkit-tap-highlight-color: transparent;
     }
-    
-    .btn-primary:hover {
-      background: rgba(0,255,163,0.3);
-      box-shadow: 0 0 15px var(--accent-glow);
-      transform: translateY(-1px);
-    }
+    .btn-primary:hover { background: rgba(0,255,163,0.3); box-shadow: 0 0 15px var(--accent-glow); }
+    .btn-primary:active { transform: scale(0.97); }
 
     .btn-secondary {
-      padding: 10px 14px;
-      background: transparent;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.2s;
+      padding: 10px 12px;
+      background: transparent; border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm); color: var(--text-muted);
+      font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.78rem;
+      cursor: pointer; transition: all 0.2s; min-height: 42px;
+      -webkit-tap-highlight-color: transparent;
     }
-
     .btn-secondary:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
 
     /* Lead List Items */
     .lead-item {
-      padding: 9px 11px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-light);
-      cursor: pointer;
-      transition: all 0.18s;
-      background: rgba(255,255,255,0.025);
-      margin-bottom: 4px;
-      position: relative;
-      overflow: hidden;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all 0.18s; background: rgba(255,255,255,0.025);
+      margin-bottom: 4px; position: relative; overflow: hidden;
     }
     .lead-item::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 0; bottom: 0; width: 2px;
-      background: var(--border-strong);
-      transition: all 0.18s;
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+      background: var(--border-strong); transition: all 0.18s;
     }
-    .lead-item:hover { background: rgba(0,255,163,0.055); border-color: rgba(0,255,163,0.22); transform: translateX(2px); }
-    .lead-item:hover::before { background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
+    .lead-item:hover, .lead-item:active { background: rgba(0,255,163,0.055); border-color: rgba(0,255,163,0.22); }
+    .lead-item:hover::before, .lead-item:active::before { background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
     .lead-item.active { background: rgba(0,255,163,0.08); border-color: rgba(0,255,163,0.3); }
     .lead-item.active::before { background: var(--accent-primary); box-shadow: 0 0 8px var(--accent-glow); }
     .li-r1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 5px; }
-    .li-name { font-size: 0.77rem; font-weight: 700; line-height: 1.3; color: var(--text-main); }
-    .li-loc { font-size: 0.61rem; color: var(--text-faint); margin-top: 3px; }
-    .li-meta { font-size: 0.6rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .li-name { font-size: 0.78rem; font-weight: 700; line-height: 1.3; color: var(--text-main); }
+    .li-loc { font-size: 0.62rem; color: var(--text-faint); margin-top: 3px; }
+    .li-meta { font-size: 0.61rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
     /* Live Items */
     .live-item {
-      padding: 9px 11px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-light);
-      cursor: pointer;
-      transition: all 0.18s;
-      background: rgba(255,255,255,0.025);
-      margin-bottom: 4px;
+      padding: 10px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light); cursor: pointer;
+      transition: all 0.18s; background: rgba(255,255,255,0.025); margin-bottom: 4px;
+      -webkit-tap-highlight-color: transparent;
     }
-    .live-item:hover { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.28); }
+    .live-item:hover, .live-item:active { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.28); }
     .li-live-h { display: flex; align-items: center; justify-content: space-between; }
     .li-live-n { font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
     .sdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .sdot.on  { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.5); animation: blink 2s infinite; }
     .sdot.off { background: rgba(255,255,255,0.18); }
-    .li-live-s { font-size: 0.61rem; color: var(--text-faint); margin-top: 2px; }
+    .li-live-s { font-size: 0.62rem; color: var(--text-faint); margin-top: 2px; }
     .li-coords { font-size: 0.57rem; color: rgba(255,255,255,0.16); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
     /* Chips */
     .chip {
-      font-size: 0.53rem;
-      font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 20px;
-      white-space: nowrap;
-      letter-spacing: 0.03em;
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.53rem; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+      white-space: nowrap; letter-spacing: 0.03em; font-family: 'JetBrains Mono', monospace;
     }
     .chip.yes  { background: rgba(0,210,100,0.13); color: var(--accent-secondary); border: 1px solid rgba(0,210,100,0.18); }
     .chip.no   { background: rgba(239,68,68,0.11); color: #f87171; border: 1px solid rgba(239,68,68,0.18); }
@@ -433,36 +395,37 @@
     .zi-name { font-size: 0.76rem; font-weight: 700; color: var(--text-main); }
     .zi-meta { font-size: 0.6rem; color: var(--text-faint); margin-top: 1px; }
     .btn-focus {
-      padding: 5px 8px; border-radius: var(--radius-sm);
-      border: 1px solid var(--border-light); font-size: 0.62rem;
-      font-weight: 600; cursor: pointer; background: transparent;
-      font-family: inherit; color: var(--text-muted); transition: all 0.15s; white-space: nowrap;
+      padding: 6px 9px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light); font-size: 0.65rem; font-weight: 600;
+      cursor: pointer; background: transparent; font-family: inherit;
+      color: var(--text-muted); transition: all 0.15s; white-space: nowrap;
+      min-height: 32px; -webkit-tap-highlight-color: transparent;
     }
     .btn-focus:hover { border-color: var(--accent-primary); color: var(--accent-primary); background: rgba(0,255,163,0.06); }
 
     /* Assign Panel */
     .assign-panel { padding: 11px; border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
     .sec-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.56rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--accent-primary); margin-bottom: 7px;
+      font-family: 'Syne', sans-serif; font-size: 0.56rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-primary); margin-bottom: 7px;
     }
-    .assign-grid { display: grid; grid-template-columns: 1fr; gap: 5px; margin-bottom: 6px; }
+    .assign-grid { display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 8px; }
     .btn-assign {
-      width: 100%; padding: 8px;
+      width: 100%; padding: 10px;
       background: rgba(0,210,100,0.17); color: var(--accent-secondary);
       border: 1px solid rgba(0,210,100,0.32); border-radius: var(--radius-sm);
       font-size: 0.67rem; font-weight: 700; font-family: 'Syne', sans-serif;
       cursor: pointer; transition: all 0.18s; letter-spacing: 0.07em; text-transform: uppercase;
+      min-height: 42px; -webkit-tap-highlight-color: transparent;
     }
     .btn-assign:hover { background: rgba(0,210,100,0.3); box-shadow: 0 0 14px var(--accent-glow); }
     .btn-unassign {
       background: rgba(239,68,68,0.14); color: #f87171;
       border: 1px solid rgba(239,68,68,0.22); border-radius: var(--radius-sm);
-      padding: 5px 9px; font-size: 0.59rem; font-weight: 700;
+      padding: 6px 10px; font-size: 0.59rem; font-weight: 700;
       cursor: pointer; font-family: 'Syne', sans-serif; transition: all 0.15s;
       white-space: nowrap; flex-shrink: 0; letter-spacing: 0.04em;
+      min-height: 32px; -webkit-tap-highlight-color: transparent;
     }
     .btn-unassign:hover { background: rgba(239,68,68,0.26); box-shadow: 0 0 10px rgba(239,68,68,0.2); }
     .salesman-row { padding: 8px 11px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 7px; min-width: 0; transition: background 0.12s; }
@@ -473,11 +436,12 @@
     .sm-taluka.assigned { color: var(--accent-primary); font-weight: 600; }
     .sm-taluka.none { color: var(--text-faint); }
     .btn-save {
-      width: 100%; padding: 8px;
+      width: 100%; padding: 10px;
       background: rgba(0,210,100,0.17); color: var(--accent-secondary);
       border: 1px solid rgba(0,210,100,0.32); border-radius: var(--radius-sm);
       font-size: 0.67rem; font-weight: 700; font-family: 'Syne', sans-serif;
       cursor: pointer; transition: all 0.18s; letter-spacing: 0.07em; text-transform: uppercase;
+      min-height: 42px; -webkit-tap-highlight-color: transparent;
     }
     .btn-save:hover { background: rgba(0,210,100,0.3); box-shadow: 0 0 14px var(--accent-glow); transform: translateY(-1px); }
     .panel-section { padding: 10px 11px; border-bottom: 1px solid var(--border-light); }
@@ -488,95 +452,71 @@
 
     /* Map Controls */
     .map-controls {
-      position: absolute;
-      top: 85px;
-      right: 24px;
-      z-index: 40;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      position: absolute; top: 76px; right: 12px; z-index: 40;
+      display: flex; flex-direction: column; gap: 6px;
     }
-
     .layer-btn {
-      background: var(--surface-100);
-      backdrop-filter: var(--blur-fx);
-      border: 1px solid var(--border-light);
-      padding: 10px 16px;
-      border-radius: 20px;
-      color: var(--text-muted);
-      font-family: 'Syne', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      background: var(--surface-100); backdrop-filter: var(--blur-fx);
+      border: 1px solid var(--border-light); padding: 8px 14px; border-radius: 20px;
+      color: var(--text-muted); font-family: 'Syne', sans-serif; font-size: 0.72rem;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+      cursor: pointer; display: flex; align-items: center; gap: 7px;
+      transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      min-height: 38px; -webkit-tap-highlight-color: transparent;
     }
-
     .layer-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
-    
-    .layer-btn.active {
-      background: rgba(0,255,163,0.1);
-      border-color: var(--border-strong);
-      color: var(--accent-primary);
-    }
+    .layer-btn.active { background: rgba(0,255,163,0.1); border-color: var(--border-strong); color: var(--accent-primary); }
 
+    /* Live Badge */
     .live-badge {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
       z-index: 40;
-      background: var(--surface-200);
-      backdrop-filter: var(--blur-fx);
-      border: 1px solid var(--border-strong);
-      padding: 8px 20px;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: var(--shadow-float);
+      background: var(--surface-200); backdrop-filter: var(--blur-fx);
+      border: 1px solid var(--border-strong); padding: 7px 18px; border-radius: 30px;
+      display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow-float);
+      white-space: nowrap;
+      bottom: max(20px, env(safe-area-inset-bottom, 20px));
     }
-
     .live-badge span {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--accent-primary);
-      letter-spacing: 0.05em;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+      font-weight: 700; color: var(--accent-primary); letter-spacing: 0.05em;
     }
 
     /* Detail Sheet */
     .detail-sheet {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(15,30,20,0.97);
-      backdrop-filter: var(--blur-fx);
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(15,30,20,0.97); backdrop-filter: var(--blur-fx);
       border-radius: 18px 18px 0 0;
       border-top: 1px solid var(--border-strong);
       box-shadow: 0 -12px 50px rgba(0,0,0,0.7);
-      padding: 15px 17px 22px;
+      padding: 15px 16px; padding-bottom: max(22px, env(safe-area-inset-bottom, 22px));
       transform: translateY(105%);
       transition: transform 0.38s cubic-bezier(0.2, 0, 0, 1);
-      z-index: 50;
-      max-height: 60%;
+      z-index: 60;
+      max-height: 65%;
       overflow-y: auto;
     }
     .detail-sheet.open { transform: translateY(0); }
-    .sheet-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 99px; margin: 0 auto 15px; cursor: pointer; transition: background 0.2s; }
+    .sheet-handle { width: 36px; height: 4px; background: var(--border-strong); border-radius: 99px; margin: 0 auto 14px; cursor: pointer; transition: background 0.2s; }
     .sheet-handle:hover { background: var(--accent-primary); }
     .detail-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .detail-name { font-family: 'Syne', sans-serif; font-size: 0.98rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.02em; }
     .detail-sub { font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 16px; margin-top: 13px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 14px; margin-top: 13px; }
     .dg-row { display: flex; flex-direction: column; gap: 3px; }
     .dg-lbl { font-family: 'Syne', sans-serif; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
     .dg-val { font-size: 0.76rem; font-weight: 500; color: var(--text-main); }
     .detail-photo { width: 100%; border-radius: 10px; margin-top: 13px; max-height: 180px; object-fit: cover; border: 1px solid var(--border-light); }
+
+    /* Zone form */
+    .zone-input {
+      padding: 9px 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      font-size: 0.78rem; font-family: inherit; outline: none;
+      background: rgba(255,255,255,0.05); color: var(--text-main); transition: all 0.15s; width: 100%;
+      min-height: 42px;
+    }
+    .zone-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(0,255,163,0.1); background: rgba(0,255,163,0.03); }
+    .zone-input option { background: #0a1f0f; }
 
     /* Toast */
     .toast-container { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 5px; pointer-events: none; }
@@ -590,34 +530,143 @@
     .toast.error   { background: rgba(239,68,68,0.17); border: 1px solid rgba(239,68,68,0.32); color: #fca5a5; }
     @keyframes tin { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
-    /* Leaflet Overrides for Dark Theme */
+    /* Leaflet Overrides */
     .leaflet-tile-pane { filter: brightness(0.7) saturate(0.85) hue-rotate(6deg); }
     .leaflet-container { background: var(--bg-base); font-family: 'Inter', sans-serif; }
     .leaflet-popup-content-wrapper {
-      background: var(--surface-200);
-      backdrop-filter: var(--blur-fx);
-      border: 1px solid var(--border-strong);
-      color: var(--text-main);
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-float);
+      background: var(--surface-200); backdrop-filter: var(--blur-fx);
+      border: 1px solid var(--border-strong); color: var(--text-main);
+      border-radius: var(--radius-md); box-shadow: var(--shadow-float);
     }
     .leaflet-popup-tip { background: var(--surface-200); }
     .leaflet-popup-close-button { color: var(--text-muted) !important; }
     .leaflet-control-zoom a { background: var(--surface-100) !important; color: var(--text-main) !important; border-color: var(--border-light) !important; }
-    .leaflet-control-attribution { background: rgba(2,6,4,0.8) !important; color: var(--text-faint) !important; }
+    .leaflet-control-attribution { background: rgba(2,6,4,0.8) !important; color: var(--text-faint) !important; font-size: 9px !important; }
     .leaflet-control-attribution a { color: var(--accent-primary) !important; }
+    /* Move zoom controls so panel doesn't cover them */
+    .leaflet-top.leaflet-left { left: 336px; }
 
-    /* Zone form inputs */
-    .zone-input {
-      padding: 6px 8px; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
-      font-size: 0.71rem; font-family: inherit; outline: none;
-      background: rgba(255,255,255,0.05); color: var(--text-main); transition: all 0.15s; width: 100%;
+    /* ══════════════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+    ══════════════════════════════════════════ */
+
+    /* Tablet: 768px–1023px — collapse sidebar, shrink panel */
+    @media (max-width: 1023px) {
+      :root { --sidebar-w: 0px; }
+
+      .sidebar {
+        transform: translateX(-240px);
+        width: 240px;
+        box-shadow: 4px 0 40px rgba(0,0,0,0.6);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content { margin-left: 0; }
+
+      .hamburger { display: flex; }
+
+      .glass-panel {
+        width: 290px;
+        top: 72px; left: 12px; bottom: 12px;
+      }
+
+      .map-controls { right: 8px; top: 72px; }
+      .layer-btn { padding: 7px 11px; font-size: 0.67rem; }
+
+      .leaflet-top.leaflet-left { left: 310px; }
     }
-    .zone-input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 3px rgba(0,255,163,0.1); background: rgba(0,255,163,0.03); }
-    .zone-input option { background: #0a1f0f; }
+
+    /* Mobile: ≤ 639px — bottom-sheet panel, floating toggle */
+    @media (max-width: 639px) {
+      .topnav { height: 56px; padding: 0 10px; }
+      .topnav { padding-top: env(safe-area-inset-top, 0px); }
+
+      .page-title { font-size: 0.8rem; gap: 7px; }
+      .page-title-text { display: none; } /* hide text, keep dot */
+
+      /* Hide secondary KPIs */
+      .kpi-card.accent-blue,
+      .kpi-card.accent-amber { display: none; }
+      .kpi-card { padding: 5px 10px; }
+      .kpi-val { font-size: 0.9rem; }
+
+      /* Panel becomes bottom sheet on mobile */
+      .glass-panel {
+        top: auto;
+        left: 0; right: 0;
+        bottom: 0;
+        width: 100%;
+        border-radius: 20px 20px 0 0;
+        border-bottom: none;
+        border-left: none; border-right: none;
+        max-height: 55vh;
+        transform: translateY(calc(100% - 54px)); /* Show just tabs */
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: none;
+      }
+      .glass-panel.panel-open {
+        transform: translateY(0);
+      }
+
+      /* Drag handle at top of mobile panel */
+      .panel-drag-handle {
+        display: flex !important;
+        width: 36px; height: 4px;
+        background: var(--border-strong);
+        border-radius: 99px;
+        margin: 8px auto 0;
+        cursor: grab;
+        flex-shrink: 0;
+      }
+
+      .panel-tabs {
+        padding: 6px 8px 8px;
+        /* Tabs always visible even when collapsed */
+      }
+
+      .panel-toggle { display: none; } /* not needed on mobile */
+
+      .map-controls {
+        right: 8px; top: auto;
+        bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 64px));
+        flex-direction: column;
+      }
+
+      /* Hide layer labels on mobile — icon only */
+      .layer-btn .layer-label { display: none; }
+      .layer-btn {
+        width: 38px; height: 38px; padding: 0;
+        border-radius: 50%; justify-content: center;
+        font-size: 0.7rem;
+      }
+      .tab-dot { margin: 0; }
+
+      .live-badge { font-size: 0.65rem; padding: 5px 13px; gap: 7px; bottom: max(64px, calc(env(safe-area-inset-bottom, 0px) + 64px)); }
+      .live-badge span { font-size: 0.65rem; }
+
+      .detail-sheet { max-height: 75%; z-index: 70; }
+
+      .leaflet-top.leaflet-left { left: 10px; top: 60px; }
+    }
+
+    /* Very small (iPhone SE etc.) */
+    @media (max-width: 374px) {
+      .kpi-card.accent-green { display: none; }
+      .page-title { gap: 5px; }
+    }
+
+    /* Safe area bottom padding for panels */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .glass-panel { padding-bottom: env(safe-area-inset-bottom, 0px); }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
@@ -627,31 +676,31 @@
       <div class="role">Administrator</div>
     </div>
     <nav class="sidebar-nav">
-      <a href="/admin/dashboard.html" class="nav-item">
+      <a href="/admin/dashboard.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>Dashboard
       </a>
-      <a href="/admin/overview.html" class="nav-item">
+      <a href="/admin/overview.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2.5 2.1h-15V5h15v14.1zm0-16.1h-15c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>Overview
       </a>
-      <a href="/admin/leaderboard.html" class="nav-item">
+      <a href="/admin/leaderboard.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 17H2v-5h5v5zm5 0H7v-9h5v9zm5 0h-5V7h5v10zm2-14H3v2h16V3z"/></svg>Leaderboard
       </a>
-      <a href="/admin/orders.html" class="nav-item">
+      <a href="/admin/orders.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Orders
       </a>
-      <a href="/admin/products.html" class="nav-item">
+      <a href="/admin/products.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h12v12z"/></svg>Products
       </a>
-      <a href="/admin/salesmen.html" class="nav-item">
+      <a href="/admin/salesmen.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>Salesmen
       </a>
-      <a href="/admin/geo-map.html" class="nav-item active">
+      <a href="/admin/geo-map.html" class="nav-item active" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>Geo Map
       </a>
-      <a href="/admin/delivery-boys.html" class="nav-item">
+      <a href="/admin/delivery-boys.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>Delivery Boys
       </a>
-      <a href="/admin/mfa-settings.html" class="nav-item">
+      <a href="/admin/mfa-settings.html" class="nav-item" onclick="closeSidebar()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>MFA Security
       </a>
     </nav>
@@ -660,29 +709,36 @@
     </div>
   </aside>
 
-  <!-- Main Content Area -->
+  <!-- Main Content -->
   <main class="main-content">
     
     <!-- Topnav -->
     <div class="topnav">
       <div class="topnav-content">
+        <!-- Hamburger (tablet/mobile) -->
+        <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
         <div class="page-title">
           <div class="pulse-dot"></div>
-          Geo Intelligence Center
+          <span class="page-title-text">Geo Intelligence</span>
         </div>
         
         <div class="kpi-container">
           <div class="kpi-card">
             <span class="kpi-val" id="kTotal">—</span>
-            <span class="kpi-lbl">Total Leads</span>
+            <span class="kpi-lbl">Leads</span>
           </div>
           <div class="kpi-card accent-green">
             <span class="kpi-val" id="kVerified">—</span>
-            <span class="kpi-lbl">GPS Verified</span>
+            <span class="kpi-lbl">GPS OK</span>
           </div>
           <div class="kpi-card accent-blue">
             <span class="kpi-val" id="kLive">—</span>
-            <span class="kpi-lbl">Live Agents</span>
+            <span class="kpi-lbl">Live</span>
           </div>
           <div class="kpi-card accent-amber">
             <span class="kpi-val" id="kTalukas">—</span>
@@ -692,7 +748,7 @@
       </div>
     </div>
 
-    <!-- Map Container -->
+    <!-- Map -->
     <div class="map-container">
       <div id="map"></div>
 
@@ -703,29 +759,31 @@
       </div>
     </div>
 
-    <!-- Map Controls (Layers) -->
+    <!-- Map Controls -->
     <div class="map-controls">
       <button class="layer-btn active" id="ctrlLeads" onclick="toggleLayer('leads')">
-        <div class="tab-dot leads"></div> Leads
+        <div class="tab-dot leads"></div><span class="layer-label"> Leads</span>
       </button>
       <button class="layer-btn active" id="ctrlLive" onclick="toggleLayer('live')">
-        <div class="tab-dot live"></div> Live
+        <div class="tab-dot live"></div><span class="layer-label"> Live</span>
       </button>
       <button class="layer-btn active" id="ctrlZones" onclick="toggleLayer('zones')">
-        <div class="tab-dot zones"></div> Zones
+        <div class="tab-dot zones"></div><span class="layer-label"> Zones</span>
       </button>
-      <button class="layer-btn" onclick="fitAllMarkers()">⊞ Fit All</button>
+      <button class="layer-btn" onclick="fitAllMarkers()">⊞</button>
     </div>
 
-    <!-- Floating Live Badge -->
+    <!-- Live Badge -->
     <div class="live-badge">
       <div class="pulse-dot"></div>
-      <span id="refreshStatus">LIVE SYSTEM · SYNCHRONIZED</span>
+      <span id="refreshStatus">LIVE · SYNC</span>
     </div>
 
     <!-- Floating Command Panel -->
-    <div class="glass-panel">
-      
+    <div class="glass-panel" id="glassPanel">
+      <!-- Mobile drag handle -->
+      <div class="panel-drag-handle" id="panelHandle" style="display:none"></div>
+
       <!-- Tabs -->
       <div class="panel-tabs">
         <button class="tab-btn active" id="tabLeads" onclick="switchTab('leads')">
@@ -742,7 +800,7 @@
         </button>
       </div>
 
-      <!-- ── TAB: LEADS ── -->
+      <!-- TAB: LEADS -->
       <div id="paneLeads" class="panel-content" style="display:flex;flex-direction:column;overflow:hidden">
         <div class="filter-bar">
           <select class="glass-input" id="filterSalesman" onchange="loadMapLeads()">
@@ -762,17 +820,17 @@
         </div>
       </div>
 
-      <!-- ── TAB: LIVE ── -->
+      <!-- TAB: LIVE -->
       <div id="paneLive" class="panel-content" style="display:none;overflow-y:auto">
         <div class="empty"><span class="empty-icon">⏳</span>Loading…</div>
       </div>
 
-      <!-- ── TAB: ASSIGN ── -->
+      <!-- TAB: ASSIGN -->
       <div id="paneAssign" class="panel-content" style="display:none;flex-direction:column;overflow:hidden">
         <div class="assign-panel">
           <div class="sec-title">📍 Assign Taluka to Salesman</div>
           <p style="font-size:.69rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">
-            Select a salesman and a taluka. The salesman can <strong style="color:var(--text-main)">only</strong> submit geo leads within that taluka's radius.
+            Select a salesman and a taluka. Salesman can <strong style="color:var(--text-main)">only</strong> submit leads within that taluka.
           </p>
           <div class="assign-grid">
             <select class="zone-input" id="asmSalesman"><option value="">Select Salesman…</option></select>
@@ -783,7 +841,7 @@
         <div id="assignList" style="flex:1;overflow-y:auto;min-height:0"></div>
       </div>
 
-      <!-- ── TAB: ZONES ── -->
+      <!-- TAB: ZONES -->
       <div id="paneZones" class="panel-content" style="display:none;flex-direction:column;overflow:hidden">
         <div class="panel-section" style="flex-shrink:0">
           <div class="sec-title" style="margin-bottom:5px">+ Add / Edit Zone</div>
@@ -795,16 +853,16 @@
               <option value="">Taluka…</option>
             </select>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 65px;gap:4px;margin-bottom:5px">
-            <input type="number" class="zone-input" id="atLat" placeholder="Lat" step="0.0001" />
-            <input type="number" class="zone-input" id="atLng" placeholder="Lng" step="0.0001" />
-            <input type="number" class="zone-input" id="atRadius" placeholder="km" value="25" min="5" max="100" step="1" title="Radius (km)" />
+          <div style="display:grid;grid-template-columns:1fr 1fr 60px;gap:4px;margin-bottom:5px">
+            <input type="number" class="zone-input" id="atLat" placeholder="Lat" step="0.0001" inputmode="decimal" />
+            <input type="number" class="zone-input" id="atLng" placeholder="Lng" step="0.0001" inputmode="decimal" />
+            <input type="number" class="zone-input" id="atRadius" placeholder="km" value="25" min="5" max="100" step="1" inputmode="numeric" />
           </div>
           <input type="hidden" id="atName" />
           <input type="hidden" id="atState" value="Maharashtra" />
           <div style="display:flex;gap:4px">
-            <button class="btn-save" id="btnSaveZone" onclick="createTaluka()" style="flex:1;margin-top:0;padding:7px">💾 Save Zone</button>
-            <button id="btnCancelEdit" style="display:none;flex-shrink:0;padding:7px 9px;background:transparent;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-size:.7rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text-muted)" onclick="cancelEditZone()">✕</button>
+            <button class="btn-save" id="btnSaveZone" onclick="createTaluka()" style="flex:1;margin-top:0;padding:9px">💾 Save Zone</button>
+            <button id="btnCancelEdit" style="display:none;flex-shrink:0;padding:9px 10px;background:transparent;border:1px solid var(--border-light);border-radius:var(--radius-sm);font-size:.7rem;font-weight:600;font-family:inherit;cursor:pointer;color:var(--text-muted)" onclick="cancelEditZone()">✕</button>
           </div>
         </div>
         <div id="zoneList" style="flex:1;overflow-y:auto;min-height:0"></div>
@@ -814,13 +872,11 @@
 
   </main>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
 <script>
 /* =====================================================
-   GEO MAP — Full JS Logic
-   Adapted from geo-map v2 (Leaflet + Google Maps fallback)
+   GEO MAP — Full JS Logic (Responsive)
 ===================================================== */
 
 /* ── Utilities ── */
@@ -853,17 +909,84 @@ function esc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ── Responsive Sidebar ── */
+function toggleSidebar() {
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebarOverlay');
+  var isOpen = sb.classList.contains('open');
+  if (isOpen) { sb.classList.remove('open'); ov.classList.remove('visible'); }
+  else { sb.classList.add('open'); ov.classList.add('visible'); }
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+}
+
+/* ── Mobile Panel Drag/Toggle ── */
+var _panelOpen = false;
+
+function initMobilePanel() {
+  var panel = document.getElementById('glassPanel');
+  var handle = document.getElementById('panelHandle');
+  var tabs = panel.querySelector('.panel-tabs');
+
+  function isMobile() { return window.innerWidth <= 639; }
+
+  function showHandle() { handle.style.display = isMobile() ? 'flex' : 'none'; }
+
+  // Tap tabs area to expand when collapsed on mobile
+  tabs.addEventListener('click', function() {
+    if (!isMobile()) return;
+    if (!_panelOpen) {
+      panel.classList.add('panel-open');
+      _panelOpen = true;
+    }
+  });
+
+  // Drag handle to toggle
+  handle.addEventListener('click', function() {
+    if (!isMobile()) return;
+    _panelOpen = !_panelOpen;
+    panel.classList.toggle('panel-open', _panelOpen);
+  });
+
+  // Touch drag on handle
+  var _dragStartY = 0, _dragStartOpen = false;
+  handle.addEventListener('touchstart', function(e) {
+    _dragStartY = e.touches[0].clientY;
+    _dragStartOpen = _panelOpen;
+  }, { passive: true });
+  handle.addEventListener('touchend', function(e) {
+    var dy = _dragStartY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 30) {
+      _panelOpen = dy > 0; // swipe up = open
+      panel.classList.toggle('panel-open', _panelOpen);
+    }
+  }, { passive: true });
+
+  // Map tap closes panel
+  document.getElementById('map').addEventListener('click', function() {
+    if (isMobile() && _panelOpen) {
+      panel.classList.remove('panel-open');
+      _panelOpen = false;
+    }
+  });
+
+  showHandle();
+  window.addEventListener('resize', showHandle);
+}
+
 /* ── State ── */
 const GEO = '/api/v1/geo';
-let _tab = 'leads';
-let _allLeads = [], _allLive = [], _allTalukas = [], _allSalesmen = [], _assignments = [];
-let _gmLeads = [], _gmLive = [], _gmZones = [];
-let _layers = { leads: true, live: true, zones: true };
-let _dataLoaded = false, _countdown = 60;
-let _map = null;                         // Google Maps instance
-let _leafletMap = null, _usingLeaflet = false;
-let _lfLeads = [], _lfLive = [], _lfZones = [];
-let _editingZoneId = null;
+var _tab = 'leads';
+var _allLeads = [], _allLive = [], _allTalukas = [], _allSalesmen = [], _assignments = [];
+var _gmLeads = [], _gmLive = [], _gmZones = [];
+var _layers = { leads: true, live: true, zones: true };
+var _dataLoaded = false, _countdown = 60;
+var _map = null;
+var _leafletMap = null, _usingLeaflet = false;
+var _lfLeads = [], _lfLive = [], _lfZones = [];
+var _editingZoneId = null;
 
 /* ── Bootstrap ── */
 function onReady() {
@@ -872,10 +995,10 @@ function onReady() {
   else if (_map) { renderLeadsOnMap(); renderLiveOnMap(); renderZonesOnMap(); }
 }
 
-const _origGMaps = window.onGMapsLoaded;
-window.onGMapsLoaded = function() { _origGMaps && _origGMaps(); onReady(); };
+window.onGMapsLoaded = function() { initMap(); onReady(); };
 
 (async function init() {
+  initMobilePanel();
   await Promise.all([loadSalesmen(), loadTalukas()]);
   await Promise.all([loadMapLeads(), loadLivePositions(), loadAssignments()]);
   _dataLoaded = true;
@@ -889,16 +1012,12 @@ function startAutoRefresh() {
   setInterval(async function() {
     _countdown--;
     var el = document.getElementById('refreshStatus');
-    if (el) el.textContent = _countdown <= 5 ? 'REFRESHING…' : 'LIVE · ' + _countdown + 's';
+    if (el) el.textContent = _countdown <= 5 ? 'SYNC…' : 'LIVE · ' + _countdown + 's';
     if (_countdown <= 0) {
       _countdown = 60;
       await loadLivePositions();
     }
   }, 1000);
-}
-
-function updateRefreshLabel() {
-  // no lastRefreshLabel in this design, silently noop
 }
 
 /* ── Google Maps Init ── */
@@ -908,6 +1027,7 @@ function initMap() {
     center: { lat: 19.4, lng: 74.5 }, zoom: 8,
     mapTypeId: 'roadmap', mapId: 'aqualence_geo',
     streetViewControl: false, fullscreenControl: false, mapTypeControl: false,
+    gestureHandling: 'greedy', // better mobile touch handling
     styles: [
       { elementType: 'geometry',              stylers: [{ color: '#0a1a0e' }] },
       { elementType: 'labels.text.fill',      stylers: [{ color: '#5a8060' }] },
@@ -953,7 +1073,11 @@ function showMapFallback(msg) {
   banner.textContent = '🗺️ OSM · No Google Maps Key';
   wrap.style.position = 'relative';
   wrap.appendChild(banner);
-  _leafletMap = L.map(wrap, { zoomControl: true }).setView([19.4, 74.5], 8);
+  _leafletMap = L.map(wrap, {
+    zoomControl: true,
+    tap: true,
+    tapTolerance: 15,
+  }).setView([19.4, 74.5], 8);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(_leafletMap);
@@ -974,7 +1098,7 @@ async function loadMapLeads() {
     var res = await apiFetch(url), data = await res.json();
     if (!data.success) return;
     _allLeads = data.data || [];
-    renderLeadsList(); renderLeadsOnMap(); renderZonesOnMap(); updateKpis(); updateRefreshLabel();
+    renderLeadsList(); renderLeadsOnMap(); renderZonesOnMap(); updateKpis();
   } catch(e) { showToast('Failed to load leads', 'error'); }
 }
 
@@ -985,7 +1109,6 @@ async function loadLivePositions() {
     _allLive = data.data || [];
     renderLiveList(); renderLiveOnMap();
     document.getElementById('kLive').textContent = _allLive.length;
-    updateRefreshLabel();
   } catch(e) { console.warn('loadLivePositions:', e.message); }
 }
 
@@ -1117,7 +1240,7 @@ function _lfRenderLeads() {
     var lat = parseFloat(lead.latitude), lng = parseFloat(lead.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
     var color = lead.sale_status === 'YES' ? '#00ffa3' : '#ef4444';
-    var icon = L.divIcon({ className: '', html: '<div style="width:11px;height:11px;border-radius:50%;background:' + color + ';border:2px solid rgba(0,0,0,.5);box-shadow:0 0 8px ' + color + '66"></div>', iconSize: [11,11], iconAnchor: [5,5] });
+    var icon = L.divIcon({ className: '', html: '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';border:2px solid rgba(0,0,0,.5);box-shadow:0 0 8px ' + color + '66"></div>', iconSize: [12,12], iconAnchor: [6,6] });
     var m = L.marker([lat, lng], { icon: icon })
       .bindPopup('<strong style="color:' + color + '">' + lead.shop_name + '</strong><br>' + lead.owner_name + ' · ' + lead.mobile + '<br>' + lead.taluka + ', ' + lead.district + '<br>' + (lead.geo_verified ? '<span style="color:#00ffa3">GPS OK</span>' : '<span style="color:#f59e0b">No GPS</span>') + ' · ' + lead.sale_status)
       .addTo(_leafletMap);
@@ -1134,7 +1257,7 @@ function _lfRenderLive() {
     var lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
     if (isNaN(lat) || isNaN(lng)) return;
     var ageMs = now - new Date(s.recorded_at).getTime(), isOn = ageMs < 5 * 60 * 1000, color = isOn ? '#3b82f6' : '#374151';
-    var icon = L.divIcon({ className: '', html: '<div style="width:13px;height:13px;border-radius:50%;background:' + color + ';border:2px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:700;box-shadow:0 0 8px ' + color + '66">' + s.name.charAt(0) + '</div>', iconSize: [13,13], iconAnchor: [6,6] });
+    var icon = L.divIcon({ className: '', html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:700;box-shadow:0 0 8px ' + color + '66">' + s.name.charAt(0) + '</div>', iconSize: [14,14], iconAnchor: [7,7] });
     var m = L.marker([lat, lng], { icon: icon })
       .bindPopup('<strong>' + s.name + '</strong><br>' + s.phone + '<br>' + (isOn ? '<span style="color:#00ffa3">● Online</span>' : '<span style="color:#6b7280">○ Offline</span>') + ' · ' + Math.round(ageMs / 60000) + 'm')
       .addTo(_leafletMap);
@@ -1233,10 +1356,15 @@ function switchTab(tab) {
     if (btn) btn.className = 'tab-btn' + (t === tab ? ' active' : '');
     var pane = document.getElementById('pane' + cap);
     if (!pane) return;
-    var dv = t === tab ? (t === 'assign' || t === 'zones' ? 'flex' : '') : 'none';
-    pane.style.display = dv;
+    pane.style.display = t === tab ? (t === 'assign' || t === 'zones' ? 'flex' : '') : 'none';
   });
   if (tab === 'zones') populateDistrictDropdown();
+  // On mobile, expand panel when tab clicked
+  if (window.innerWidth <= 639) {
+    var panel = document.getElementById('glassPanel');
+    panel.classList.add('panel-open');
+    _panelOpen = true;
+  }
 }
 
 /* ── Focus / Navigation ── */
@@ -1248,12 +1376,22 @@ function focusLead(idx) {
   document.querySelectorAll('.lead-item').forEach(function(el) { el.classList.remove('active'); });
   var li = document.getElementById('li-' + l.id);
   if (li) { li.classList.add('active'); li.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  // Collapse panel on mobile to see the map
+  if (window.innerWidth <= 639) {
+    var panel = document.getElementById('glassPanel');
+    panel.classList.remove('panel-open');
+    _panelOpen = false;
+  }
 }
 
 function focusLive(sid) {
   var s = _allLive.find(function(x) { return x.salesman_id === sid; }); if (!s) return;
   if (_map) { _map.setZoom(14); _map.setCenter({ lat: parseFloat(s.latitude), lng: parseFloat(s.longitude) }); }
   else if (_leafletMap) { _leafletMap.setView([parseFloat(s.latitude), parseFloat(s.longitude)], 14); }
+  if (window.innerWidth <= 639) {
+    document.getElementById('glassPanel').classList.remove('panel-open');
+    _panelOpen = false;
+  }
 }
 
 function focusTaluka(tid) {
@@ -1492,18 +1630,15 @@ async function showLeadDetail(lead) {
   } catch(e) { renderPanel([]); }
 }
 
-function closeDetail() { document.getElementById('detailSheet').classList.remove('open'); }
+function closeDetail() {
+  document.getElementById('detailSheet').classList.remove('open');
+}
 
 /* ── Misc ── */
 function clearFilters() {
   ['filterFrom', 'filterTo'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('filterSalesman').value = '';
   loadMapLeads();
-}
-
-function refreshAll() {
-  loadMapLeads(); loadLivePositions(); loadTalukas(); loadAssignments();
-  _countdown = 60;
 }
 
 function updateKpis() {
@@ -1513,10 +1648,16 @@ function updateKpis() {
 
 /* ── Keyboard ── */
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeDetail();
+  if (e.key === 'Escape') {
+    closeDetail();
+    closeSidebar();
+  }
 });
 
-window.onGMapsLoaded = function() { initMap(); onReady(); };
+function adminLogout() {
+  try { localStorage.removeItem('aq_token'); } catch(e) {}
+  window.location.href = '/login.html';
+}
 </script>
 </body>
 </html>
