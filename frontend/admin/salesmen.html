@@ -531,6 +531,23 @@
 
 /* Admin sidebar always dark */
 [data-theme="dark"] .sidebar { background:#060d14!important; border-color:#1e3a55!important; }
+
+/* ── Salesmen page: sidebar + modal z-index fix ── */
+.sidebar { z-index: 300 !important; }
+.modal-overlay { z-index: 1100 !important; }
+#sidebarOverlay { z-index: 299 !important; }
+#photoModal { z-index: 9000 !important; }
+/* Prevent sidebar from shifting when modals open */
+.sidebar { position: fixed !important; top: 0 !important; left: 0 !important; bottom: 0 !important; width: 240px !important; }
+@media (min-width: 900px) {
+  .sidebar { transform: translateX(0) !important; }
+  .main-area { margin-left: 240px !important; }
+}
+@media (max-width: 899px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0) !important; }
+  .main-area { margin-left: 0 !important; }
+}
 [data-theme="dark"] .topnav { background:var(--surface)!important; border-color:var(--border)!important; }
 [data-theme="dark"] .app-header { background:var(--surface)!important; border-color:var(--border)!important; }
 
@@ -1112,6 +1129,24 @@ function closeSidebar(){
   document.getElementById("sidebar").classList.remove("open");
   document.getElementById("sidebarOverlay").classList.remove("show");
   document.body.style.overflow="";
+}
+/* ── Modal helpers override: scroll-lock + sidebar stability ── */
+function openModal(id){
+  var el=document.getElementById(id); if(!el) return;
+  el.classList.add('show');
+  // Lock body scroll without shifting layout
+  var w=window.innerWidth-document.documentElement.clientWidth;
+  document.body.style.paddingRight=w+'px';
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  var el=document.getElementById(id); if(!el) return;
+  el.classList.remove('show');
+  // Only unlock if no other modal open
+  if(!document.querySelector('.modal-overlay.show')){
+    document.body.style.overflow='';
+    document.body.style.paddingRight='';
+  }
 }
 (function(){
   // Close sidebar on Escape key
@@ -1958,7 +1993,7 @@ function handleSPExportSelect(sel) {
       </div>
 
       <!-- Google Map -->
-      <div id="areasMap" style="width:100%;height:220px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:14px;background:var(--surface-2);overflow:hidden;position:relative"></div>
+      <div id="areasMap" style="width:100%;height:220px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:14px;background:var(--surface-2);overflow:hidden;position:relative;contain:layout style;"></div>
 
       <!-- Assigned areas list -->
       <div style="margin-bottom:14px">
@@ -2242,9 +2277,8 @@ async function openAreasModal(id, name) {
 
   openModal('areasModal');
 
-  // Init/refresh Google Map
+  // Init/refresh Google Map (don't null-reset — avoids layout thrash on reopen)
   setTimeout(() => {
-    _areasMap = null;
     initAreasMap();
   }, 250);
 
